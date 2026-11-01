@@ -1,0 +1,74 @@
+{
+  "admin": {
+    "username": "axeluf",
+    "passwordHash": "fb4da1ea731cdfee1528abb7efe9f73dd572597294c11bbc87aacb34a39697fc"
+  },
+  "items": [
+    {
+      "id": "item-1793530201938-v71f2",
+      "type": "game",
+      "title": "Celeste Mountain Climb",
+      "slug": "celeste-mountain-climb",
+      "version": "v1.0.0",
+      "status": "Unofficial",
+      "category": "Action",
+      "tags": [],
+      "shortDescription": "",
+      "description": "",
+      "developer": "Community Developer",
+      "porter": "",
+      "platform": "Android",
+      "minAndroid": "Android 8.0+",
+      "architecture": "ARM64",
+      "obbRequired": false,
+      "fileSizeValue": "850",
+      "fileSizeUnit": "MB",
+      "formattedFileSize": "850 MB",
+      "iconUrl": "",
+      "coverUrl": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80",
+      "bannerUrl": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80"
+      ],
+      "downloadLinks": [
+        {
+          "id": "dl-primary",
+          "name": "Primary Mirror",
+          "url": "https://example.com/download.apk",
+          "isPrimary": true,
+          "version": "v1.0.0",
+          "notes": ""
+        }
+      ],
+      "rating": 5,
+      "ratingCount": 1,
+      "downloads": "1",
+      "downloadCount": 1,
+      "releaseDate": "2026-11-01",
+      "updatedDate": "Nov 1, 2026",
+      "isNewlyAdded": true,
+      "isFeatured": false,
+      "isPopular": false,
+      "visibility": "published",
+      "changelog": [
+        {
+          "version": "v1.0.0",
+          "date": "Initial Release",
+          "changes": [
+            "Initial release published"
+          ]
+        }
+      ],
+      "sha256": "d927d928ebadbb14dced8459497d265fc93a76272b4b7657153bd779de77c08a"
+    }
+  ],
+  "categories": [],
+  "settings": {
+    "siteName": "APXELUZ",
+    "siteDescription": "App & Mod Repository with Apple Liquid Glass Design",
+    "announcement": "",
+    "enableDownloads": true,
+    "maintenanceMode": false,
+    "defaultArchitecture": "ARM64"
+  }
+}
