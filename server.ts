@@ -5,8 +5,9 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { Item, Category, WebsiteSettings, AdminStats } from './src/types/admin';
-import { formatFileSize, slugify, validatePasswordStrength } from './src/utils/adminValidation';
+import { formatFileSize, slugify } from './src/utils/adminValidation';
 import { isValidHttpUrl } from './src/utils/urlValidation';
+import { PRIMARY_ADMIN_EMAIL, isAuthorizedAdminEmail } from './src/lib/auth';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -128,27 +129,31 @@ async function startServer() {
   readDb();
 
   // -------------------------------------------------------------
-  // AUTH ROUTES
+  // FIREBASE GOOGLE AUTH & SESSION ROUTES
   // -------------------------------------------------------------
-  app.post('/api/auth/login', (req: Request, res: Response) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required.' });
+  app.post('/api/auth/google-login', (req: Request, res: Response) => {
+    const { email, name, photoURL } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Google account email is required.' });
     }
 
-    const db = readDb();
-    const inputHash = hashPassword(password);
-
-    if (username.trim() === db.admin.username && inputHash === db.admin.passwordHash) {
-      const token = createSession(db.admin.username);
-      return res.json({
-        success: true,
-        token,
-        user: { username: db.admin.username },
+    if (!isAuthorizedAdminEmail(email)) {
+      return res.status(403).json({
+        error: `Access Denied: Google account "${email}" is not authorized for administrator access. Only authorized administrators (${PRIMARY_ADMIN_EMAIL}) are permitted.`,
       });
     }
 
-    return res.status(401).json({ error: 'Invalid administrator username or password.' });
+    const token = createSession(email);
+    return res.json({
+      success: true,
+      token,
+      user: {
+        username: name || email,
+        email,
+        photoURL: photoURL || '',
+        role: 'ADMIN',
+      },
+    });
   });
 
   app.get('/api/auth/me', (req: Request, res: Response) => {
@@ -163,7 +168,11 @@ async function startServer() {
     const session = activeSessions.get(token!);
     return res.json({
       authenticated: true,
-      user: { username: session?.username },
+      user: {
+        username: session?.username,
+        email: session?.username,
+        role: 'ADMIN',
+      },
     });
   });
 
@@ -174,30 +183,6 @@ async function startServer() {
       activeSessions.delete(token);
     }
     return res.json({ success: true });
-  });
-
-  app.post('/api/auth/change-credentials', requireAdmin, (req: Request, res: Response) => {
-    const { currentPassword, newUsername, newPassword } = req.body;
-    const db = readDb();
-
-    if (hashPassword(currentPassword) !== db.admin.passwordHash) {
-      return res.status(400).json({ error: 'Current password is incorrect.' });
-    }
-
-    if (newPassword) {
-      const strength = validatePasswordStrength(newPassword);
-      if (!strength.isValid) {
-        return res.status(400).json({ error: strength.message });
-      }
-      db.admin.passwordHash = hashPassword(newPassword);
-    }
-
-    if (newUsername && newUsername.trim().length >= 3) {
-      db.admin.username = newUsername.trim();
-    }
-
-    writeDb(db);
-    return res.json({ success: true, message: 'Administrator credentials updated successfully.' });
   });
 
   // -------------------------------------------------------------

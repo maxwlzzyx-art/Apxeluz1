@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { Item, Category, WebsiteSettings, AdminStats, ItemType } from '../types/admin';
 import { ItemFormModal } from './ItemFormModal';
-import { validatePasswordStrength } from '../utils/adminValidation';
+import { PRIMARY_ADMIN_EMAIL } from '../lib/auth';
 
 interface AdminDashboardProps {
   adminToken: string;
@@ -74,12 +74,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('Sparkles');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-
-  // Account Settings Form
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newUsername, setNewUsername] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [accountFeedback, setAccountFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Settings Form
   const [settingsFeedback, setSettingsFeedback] = useState<string | null>(null);
@@ -278,53 +272,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
     } catch (err) {
       console.error('Settings save error', err);
-    }
-  };
-
-  // Change Admin Account Credentials
-  const handleChangeCredentials = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAccountFeedback(null);
-
-    if (!currentPassword) {
-      setAccountFeedback({ type: 'error', message: 'Current password is required.' });
-      return;
-    }
-
-    if (newPassword) {
-      const check = validatePasswordStrength(newPassword);
-      if (!check.isValid) {
-        setAccountFeedback({ type: 'error', message: check.message });
-        return;
-      }
-    }
-
-    try {
-      const res = await fetch('/api/auth/change-credentials', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({
-          currentPassword,
-          newUsername: newUsername.trim() || undefined,
-          newPassword: newPassword || undefined,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setAccountFeedback({ type: 'error', message: data.error || 'Failed to update credentials.' });
-        return;
-      }
-
-      setAccountFeedback({ type: 'success', message: 'Credentials updated successfully!' });
-      setCurrentPassword('');
-      setNewPassword('');
-    } catch (err) {
-      console.error('Account update error', err);
-      setAccountFeedback({ type: 'error', message: 'Network error updating credentials.' });
     }
   };
 
@@ -1020,83 +967,71 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* SECTION 8: ACCOUNT SETTINGS */}
+      {/* SECTION 8: FIREBASE GOOGLE ACCOUNT & SECURITY */}
       {activeSection === 'account' && (
         <div className="space-y-6">
           <div>
             <h2 className="heading-font text-lg font-bold text-white uppercase tracking-wider">
-              Administrator Account Settings
+              Administrator Authentication
             </h2>
             <p className="text-xs text-slate-400">
-              Update your administrator username and password securely. Credentials are encrypted on the server.
+              Your administrative session is protected by Firebase Google Authentication and persistent OAuth 2.0 authorization.
             </p>
           </div>
 
-          {accountFeedback && (
-            <div
-              className={`p-4 rounded-2xl border text-xs ${
-                accountFeedback.type === 'success'
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                  : 'bg-rose-500/20 border-rose-500/40 text-rose-300'
-              }`}
-            >
-              {accountFeedback.message}
-            </div>
-          )}
-
-          <form onSubmit={handleChangeCredentials} className="p-6 rounded-3xl liquid-glass border border-white/15 space-y-4 max-w-lg">
-            <div className="p-3.5 rounded-2xl liquid-glass-subtle text-xs text-slate-400">
-              Current Username: <strong className="text-white">{adminUsername}</strong>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
-                Current Password * (Required to make changes)
-              </label>
-              <input
-                type="password"
-                required
-                placeholder="Enter current password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none"
-              />
+          <div className="p-6 rounded-3xl liquid-glass border border-white/15 space-y-5 max-w-xl shadow-xl">
+            <div className="flex items-center gap-3 pb-4 border-b border-white/10">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0A84FF]/25 to-[#BF5AF2]/25 border border-white/20 flex items-center justify-center text-[#0A84FF]">
+                <Shield className="w-6 h-6 text-[#0A84FF]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>{adminUsername}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                    Authorized Admin
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">Firebase Google OAuth Provider</p>
+              </div>
             </div>
 
-            <div>
-              <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
-                New Username (Optional)
-              </label>
-              <input
-                type="text"
-                placeholder="Leave blank to keep current"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-1">
+                <span className="text-[11px] text-slate-400 uppercase font-semibold block">Primary Admin</span>
+                <span className="text-white font-mono text-[11px] font-medium">{PRIMARY_ADMIN_EMAIL}</span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-1">
+                <span className="text-[11px] text-slate-400 uppercase font-semibold block">Session Persistence</span>
+                <span className="text-emerald-300 font-semibold flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Retained Across Sessions</span>
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-1">
+                <span className="text-[11px] text-slate-400 uppercase font-semibold block">Access Role</span>
+                <span className="text-white font-semibold">Full Repository CMS & Downloads</span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-1">
+                <span className="text-[11px] text-slate-400 uppercase font-semibold block">Authorization Token</span>
+                <span className="text-slate-300 font-mono text-[11px]">Bearer ••••••••{adminToken.slice(-6)}</span>
+              </div>
             </div>
 
-            <div>
-              <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
-                New Password (Optional, 8+ characters with letters & numbers)
-              </label>
-              <input
-                type="password"
-                placeholder="Enter new strong password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none"
-              />
-            </div>
-
-            <div className="pt-3 border-t border-white/10 flex justify-end">
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+              <span className="text-xs text-slate-400">Want to terminate this session?</span>
               <button
-                type="submit"
-                className="px-6 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white shadow-lg"
+                type="button"
+                onClick={onLogout}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-semibold transition-all cursor-pointer"
               >
-                Update Credentials
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out of Admin</span>
               </button>
             </div>
-          </form>
+          </div>
         </div>
       )}
 

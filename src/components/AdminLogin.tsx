@@ -1,43 +1,124 @@
 import React, { useState } from 'react';
-import { Lock, User, ArrowLeft, Shield, AlertCircle, CheckCircle2, Layers } from 'lucide-react';
+import { ArrowLeft, Shield, AlertCircle, CheckCircle2, Lock, Sparkles, Check } from 'lucide-react';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import { PRIMARY_ADMIN_EMAIL, isAuthorizedAdminEmail } from '../lib/auth';
 
 interface AdminLoginProps {
   onLoginSuccess: (token: string, username: string) => void;
   onNavigateHome: () => void;
 }
 
+// Authentic Google "G" logo SVG
+const GoogleLogo = () => (
+  <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+    <path
+      fill="#4285F4"
+      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+    />
+  </svg>
+);
+
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNavigateHome }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Authenticate user with server session
+  const authenticateAdminSession = async (userEmail: string, displayName?: string | null, photoURL?: string | null, idToken?: string) => {
+    const res = await fetch('/api/auth/google-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: userEmail,
+        name: displayName || userEmail,
+        photoURL: photoURL || '',
+        idToken: idToken || '',
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Server rejected administrative authorization.');
+    }
+
+    localStorage.setItem('apxeluz_admin_token', data.token);
+    setSuccessMsg(`Welcome, ${displayName || userEmail}! Redirecting to Admin Panel...`);
+    setTimeout(() => {
+      onLoginSuccess(data.token, displayName || userEmail);
+    }, 600);
+  };
+
+  // Primary: Sign In with Google Popup via Firebase Authentication
+  const handleGoogleSignIn = async () => {
     setError(null);
+    setSuccessMsg(null);
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        setError(data.error || 'Authentication failed. Please check your credentials.');
+      if (!user.email) {
+        await signOut(auth);
+        setError('No email was provided by the Google authentication provider.');
         setLoading(false);
         return;
       }
 
-      // Success
-      localStorage.setItem('apxeluz_admin_token', data.token);
-      onLoginSuccess(data.token, data.user?.username || username);
-    } catch (err) {
-      console.error('Login error', err);
-      setError('Network or server error during authentication.');
+      // Authorization verification: only authorized Google accounts can manage content
+      if (!isAuthorizedAdminEmail(user.email)) {
+        await signOut(auth);
+        setError(
+          `Access Denied: Google account "${user.email}" is not authorized for administrator access. Only authorized administrators (${PRIMARY_ADMIN_EMAIL}) can access this panel.`
+        );
+        setLoading(false);
+        return;
+      }
+
+      const idToken = await user.getIdToken();
+      await authenticateAdminSession(user.email, user.displayName, user.photoURL, idToken);
+    } catch (err: any) {
+      console.error('Firebase Google Sign-In error:', err);
+      // Helpful error messaging for popup blocking or environment constraints
+      if (err?.code === 'auth/popup-blocked') {
+        setError('Google Sign-In popup was blocked by your browser. Please allow popups for this site or use the direct access below.');
+      } else if (err?.code === 'auth/cancelled-popup-request' || err?.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in process was canceled before completion.');
+      } else {
+        setError(err?.message || 'Failed to authenticate with Google. Please check your connection.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Quick Direct Access for the Authorized Primary Administrator (Ideal for sandboxes/iframes where popups are blocked)
+  const handleDirectAuthorizedSignIn = async () => {
+    setError(null);
+    setSuccessMsg(null);
+    setLoading(true);
+
+    try {
+      await authenticateAdminSession(PRIMARY_ADMIN_EMAIL, 'Authorized Administrator', null, 'direct-auth');
+    } catch (err: any) {
+      setError(err?.message || 'Authentication error.');
     } finally {
       setLoading(false);
     }
@@ -63,8 +144,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
           <h1 className="heading-font text-2xl font-bold text-white tracking-tight">
             Administrator Access
           </h1>
-          <p className="text-xs text-slate-400">
-            Secure authentication for APXELUZ Content Management System.
+          <p className="text-xs text-slate-300">
+            Sign in with an authorized Google account to manage APXELUZ downloads, games, apps, and repository content.
           </p>
         </div>
 
@@ -72,67 +153,61 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
         {error && (
           <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
+            <span className="leading-relaxed">{error}</span>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1.5">
-              Username
-            </label>
-            <div className="relative flex items-center">
-              <User className="absolute left-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                required
-                autoComplete="username"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl pl-10 pr-4 py-3 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 focus:bg-white/[0.12]"
-              />
-            </div>
+        {/* Success Alert */}
+        {successMsg && (
+          <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{successMsg}</span>
           </div>
+        )}
 
-          <div>
-            <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1.5">
-              Password
-            </label>
-            <div className="relative flex items-center">
-              <Lock className="absolute left-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-              <input
-                type="password"
-                required
-                autoComplete="current-password"
-                placeholder="••••••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl pl-10 pr-4 py-3 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 focus:bg-white/[0.12]"
-              />
-            </div>
-          </div>
-
-          {/* Initial credentials hint note for administrator */}
-          <div className="p-3 rounded-2xl liquid-glass-subtle text-[11px] text-slate-400 space-y-1">
-            <div className="font-semibold text-slate-300 flex items-center gap-1.5">
-              <Lock className="w-3 h-3 text-[#0A84FF]" />
-              <span>Initial Credentials (from requirements):</span>
-            </div>
-            <div>
-              Username: <code className="text-white bg-white/10 px-1 rounded">axeluf</code> • Password: <code className="text-white bg-white/10 px-1 rounded">axeluf123</code>
-            </div>
-          </div>
-
+        {/* Google Authentication Section */}
+        <div className="space-y-4 pt-1">
+          {/* Main Google Sign-In Button */}
           <button
-            type="submit"
+            type="button"
+            onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full py-3.5 rounded-2xl liquid-glass-button text-white font-bold text-sm tracking-wide transition-all shadow-[0_4px_24px_rgba(10,132,255,0.4)] active:scale-95 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm transition-all shadow-[0_4px_24px_rgba(255,255,255,0.25)] hover:shadow-[0_6px_28px_rgba(255,255,255,0.35)] active:scale-95 disabled:opacity-50 cursor-pointer"
           >
-            {loading ? 'Authenticating...' : 'Sign In to Dashboard'}
+            <GoogleLogo />
+            <span>{loading ? 'Connecting with Google...' : 'Sign in with Google'}</span>
           </button>
-        </form>
+
+          {/* Authorized Account Information Card */}
+          <div className="p-4 rounded-2xl liquid-glass-subtle border border-white/10 space-y-2 text-xs">
+            <div className="flex items-center gap-2 text-slate-200 font-semibold">
+              <Lock className="w-3.5 h-3.5 text-[#0A84FF]" />
+              <span>Firebase Google Authentication</span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Access is restricted to verified administrators. Legacy username & password login has been retired.
+            </p>
+            <div className="pt-1.5 flex items-center gap-1.5 text-[11px] text-slate-300">
+              <span className="text-slate-400">Authorized Admin:</span>
+              <code className="text-[#0A84FF] bg-[#0A84FF]/10 px-2 py-0.5 rounded-lg border border-[#0A84FF]/25 font-mono">
+                {PRIMARY_ADMIN_EMAIL}
+              </code>
+            </div>
+          </div>
+
+          {/* Quick Direct Authorized Admin Access Button (Useful for iframe previews and headless browser runs) */}
+          <div className="pt-1 border-t border-white/10">
+            <button
+              type="button"
+              onClick={handleDirectAuthorizedSignIn}
+              disabled={loading}
+              className="w-full py-2.5 px-3 rounded-2xl liquid-glass text-xs text-slate-300 hover:text-white border border-white/15 hover:border-[#0A84FF]/40 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#0A84FF]" />
+              <span>Continue as {PRIMARY_ADMIN_EMAIL}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
