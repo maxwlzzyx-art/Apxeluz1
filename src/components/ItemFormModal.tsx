@@ -14,6 +14,7 @@ import {
 import { Item, ItemType, Category, DownloadLink } from '../types/admin';
 import { formatFileSize, slugify, validateSlug } from '../utils/adminValidation';
 import { isValidHttpUrl } from '../utils/urlValidation';
+import { safeFetchJson } from '../utils/apiClient';
 
 interface ItemFormModalProps {
   initialItem?: Item | null;
@@ -162,7 +163,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     reader.onload = async () => {
       try {
         const base64Data = reader.result as string;
-        const res = await fetch('/api/admin/upload-image', {
+        const apiRes = await safeFetchJson<{ url: string }>('/api/admin/upload-image', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -174,17 +175,17 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
           }),
         });
 
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || 'Failed to upload image.');
+        if (!apiRes.ok || !apiRes.data?.url) {
+          setError(apiRes.error || 'Failed to upload image.');
           return;
         }
 
+        const uploadedUrl = apiRes.data.url;
         // Apply uploaded URL
-        if (target === 'icon') setIconUrl(data.url);
-        else if (target === 'cover') setCoverUrl(data.url);
-        else if (target === 'banner') setBannerUrl(data.url);
-        else if (target === 'screenshot') setScreenshots((prev) => [...prev, data.url]);
+        if (target === 'icon') setIconUrl(uploadedUrl);
+        else if (target === 'cover') setCoverUrl(uploadedUrl);
+        else if (target === 'banner') setBannerUrl(uploadedUrl);
+        else if (target === 'screenshot') setScreenshots((prev) => [...prev, uploadedUrl]);
       } catch (err) {
         console.error('Upload failed', err);
         setError('Network error during file upload.');
@@ -278,7 +279,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       const url = isEditing && initialItem ? `/api/admin/items/${initialItem.id}` : '/api/admin/items';
       const method = isEditing ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const apiRes = await safeFetchJson<Item>(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -287,14 +288,13 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Failed to save item.');
+      if (!apiRes.ok || !apiRes.data) {
+        setError(apiRes.error || 'Failed to save item.');
         setLoading(false);
         return;
       }
 
-      onSaved(data);
+      onSaved(apiRes.data);
       onClose();
     } catch (err) {
       console.error('Save item error', err);

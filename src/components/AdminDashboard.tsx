@@ -31,6 +31,7 @@ import {
 import { Item, Category, WebsiteSettings, AdminStats, ItemType } from '../types/admin';
 import { ItemFormModal } from './ItemFormModal';
 import { PRIMARY_ADMIN_EMAIL } from '../lib/auth';
+import { safeFetchJson } from '../utils/apiClient';
 
 interface AdminDashboardProps {
   adminToken: string;
@@ -86,17 +87,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [imageUploadFeedback, setImageUploadFeedback] = useState<string | null>(null);
 
-  // Fetch all administrative data
+  // Fetch all administrative data (safely handles both full-stack and static deployments)
   const fetchData = async () => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${adminToken}` };
 
       const [statsRes, itemsRes, catsRes, settingsRes] = await Promise.all([
-        fetch('/api/admin/stats', { headers }),
-        fetch('/api/admin/items', { headers }),
-        fetch('/api/categories'),
-        fetch('/api/admin/settings', { headers }),
+        safeFetchJson<AdminStats>('/api/admin/stats', { headers }),
+        safeFetchJson<Item[]>('/api/admin/items', { headers }),
+        safeFetchJson<Category[]>('/api/categories'),
+        safeFetchJson<WebsiteSettings>('/api/admin/settings', { headers }),
       ]);
 
       if (statsRes.status === 401 || itemsRes.status === 401) {
@@ -104,12 +105,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         return;
       }
 
-      if (statsRes.ok) setStats(await statsRes.json());
-      if (itemsRes.ok) setItems(await itemsRes.json());
-      if (catsRes.ok) setCategories(await catsRes.json());
-      if (settingsRes.ok) setSettings(await settingsRes.json());
+      if (statsRes.ok && statsRes.data) setStats(statsRes.data);
+      if (itemsRes.ok && Array.isArray(itemsRes.data)) setItems(itemsRes.data);
+      if (catsRes.ok && Array.isArray(catsRes.data)) setCategories(catsRes.data);
+      if (settingsRes.ok && settingsRes.data) setSettings(settingsRes.data);
     } catch (err) {
-      console.error('Failed fetching admin data', err);
+      console.warn('Administrative data load notice:', err);
     } finally {
       setLoading(false);
     }
@@ -151,7 +152,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleToggleVisibility = async (item: Item) => {
     const newVis = item.visibility === 'published' ? 'draft' : 'published';
     try {
-      const res = await fetch(`/api/admin/items/${item.id}`, {
+      const apiRes = await safeFetchJson<Item>(`/api/admin/items/${item.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -159,9 +160,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         },
         body: JSON.stringify({ visibility: newVis }),
       });
-      if (res.ok) {
-        const updated = await res.json();
-        setItems(items.map((i) => (i.id === item.id ? updated : i)));
+      if (apiRes.ok && apiRes.data) {
+        setItems(items.map((i) => (i.id === item.id ? apiRes.data! : i)));
       }
     } catch (err) {
       console.error('Update visibility error', err);
@@ -175,7 +175,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     try {
       if (editingCategory) {
-        const res = await fetch(`/api/admin/categories/${editingCategory.id}`, {
+        const apiRes = await safeFetchJson<Category>(`/api/admin/categories/${editingCategory.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -183,14 +183,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           },
           body: JSON.stringify({ name: newCatName.trim(), icon: newCatIcon }),
         });
-        if (res.ok) {
-          const updated = await res.json();
-          setCategories(categories.map((c) => (c.id === editingCategory.id ? updated : c)));
+        if (apiRes.ok && apiRes.data) {
+          setCategories(categories.map((c) => (c.id === editingCategory.id ? apiRes.data! : c)));
           setEditingCategory(null);
           setNewCatName('');
         }
       } else {
-        const res = await fetch('/api/admin/categories', {
+        const apiRes = await safeFetchJson<Category>('/api/admin/categories', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -198,9 +197,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           },
           body: JSON.stringify({ name: newCatName.trim(), icon: newCatIcon }),
         });
-        if (res.ok) {
-          const created = await res.json();
-          setCategories([...categories, created]);
+        if (apiRes.ok && apiRes.data) {
+          setCategories([...categories, apiRes.data]);
           setNewCatName('');
         }
       }
@@ -284,7 +282,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     reader.onload = async () => {
       try {
         const base64Data = reader.result as string;
-        const res = await fetch('/api/admin/upload-image', {
+        const apiRes = await safeFetchJson<{ url: string }>('/api/admin/upload-image', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -296,10 +294,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }),
         });
 
-        const data = await res.json();
-        if (res.ok && data.url) {
-          setUploadedImages([data.url, ...uploadedImages]);
-          setImageUploadFeedback(`Uploaded: ${data.url}`);
+        if (apiRes.ok && apiRes.data?.url) {
+          const uploaded = apiRes.data.url;
+          setUploadedImages([uploaded, ...uploadedImages]);
+          setImageUploadFeedback(`Uploaded: ${uploaded}`);
           setTimeout(() => setImageUploadFeedback(null), 3000);
         }
       } catch (err) {

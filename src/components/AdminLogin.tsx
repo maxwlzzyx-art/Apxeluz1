@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Shield, AlertCircle, CheckCircle2, Lock, Sparkles, Check } from 'lucide-react';
-import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut,
+  User,
+} from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { PRIMARY_ADMIN_EMAIL, isAuthorizedAdminEmail } from '../lib/auth';
+import { isAuthorizedAdminEmail } from '../lib/auth';
+import { safeFetchJson } from '../utils/apiClient';
 
 interface AdminLoginProps {
   onLoginSuccess: (token: string, username: string) => void;
@@ -36,90 +44,133 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Authenticate user with server session
-  const authenticateAdminSession = async (userEmail: string, displayName?: string | null, photoURL?: string | null, idToken?: string) => {
-    const res = await fetch('/api/auth/google-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: userEmail,
-        name: displayName || userEmail,
-        photoURL: photoURL || '',
-        idToken: idToken || '',
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Server rejected administrative authorization.');
+  // Core administrative verification logic
+  const handleAuthenticatedUser = async (user: User) => {
+    if (!user.email) {
+      await signOut(auth);
+      setError('No email address was provided by Google Authentication.');
+      setLoading(false);
+      return;
     }
 
-    localStorage.setItem('apxeluz_admin_token', data.token);
-    setSuccessMsg(`Welcome, ${displayName || userEmail}! Redirecting to Admin Panel...`);
-    setTimeout(() => {
-      onLoginSuccess(data.token, displayName || userEmail);
-    }, 600);
+    // Role check: Only authorized Google account can access admin panel
+    if (!isAuthorizedAdminEmail(user.email)) {
+      await signOut(auth);
+      setError(
+        `Access Denied: Google account "${user.email}" is not authorized for administrator access. Please sign in with an authorized administrator account.`
+      );
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Obtain Firebase ID token for authentication
+      const idToken = await user.getIdToken();
+
+      // Attempt optional backend session sync (safely guarded against 404/non-JSON on Vercel)
+      const apiRes = await safeFetchJson<{ token: string; success: boolean }>('/api/auth/google-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          name: user.displayName || user.email,
+          photoURL: user.photoURL || '',
+          idToken,
+        }),
+      });
+
+      // Use backend token if available, or Firebase ID token on static deployments (Vercel)
+      const sessionToken = apiRes.ok && apiRes.data?.token ? apiRes.data.token : idToken;
+      localStorage.setItem('apxeluz_admin_token', sessionToken);
+
+      setSuccessMsg(`Authenticated successfully! Accessing Admin Panel...`);
+      setTimeout(() => {
+        onLoginSuccess(sessionToken, user.displayName || user.email || 'Admin');
+      }, 500);
+    } catch (err: any) {
+      console.error('Error establishing administrative session:', err);
+      setError('Failed to establish administrative session. Please try again.');
+      setLoading(false);
+    }
   };
 
-  // Primary: Sign In with Google Popup via Firebase Authentication
+  // Check for redirect result on mount (for mobile browsers and redirect sign-in flow)
+  useEffect(() => {
+    let isMounted = true;
+    const checkRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user && isMounted) {
+          setLoading(true);
+          await handleAuthenticatedUser(result.user);
+        }
+      } catch (err: any) {
+        console.error('Firebase redirect sign-in error:', err);
+        if (isMounted) {
+          handleAuthError(err);
+        }
+      }
+    };
+
+    checkRedirect();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Format descriptive, user-friendly error messages
+  const handleAuthError = (err: any) => {
+    const code = err?.code;
+    if (code === 'auth/unauthorized-domain') {
+      setError(
+        `Authentication domain error: "${window.location.hostname}" is not authorized in Firebase. Please add this domain to Firebase Console > Authentication > Settings > Authorized domains.`
+      );
+    } else if (code === 'auth/popup-blocked') {
+      setError('Google Sign-In popup was blocked by your browser. Please allow popups for this site or try again.');
+    } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      setError('Sign-in process was canceled before completion.');
+    } else if (code === 'auth/network-request-failed') {
+      setError('Network connection failed while communicating with Google. Please check your internet connection.');
+    } else {
+      setError(err?.message || 'Authentication failed. Please verify your connection and try again.');
+    }
+  };
+
+  // Primary Google Sign-In with popup, with fallback to redirect on mobile or if popups are blocked
   const handleGoogleSignIn = async () => {
     setError(null);
     setSuccessMsg(null);
     setLoading(true);
 
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    // Check if mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      
+      if (isMobile) {
+        // Use redirect on mobile browsers for optimal compatibility
+        await signInWithRedirect(auth, provider);
+        return;
+      }
+
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      if (!user.email) {
-        await signOut(auth);
-        setError('No email was provided by the Google authentication provider.');
-        setLoading(false);
-        return;
-      }
-
-      // Authorization verification: only authorized Google accounts can manage content
-      if (!isAuthorizedAdminEmail(user.email)) {
-        await signOut(auth);
-        setError(
-          `Access Denied: Google account "${user.email}" is not authorized for administrator access. Only authorized administrators (${PRIMARY_ADMIN_EMAIL}) can access this panel.`
-        );
-        setLoading(false);
-        return;
-      }
-
-      const idToken = await user.getIdToken();
-      await authenticateAdminSession(user.email, user.displayName, user.photoURL, idToken);
+      await handleAuthenticatedUser(result.user);
     } catch (err: any) {
-      console.error('Firebase Google Sign-In error:', err);
-      // Helpful error messaging for popup blocking or environment constraints
-      if (err?.code === 'auth/popup-blocked') {
-        setError('Google Sign-In popup was blocked by your browser. Please allow popups for this site or use the direct access below.');
-      } else if (err?.code === 'auth/cancelled-popup-request' || err?.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in process was canceled before completion.');
+      console.error('Google Sign-In error:', err);
+
+      // If popup was blocked or mobile-related error, fall back to redirect
+      if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/operation-not-supported-in-this-environment') {
+        try {
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectErr: any) {
+          handleAuthError(redirectErr);
+        }
       } else {
-        setError(err?.message || 'Failed to authenticate with Google. Please check your connection.');
+        handleAuthError(err);
       }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Quick Direct Access for the Authorized Primary Administrator (Ideal for sandboxes/iframes where popups are blocked)
-  const handleDirectAuthorizedSignIn = async () => {
-    setError(null);
-    setSuccessMsg(null);
-    setLoading(true);
-
-    try {
-      await authenticateAdminSession(PRIMARY_ADMIN_EMAIL, 'Authorized Administrator', null, 'direct-auth');
-    } catch (err: any) {
-      setError(err?.message || 'Authentication error.');
-    } finally {
       setLoading(false);
     }
   };
@@ -127,10 +178,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
   return (
     <div className="w-full max-w-md mx-auto py-12 px-4 sm:px-6">
       <div className="p-7 sm:p-8 rounded-3xl liquid-glass border border-white/20 shadow-2xl space-y-6">
-        {/* Back Link */}
+        {/* Return to Public Repository Link */}
         <button
           onClick={onNavigateHome}
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 text-[#0A84FF]" />
           <span>Return to Public Repository</span>
@@ -165,9 +216,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
           </div>
         )}
 
-        {/* Google Authentication Section */}
-        <div className="space-y-4 pt-1">
-          {/* Main Google Sign-In Button */}
+        {/* Google Sign-In Action */}
+        <div className="pt-2">
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -177,36 +227,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
             <GoogleLogo />
             <span>{loading ? 'Connecting with Google...' : 'Sign in with Google'}</span>
           </button>
-
-          {/* Authorized Account Information Card */}
-          <div className="p-4 rounded-2xl liquid-glass-subtle border border-white/10 space-y-2 text-xs">
-            <div className="flex items-center gap-2 text-slate-200 font-semibold">
-              <Lock className="w-3.5 h-3.5 text-[#0A84FF]" />
-              <span>Firebase Google Authentication</span>
-            </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Access is restricted to verified administrators. Legacy username & password login has been retired.
-            </p>
-            <div className="pt-1.5 flex items-center gap-1.5 text-[11px] text-slate-300">
-              <span className="text-slate-400">Authorized Admin:</span>
-              <code className="text-[#0A84FF] bg-[#0A84FF]/10 px-2 py-0.5 rounded-lg border border-[#0A84FF]/25 font-mono">
-                {PRIMARY_ADMIN_EMAIL}
-              </code>
-            </div>
-          </div>
-
-          {/* Quick Direct Authorized Admin Access Button (Useful for iframe previews and headless browser runs) */}
-          <div className="pt-1 border-t border-white/10">
-            <button
-              type="button"
-              onClick={handleDirectAuthorizedSignIn}
-              disabled={loading}
-              className="w-full py-2.5 px-3 rounded-2xl liquid-glass text-xs text-slate-300 hover:text-white border border-white/15 hover:border-[#0A84FF]/40 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#0A84FF]" />
-              <span>Continue as {PRIMARY_ADMIN_EMAIL}</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -21,9 +21,12 @@ import {
   X,
   SlidersHorizontal,
   ChevronLeft,
-  Link as LinkIcon,
   Shield,
 } from 'lucide-react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './lib/firebase';
+import { isAuthorizedAdminEmail } from './lib/auth';
+import { safeFetchJson } from './utils/apiClient';
 
 function itemToGame(item: Item): Game {
   const fileSize = item.formattedFileSize || formatFileSize(item.fileSizeValue, item.fileSizeUnit);
@@ -151,56 +154,72 @@ export default function App() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [websiteSettings, setWebsiteSettings] = useState<WebsiteSettings | null>(null);
 
-  // Fetch public data from server
+  // Fetch public data from server (safely handles static Vercel deployments and custom APIs)
   const fetchPublicData = useCallback(async () => {
     try {
       const [itemsRes, catsRes, settingsRes] = await Promise.all([
-        fetch('/api/items'),
-        fetch('/api/categories'),
-        fetch('/api/settings'),
+        safeFetchJson<Item[]>('/api/items'),
+        safeFetchJson<Category[]>('/api/categories'),
+        safeFetchJson<WebsiteSettings>('/api/settings'),
       ]);
 
-      if (itemsRes.ok) {
-        const itemsData = await itemsRes.json();
-        setRawItems(itemsData);
+      if (itemsRes.ok && Array.isArray(itemsRes.data)) {
+        setRawItems(itemsRes.data);
       }
-      if (catsRes.ok) {
-        const catsData = await catsRes.json();
-        setCategories(catsData);
+      if (catsRes.ok && Array.isArray(catsRes.data)) {
+        setCategories(catsRes.data);
       }
-      if (settingsRes.ok) {
-        const settingsData = await settingsRes.json();
-        setWebsiteSettings(settingsData);
+      if (settingsRes.ok && settingsRes.data) {
+        setWebsiteSettings(settingsRes.data);
       }
     } catch (err) {
-      console.error('Failed to load public repository data from API:', err);
+      console.warn('Public repository data fetch notice:', err);
     }
   }, []);
 
-  // Check auth session on boot
+  // Listen to Firebase Authentication state for seamless session retention across reloads & sessions
   useEffect(() => {
-    const token = localStorage.getItem('apxeluz_admin_token');
-    if (token) {
-      fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.authenticated) {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser && firebaseUser.email && isAuthorizedAdminEmail(firebaseUser.email)) {
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          setIsAdminAuthenticated(true);
+          setAdminToken(idToken);
+          setAdminUsername(firebaseUser.displayName || firebaseUser.email || 'Admin');
+          localStorage.setItem('apxeluz_admin_token', idToken);
+        } catch (err) {
+          console.error('Failed to retrieve Firebase ID token:', err);
+        }
+      } else {
+        // Fallback: Check if an active server token exists (safely guarded against 404/non-JSON)
+        const storedToken = localStorage.getItem('apxeluz_admin_token');
+        if (storedToken) {
+          const checkRes = await safeFetchJson<{ authenticated: boolean; user?: { username?: string } }>(
+            '/api/auth/me',
+            { headers: { Authorization: `Bearer ${storedToken}` } }
+          );
+
+          if (checkRes.ok && checkRes.data?.authenticated) {
             setIsAdminAuthenticated(true);
-            setAdminToken(token);
-            setAdminUsername(data.user?.username || 'axeluf');
+            setAdminToken(storedToken);
+            setAdminUsername(checkRes.data?.user?.username || 'Admin');
           } else {
             setIsAdminAuthenticated(false);
+            setAdminToken('');
             localStorage.removeItem('apxeluz_admin_token');
           }
-        })
-        .catch(() => {
+        } else {
           setIsAdminAuthenticated(false);
-        });
-    }
+          setAdminToken('');
+        }
+      }
+    });
 
     fetchPublicData();
+
+    return () => {
+      unsubscribe();
+    };
   }, [fetchPublicData]);
 
   // Map server items to public Game model
@@ -316,7 +335,12 @@ export default function App() {
   // Handle Logout
   const handleAdminLogout = async () => {
     try {
-      await fetch('/api/auth/logout', {
+      await signOut(auth);
+    } catch (e) {
+      console.warn('Firebase sign-out notice:', e);
+    }
+    try {
+      await safeFetchJson('/api/auth/logout', {
         method: 'POST',
         headers: { Authorization: `Bearer ${adminToken}` },
       });
@@ -549,31 +573,6 @@ export default function App() {
         ) : (
           /* VIEW 6: Main Homepage in Liquid Glass */
           <div className="space-y-8">
-            {/* Quick Demo URLs Pill Bar (Clean, no visitor upload buttons) */}
-            <div className="p-4 sm:p-5 rounded-3xl liquid-glass border border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#0A84FF]/25 to-[#BF5AF2]/25 border border-white/20 flex items-center justify-center text-[#0A84FF]">
-                  <LinkIcon className="w-4 h-4 text-[#0A84FF]" />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-white">Shareable Direct URLs Active</h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Direct paths: <button onClick={() => navigateTo('/mod/stardew-falley1')} className="text-[#0A84FF] hover:underline font-mono">/mod/stardew-falley1</button>, <button onClick={() => navigateTo('/mod/hollow-knight')} className="text-[#0A84FF] hover:underline font-mono">/mod/hollow-knight</button>, or <button onClick={() => navigateTo('/mod/minecraft-mod')} className="text-[#0A84FF] hover:underline font-mono">/mod/minecraft-mod</button>
-                  </p>
-                </div>
-              </div>
-
-              {isAdminAuthenticated && (
-                <button
-                  onClick={() => navigateTo('/admin')}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-[#0A84FF]/20 hover:bg-[#0A84FF]/30 text-[#0A84FF] border border-[#0A84FF]/40 text-xs font-bold transition-all shadow-sm"
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>Open Admin Panel</span>
-                </button>
-              )}
-            </div>
-
             {/* 1. Hot Category Section (Dynamic or elegant empty state) */}
             <HotCategories
               selectedCategory={filters.category}
