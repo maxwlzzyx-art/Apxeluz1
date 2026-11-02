@@ -17,8 +17,14 @@ service cloud.firestore {
     match /items/{itemId} {
       // Anyone can read published items; admins can read drafts
       allow read: if resource == null || resource.data.visibility == 'published' || isAdmin();
-      // Only authenticated admins can create, update, or delete items
-      allow create, update, delete: if isAdmin();
+      // Only authenticated admins can create or delete items
+      allow create, delete: if isAdmin();
+      // Admins can update anything; visitors can increment downloadCount on published items
+      allow update: if isAdmin() || (
+        resource != null &&
+        resource.data.visibility == 'published' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloadCount'])
+      );
     }
 
     // Categories

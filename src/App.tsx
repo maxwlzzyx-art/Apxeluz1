@@ -21,11 +21,15 @@ import {
   X,
   SlidersHorizontal,
   ChevronLeft,
-  Shield,
+  ShieldAlert,
+  Loader2,
 } from 'lucide-react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from './lib/firebase';
-import { isAuthorizedAdminEmail } from './lib/auth';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import {
+  subscribeToPublishedItems,
+  subscribeToCategories,
+  subscribeToSettings,
+} from './lib/firestoreService';
 import { safeFetchJson } from './utils/apiClient';
 
 function itemToGame(item: Item): Game {
@@ -61,19 +65,19 @@ function itemToGame(item: Item): Game {
     description: item.description,
     features: item.shortDescription ? [item.shortDescription] : [],
     screenshots: item.screenshots || [],
-    changelog: item.changelog || [{ version: item.version, date: item.updatedDate, changes: ['Initial release published'] }],
+    changelog: item.changelog || [
+      { version: item.version, date: item.updatedDate, changes: ['Initial release published'] },
+    ],
     sha256: item.sha256 || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     virusTotalClean: true,
     downloadFilename: `${item.slug}_${item.version}.apk`,
     downloadLinks: item.downloadLinks,
+    versions: item.versions || [],
   };
 }
 
-export default function App() {
-  // Authentication State
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
-  const [adminToken, setAdminToken] = useState<string>('');
-  const [adminUsername, setAdminUsername] = useState<string>('axeluf');
+function AppContent() {
+  const { status, user, adminToken, adminUsername, signOut: authSignOut } = useAuth();
 
   // Routing State based on browser URL
   const [currentRoute, setCurrentRoute] = useState<{
@@ -149,12 +153,20 @@ export default function App() {
     }
   };
 
+  // Synchronize authenticated state with admin-login route:
+  // If user is already authenticated and visits /admin/login, auto-redirect to /admin
+  useEffect(() => {
+    if (status === 'authenticated' && currentRoute.view === 'admin-login') {
+      navigateTo('/admin');
+    }
+  }, [status, currentRoute.view]);
+
   // Persistent Server Database State
   const [rawItems, setRawItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [websiteSettings, setWebsiteSettings] = useState<WebsiteSettings | null>(null);
 
-  // Fetch public data from server (safely handles static Vercel deployments and custom APIs)
+  // Fallback REST fetcher for static/fullstack environments
   const fetchPublicData = useCallback(async () => {
     try {
       const [itemsRes, catsRes, settingsRes] = await Promise.all([
@@ -163,62 +175,56 @@ export default function App() {
         safeFetchJson<WebsiteSettings>('/api/settings'),
       ]);
 
-      if (itemsRes.ok && Array.isArray(itemsRes.data)) {
-        setRawItems(itemsRes.data);
+      if (itemsRes.ok && Array.isArray(itemsRes.data) && itemsRes.data.length > 0) {
+        setRawItems((prev) => (prev.length === 0 ? itemsRes.data! : prev));
       }
       if (catsRes.ok && Array.isArray(catsRes.data)) {
-        setCategories(catsRes.data);
+        setCategories((prev) => (prev.length === 0 ? catsRes.data! : prev));
       }
       if (settingsRes.ok && settingsRes.data) {
-        setWebsiteSettings(settingsRes.data);
+        setWebsiteSettings((prev) => prev || settingsRes.data!);
       }
     } catch (err) {
-      console.warn('Public repository data fetch notice:', err);
+      console.warn('Public repository data REST fallback notice:', err);
     }
   }, []);
 
-  // Listen to Firebase Authentication state for seamless session retention across reloads & sessions
+  // Real-Time Firestore Synchronization for Public Visitors & Admin
+  // Changes in Firestore update the UI dynamically without any redeployment!
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser && firebaseUser.email && isAuthorizedAdminEmail(firebaseUser.email)) {
-        try {
-          const idToken = await firebaseUser.getIdToken();
-          setIsAdminAuthenticated(true);
-          setAdminToken(idToken);
-          setAdminUsername(firebaseUser.displayName || firebaseUser.email || 'Admin');
-          localStorage.setItem('apxeluz_admin_token', idToken);
-        } catch (err) {
-          console.error('Failed to retrieve Firebase ID token:', err);
-        }
-      } else {
-        // Fallback: Check if an active server token exists (safely guarded against 404/non-JSON)
-        const storedToken = localStorage.getItem('apxeluz_admin_token');
-        if (storedToken) {
-          const checkRes = await safeFetchJson<{ authenticated: boolean; user?: { username?: string } }>(
-            '/api/auth/me',
-            { headers: { Authorization: `Bearer ${storedToken}` } }
-          );
-
-          if (checkRes.ok && checkRes.data?.authenticated) {
-            setIsAdminAuthenticated(true);
-            setAdminToken(storedToken);
-            setAdminUsername(checkRes.data?.user?.username || 'Admin');
-          } else {
-            setIsAdminAuthenticated(false);
-            setAdminToken('');
-            localStorage.removeItem('apxeluz_admin_token');
-          }
+    const unsubItems = subscribeToPublishedItems(
+      (firestoreItems) => {
+        if (firestoreItems && firestoreItems.length > 0) {
+          setRawItems(firestoreItems);
         } else {
-          setIsAdminAuthenticated(false);
-          setAdminToken('');
+          // Fallback to REST if Firestore collection empty or initializing
+          fetchPublicData();
         }
+      },
+      (err) => {
+        console.warn('Firestore subscription fallback:', err);
+        fetchPublicData();
+      }
+    );
+
+    const unsubCategories = subscribeToCategories((cats) => {
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+
+    const unsubSettings = subscribeToSettings((sett) => {
+      if (sett) {
+        setWebsiteSettings(sett);
       }
     });
 
     fetchPublicData();
 
     return () => {
-      unsubscribe();
+      unsubItems();
+      unsubCategories();
+      unsubSettings();
     };
   }, [fetchPublicData]);
 
@@ -291,7 +297,7 @@ export default function App() {
     setSearchQuery('');
   };
 
-  // Item lookup for shareable detail URLs: checks server repository items, then fallback REGISTERED_MODS
+  // Item lookup for shareable detail URLs
   const activeDetailItem = useMemo(() => {
     if (currentRoute.view !== 'item-detail' || !currentRoute.slug) return undefined;
     const slug = currentRoute.slug.toLowerCase();
@@ -312,7 +318,7 @@ export default function App() {
     return sortGames(filtered, filters.sortBy);
   }, [repositoryGames, filters]);
 
-  // Homepage collections - empty when no items exist per requirement 4
+  // Homepage collections
   const newlyAddedGames = useMemo(() => repositoryGames.filter((g) => g.isNewlyAdded), [repositoryGames]);
   const featuredGames = useMemo(() => repositoryGames.filter((g) => g.isFeatured), [repositoryGames]);
   const popularGames = useMemo(() => repositoryGames.filter((g) => g.isPopular), [repositoryGames]);
@@ -334,36 +340,20 @@ export default function App() {
 
   // Handle Logout
   const handleAdminLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (e) {
-      console.warn('Firebase sign-out notice:', e);
-    }
-    try {
-      await safeFetchJson('/api/auth/logout', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-    } catch {}
-    localStorage.removeItem('apxeluz_admin_token');
-    setIsAdminAuthenticated(false);
-    setAdminToken('');
+    await authSignOut();
     navigateTo('/');
-    fetchPublicData();
   };
 
   // Handle Login Success
-  const handleAdminLoginSuccess = (token: string, username: string) => {
-    setIsAdminAuthenticated(true);
-    setAdminToken(token);
-    setAdminUsername(username);
+  const handleAdminLoginSuccess = () => {
     navigateTo('/admin');
-    fetchPublicData();
   };
+
+  const isAdminAuthenticated = status === 'authenticated';
 
   return (
     <div className="min-h-screen flex flex-col font-sans selection:bg-[#0A84FF]/30 selection:text-white">
-      {/* Liquid Glass Header with APXELUZ Branding and Hidden 5-Click Admin Entry */}
+      {/* Liquid Glass Header with APXELUZ Branding */}
       <Header
         activeTab={
           currentRoute.view === 'admin-dashboard'
@@ -416,16 +406,51 @@ export default function App() {
             onNavigateHome={() => navigateTo('/')}
           />
         ) : currentRoute.view === 'admin-dashboard' ? (
-          /* VIEW 3: Admin CMS Dashboard */
-          isAdminAuthenticated ? (
+          /* VIEW 3: Admin CMS Dashboard with Robust Async Auth Guarding */
+          status === 'loading' ? (
+            <div className="py-24 text-center space-y-4">
+              <div className="w-14 h-14 mx-auto rounded-3xl liquid-glass border border-white/20 flex items-center justify-center text-[#0A84FF] shadow-lg">
+                <Loader2 className="w-7 h-7 animate-spin text-[#0A84FF]" />
+              </div>
+              <p className="text-sm font-semibold text-slate-200">
+                Verifying Administrator Session...
+              </p>
+              <p className="text-xs text-slate-400">
+                Synchronizing with Firebase Authentication
+              </p>
+            </div>
+          ) : status === 'unauthorized' ? (
+            <div className="max-w-md mx-auto py-16 px-4">
+              <div className="p-8 rounded-3xl liquid-glass border border-rose-500/30 text-center space-y-4 shadow-2xl">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                  <ShieldAlert className="w-7 h-7" />
+                </div>
+                <h2 className="heading-font text-xl font-bold text-white">Access Denied</h2>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  The Google account {user?.email ? `"${user.email}"` : ''} is not authorized for administrator access. Only authorized administrators are permitted.
+                </p>
+                <div className="pt-2 flex flex-col gap-2">
+                  <button
+                    onClick={() => authSignOut()}
+                    className="w-full py-2.5 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all cursor-pointer"
+                  >
+                    Sign Out & Switch Account
+                  </button>
+                  <button
+                    onClick={() => navigateTo('/')}
+                    className="text-xs text-slate-400 hover:text-white py-1 transition-colors cursor-pointer"
+                  >
+                    Return to Public Repository
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : status === 'authenticated' ? (
             <AdminDashboard
               adminToken={adminToken}
-              adminUsername={adminUsername}
+              adminUsername={adminUsername || user?.displayName || user?.email || 'Admin'}
               onLogout={handleAdminLogout}
-              onNavigateHome={() => {
-                navigateTo('/');
-                fetchPublicData();
-              }}
+              onNavigateHome={() => navigateTo('/')}
             />
           ) : (
             <AdminLogin
@@ -445,7 +470,7 @@ export default function App() {
               </div>
               <button
                 onClick={() => navigateTo('/')}
-                className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5"
+                className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4 text-[#0A84FF]" />
                 <span>Back to Discover</span>
@@ -461,7 +486,7 @@ export default function App() {
                 </p>
                 <button
                   onClick={() => navigateTo('/')}
-                  className="px-5 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs"
+                  className="px-5 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
                 >
                   Explore Repository
                 </button>
@@ -486,7 +511,7 @@ export default function App() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
               <div>
                 <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
-                  <button onClick={handleResetFilters} className="hover:text-white">
+                  <button onClick={handleResetFilters} className="hover:text-white cursor-pointer">
                     Discover
                   </button>
                   <span>/</span>
@@ -505,7 +530,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all ${
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all cursor-pointer ${
                     isFiltersOpen
                       ? 'bg-[#0A84FF]/25 text-[#0A84FF] border-[#0A84FF]/50 shadow-sm'
                       : 'liquid-glass-subtle text-slate-300 hover:text-white border-white/15'
@@ -518,7 +543,7 @@ export default function App() {
                 {searchQuery && (
                   <button
                     onClick={handleResetFilters}
-                    className="text-xs text-slate-400 hover:text-white flex items-center gap-1 px-3 py-2 rounded-2xl liquid-glass-subtle border border-white/15 transition-colors"
+                    className="text-xs text-slate-400 hover:text-white flex items-center gap-1 px-3 py-2 rounded-2xl liquid-glass-subtle border border-white/15 transition-colors cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                     <span>Clear Search</span>
@@ -550,7 +575,7 @@ export default function App() {
                 <div className="pt-2 flex justify-center gap-2.5">
                   <button
                     onClick={handleResetFilters}
-                    className="px-5 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs"
+                    className="px-5 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
                   >
                     Reset Search & Filters
                   </button>
@@ -573,7 +598,7 @@ export default function App() {
         ) : (
           /* VIEW 6: Main Homepage in Liquid Glass */
           <div className="space-y-8">
-            {/* 1. Hot Category Section (Dynamic or elegant empty state) */}
+            {/* 1. Hot Category Section */}
             <HotCategories
               selectedCategory={filters.category}
               onSelectCategory={(cat) => setFilters((prev) => ({ ...prev, category: cat }))}
@@ -639,7 +664,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer in Liquid Glass (unwanted sections removed per requirement 1) */}
+      {/* Footer in Liquid Glass */}
       <Footer />
 
       {/* Game Detail Modal */}
@@ -672,5 +697,13 @@ export default function App() {
         />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

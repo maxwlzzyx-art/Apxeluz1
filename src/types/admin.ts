@@ -9,6 +9,21 @@ export interface DownloadLink {
   isPrimary: boolean;
   version?: string;
   notes?: string;
+  storagePath?: string;
+  fileSizeBytes?: number;
+}
+
+export interface ItemVersion {
+  id: string;
+  version: string;
+  releaseDate: string;
+  formattedFileSize?: string;
+  fileSizeValue?: number | string;
+  fileSizeUnit?: 'MB' | 'GB';
+  downloadLinks: DownloadLink[];
+  changelog?: string[];
+  notes?: string;
+  isLatest?: boolean;
 }
 
 export interface Item {
@@ -48,6 +63,7 @@ export interface Item {
   visibility: 'published' | 'draft';
   changelog?: { version: string; date: string; changes: string[] }[];
   sha256?: string;
+  versions?: ItemVersion[];
 }
 
 export interface Category {

@@ -14,10 +14,12 @@ import {
   Maximize2,
   ExternalLink,
   Server,
+  History,
 } from 'lucide-react';
 import { Game } from '../types/game';
 import { GameCard } from './GameCard';
 import { safeOpenExternalUrl, getHostingProvider } from '../utils/urlValidation';
+import { incrementDownloadCounter } from '../lib/firestoreService';
 
 interface GameDetailModalProps {
   game: Game | null;
@@ -406,8 +408,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
                           <button
                             type="button"
-                            onClick={() => safeOpenExternalUrl(mirror.url, '_blank')}
-                            className="w-full py-2 px-3 rounded-xl liquid-glass-button text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02] active:scale-95 shadow-md"
+                            onClick={() => {
+                              incrementDownloadCounter(game.id).catch(() => {});
+                              safeOpenExternalUrl(mirror.url, '_blank');
+                            }}
+                            className="w-full py-2 px-3 rounded-xl liquid-glass-button text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02] active:scale-95 shadow-md cursor-pointer"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                             <span>Open {mirror.name}</span>
@@ -416,6 +421,53 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                       );
                     })}
                   </div>
+
+                  {/* Previous Releases Archive if available */}
+                  {game.versions && game.versions.length > 0 && (
+                    <div className="mt-5 pt-4 border-t border-white/10 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                          <History className="w-3.5 h-3.5 text-[#0A84FF]" />
+                          <span>Previous Releases ({game.versions.length})</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400">Archives</span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {game.versions.map((ver, vIdx) => {
+                          const mirror = ver.downloadLinks?.[0];
+                          return (
+                            <div
+                              key={ver.id || vIdx}
+                              className="p-2.5 rounded-xl liquid-glass-subtle border border-white/10 flex items-center justify-between gap-2 text-xs"
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <span className="font-mono text-[11px] font-bold text-[#0A84FF] px-1.5 py-0.5 rounded bg-[#0A84FF]/20">
+                                  {ver.version}
+                                </span>
+                                <span className="text-slate-300 text-[11px] truncate">
+                                  {ver.formattedFileSize || `${ver.fileSizeValue || ''} ${ver.fileSizeUnit || 'MB'}`}
+                                </span>
+                              </div>
+                              {mirror && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    incrementDownloadCounter(game.id).catch(() => {});
+                                    safeOpenExternalUrl(mirror.url, '_blank');
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-[#0A84FF] text-white text-[11px] font-medium flex items-center gap-1 flex-shrink-0 cursor-pointer"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  <span>Download</span>
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

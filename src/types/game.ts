@@ -1,4 +1,5 @@
 export type GameStatus = 'Unofficial' | 'Official';
+import type { ItemVersion } from './admin';
 
 export type GameCategory =
   | 'Action'
@@ -64,6 +65,7 @@ export interface Game {
   virusTotalClean: boolean;
   downloadFilename: string;
   downloadLinks?: DownloadMirror[];
+  versions?: ItemVersion[];
 }
 
 export interface FilterOptions {

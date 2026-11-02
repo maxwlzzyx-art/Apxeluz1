@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   X,
   Plus,
@@ -7,14 +7,18 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
-  Layers,
   Sparkles,
+  Package,
+  Loader2,
+  HardDrive,
+  History,
 } from 'lucide-react';
-import { Item, ItemType, Category, DownloadLink } from '../types/admin';
+import { Item, ItemType, Category, DownloadLink, ItemVersion } from '../types/admin';
 import { formatFileSize, slugify, validateSlug } from '../utils/adminValidation';
 import { isValidHttpUrl } from '../utils/urlValidation';
 import { safeFetchJson } from '../utils/apiClient';
+import { uploadToFirebaseStorage, UploadProgress } from '../lib/storageService';
+import { saveItemToFirestore } from '../lib/firestoreService';
 
 interface ItemFormModalProps {
   initialItem?: Item | null;
@@ -72,10 +76,12 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   // Images
   const [iconUrl, setIconUrl] = useState(initialItem?.iconUrl || '');
   const [coverUrl, setCoverUrl] = useState(
-    initialItem?.coverUrl || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80'
+    initialItem?.coverUrl ||
+      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80'
   );
   const [bannerUrl, setBannerUrl] = useState(
-    initialItem?.bannerUrl || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80'
+    initialItem?.bannerUrl ||
+      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80'
   );
   const [screenshots, setScreenshots] = useState<string[]>(
     initialItem?.screenshots || [
@@ -84,10 +90,17 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   );
   const [newScreenshotUrl, setNewScreenshotUrl] = useState('');
 
-  // Upload feedback state
-  const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
+  // Firebase Cloud Storage upload progress tracking
+  const [activeUpload, setActiveUpload] = useState<{
+    target: 'package' | 'cover' | 'banner' | 'icon' | 'screenshot';
+    progress: UploadProgress;
+    filename: string;
+    cancel?: () => void;
+  } | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadSuccessFeedback, setUploadSuccessFeedback] = useState<string | null>(null);
 
   // Live formatted size
   const formattedSize = formatFileSize(fileSizeValue, fileSizeUnit);
@@ -138,7 +151,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   };
 
   const handleAddScreenshot = () => {
-    if (newScreenshotUrl.trim()) {
+    if (newScreenshotUrl.trim() && isValidHttpUrl(newScreenshotUrl.trim())) {
       setScreenshots([...screenshots, newScreenshotUrl.trim()]);
       setNewScreenshotUrl('');
     }
@@ -148,52 +161,137 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     setScreenshots(screenshots.filter((_, i) => i !== index));
   };
 
-  // Image file upload handler
-  const handleFileUpload = async (
+  // Upload handler for APK / Packages directly to Firebase Cloud Storage
+  const handlePackageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError(null);
+    setUploadSuccessFeedback(null);
+
+    const cleanSlug = slugify(slug) || 'package';
+    const storagePath = `items/${cleanSlug}/packages/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+
+    const { promise, cancel } = uploadToFirebaseStorage(file, storagePath, (progress) => {
+      setActiveUpload({
+        target: 'package',
+        progress,
+        filename: file.name,
+        cancel,
+      });
+    });
+
+    setActiveUpload({
+      target: 'package',
+      progress: { percentage: 0, bytesTransferred: 0, totalBytes: file.size, state: 'running' },
+      filename: file.name,
+      cancel,
+    });
+
+    try {
+      const result = await promise;
+      // Auto-set the primary download URL to the Firebase Cloud Storage download URL
+      setPrimaryUrl(result.downloadUrl);
+      setPrimaryName(`Firebase Cloud Storage (${file.name})`);
+      setDownloadNotes(`Direct High-Speed Mirror • ${file.name}`);
+
+      // Calculate file size value and unit automatically
+      const mbSize = file.size / (1024 * 1024);
+      if (mbSize >= 1000) {
+        setFileSizeValue(parseFloat((mbSize / 1024).toFixed(2)));
+        setFileSizeUnit('GB');
+      } else {
+        setFileSizeValue(parseFloat(mbSize.toFixed(1)));
+        setFileSizeUnit('MB');
+      }
+
+      setUploadSuccessFeedback(
+        `Package "${file.name}" uploaded to Firebase Cloud Storage! Download URL configured automatically.`
+      );
+      setTimeout(() => setUploadSuccessFeedback(null), 6000);
+    } catch (err: any) {
+      if (err?.code !== 'storage/canceled') {
+        console.error('Firebase storage upload error:', err);
+        setError(`Package upload failed: ${err?.message || 'Storage error'}`);
+      }
+    } finally {
+      setActiveUpload(null);
+      e.target.value = '';
+    }
+  };
+
+  // Upload handler for Images (Cover, Banner, Icon, Screenshots) directly to Firebase Cloud Storage
+  const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     target: 'icon' | 'cover' | 'banner' | 'screenshot'
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingTarget(target);
     setError(null);
+    const cleanSlug = slugify(slug) || 'item';
+    const storagePath = `items/${cleanSlug}/images/${Date.now()}_${target}_${file.name.replace(/\s+/g, '_')}`;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const base64Data = reader.result as string;
-        const apiRes = await safeFetchJson<{ url: string }>('/api/admin/upload-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${adminToken}`,
-          },
-          body: JSON.stringify({
-            filename: file.name,
-            base64Data,
-          }),
-        });
+    const { promise, cancel } = uploadToFirebaseStorage(file, storagePath, (progress) => {
+      setActiveUpload({
+        target,
+        progress,
+        filename: file.name,
+        cancel,
+      });
+    });
 
-        if (!apiRes.ok || !apiRes.data?.url) {
-          setError(apiRes.error || 'Failed to upload image.');
-          return;
+    setActiveUpload({
+      target,
+      progress: { percentage: 0, bytesTransferred: 0, totalBytes: file.size, state: 'running' },
+      filename: file.name,
+      cancel,
+    });
+
+    try {
+      const result = await promise;
+      const uploadedUrl = result.downloadUrl;
+
+      if (target === 'icon') setIconUrl(uploadedUrl);
+      else if (target === 'cover') setCoverUrl(uploadedUrl);
+      else if (target === 'banner') setBannerUrl(uploadedUrl);
+      else if (target === 'screenshot') setScreenshots((prev) => [...prev, uploadedUrl]);
+
+      setUploadSuccessFeedback(`Image uploaded successfully!`);
+      setTimeout(() => setUploadSuccessFeedback(null), 4000);
+    } catch (err: any) {
+      if (err?.code !== 'storage/canceled') {
+        console.warn('Direct storage upload fallback to base64 API:', err);
+        // Fallback to base64 API if storage has an issue
+        try {
+          const reader = new FileReader();
+          reader.onload = async () => {
+            const base64Data = reader.result as string;
+            const apiRes = await safeFetchJson<{ url: string }>('/api/admin/upload', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${adminToken}`,
+              },
+              body: JSON.stringify({ filename: file.name, base64Data }),
+            });
+            if (apiRes.ok && apiRes.data?.url) {
+              const url = apiRes.data.url;
+              if (target === 'icon') setIconUrl(url);
+              else if (target === 'cover') setCoverUrl(url);
+              else if (target === 'banner') setBannerUrl(url);
+              else if (target === 'screenshot') setScreenshots((prev) => [...prev, url]);
+            }
+          };
+          reader.readAsDataURL(file);
+        } catch {
+          setError('Failed to upload image.');
         }
-
-        const uploadedUrl = apiRes.data.url;
-        // Apply uploaded URL
-        if (target === 'icon') setIconUrl(uploadedUrl);
-        else if (target === 'cover') setCoverUrl(uploadedUrl);
-        else if (target === 'banner') setBannerUrl(uploadedUrl);
-        else if (target === 'screenshot') setScreenshots((prev) => [...prev, uploadedUrl]);
-      } catch (err) {
-        console.error('Upload failed', err);
-        setError('Network error during file upload.');
-      } finally {
-        setUploadingTarget(null);
       }
-    };
-    reader.readAsDataURL(file);
+    } finally {
+      setActiveUpload(null);
+      e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,7 +317,9 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     for (let i = 0; i < altLinks.length; i++) {
       const link = altLinks[i];
       if (link.url.trim() && !isValidHttpUrl(link.url.trim())) {
-        setError(`Mirror "${link.name || `#${i + 1}`}" has an invalid URL. Only HTTP and HTTPS destinations are permitted.`);
+        setError(
+          `Mirror "${link.name || `#${i + 1}`}" has an invalid URL. Only HTTP and HTTPS destinations are permitted.`
+        );
         return;
       }
     }
@@ -245,14 +345,42 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
         })),
     ];
 
-    const payload = {
+    // Version Preservation Logic:
+    // If editing and version number was bumped, preserve previous version in versions history
+    let preservedVersions: ItemVersion[] = initialItem?.versions ? [...initialItem.versions] : [];
+
+    if (isEditing && initialItem && initialItem.version && initialItem.version !== version.trim()) {
+      const previousReleaseArchive: ItemVersion = {
+        id: `ver-${Date.now()}-${initialItem.version.replace(/[^a-z0-9]/gi, '')}`,
+        version: initialItem.version,
+        releaseDate: initialItem.updatedDate || initialItem.releaseDate || new Date().toISOString(),
+        formattedFileSize: initialItem.formattedFileSize,
+        fileSizeValue: initialItem.fileSizeValue,
+        fileSizeUnit: initialItem.fileSizeUnit,
+        downloadLinks: initialItem.downloadLinks || [],
+        changelog: (initialItem.changelog || []).map((c) => c.changes).flat(),
+        notes: `Archived release ${initialItem.version}`,
+        isLatest: false,
+      };
+
+      // Add previous version to the beginning of the version history
+      preservedVersions = [previousReleaseArchive, ...preservedVersions];
+    }
+
+    const itemId = initialItem?.id || `item-${Date.now()}-${cleanSlug}`;
+
+    const completeItem: Item = {
+      id: itemId,
       type,
       title: title.trim(),
       slug: cleanSlug,
       version: version.trim(),
       status,
       category,
-      tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+      tags: tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
       shortDescription: shortDescription.trim(),
       description: description.trim(),
       developer: developer.trim() || 'Community Developer',
@@ -269,36 +397,52 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       bannerUrl,
       screenshots,
       downloadLinks,
-      downloadUrl: primaryUrl,
-      downloadNotes,
-      visibility,
+      rating: initialItem?.rating || 5.0,
+      ratingCount: initialItem?.ratingCount || 1,
+      downloads: initialItem?.downloads || '0',
+      downloadCount: initialItem?.downloadCount || 0,
+      releaseDate: initialItem?.releaseDate || new Date().toISOString().split('T')[0],
+      updatedDate: new Date().toISOString().split('T')[0],
+      isNewlyAdded: !isEditing,
       isFeatured,
+      isPopular: Boolean(initialItem?.isPopular),
+      visibility,
+      changelog: initialItem?.changelog || [
+        {
+          version: version.trim(),
+          date: new Date().toISOString().split('T')[0],
+          changes: ['Official release package published to APXELUZ repository.'],
+        },
+      ],
+      sha256: initialItem?.sha256 || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+      versions: preservedVersions,
     };
 
     try {
-      const url = isEditing && initialItem ? `/api/admin/items/${initialItem.id}` : '/api/admin/items';
-      const method = isEditing ? 'PUT' : 'POST';
+      // 1. Direct Firestore Cloud Persistence (Single Source of Truth)
+      await saveItemToFirestore(completeItem);
 
-      const apiRes = await safeFetchJson<Item>(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!apiRes.ok || !apiRes.data) {
-        setError(apiRes.error || 'Failed to save item.');
-        setLoading(false);
-        return;
+      // 2. Also replicate to server REST API if available (non-blocking fallback)
+      try {
+        const url = isEditing && initialItem ? `/api/admin/items/${initialItem.id}` : '/api/admin/items';
+        const method = isEditing ? 'PUT' : 'POST';
+        await safeFetchJson<Item>(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify(completeItem),
+        });
+      } catch (restErr) {
+        console.warn('REST mirror sync notice (Firestore save succeeded):', restErr);
       }
 
-      onSaved(apiRes.data);
+      onSaved(completeItem);
       onClose();
-    } catch (err) {
-      console.error('Save item error', err);
-      setError('Network error saving item.');
+    } catch (err: any) {
+      console.error('Save item error:', err);
+      setError(`Failed to save item to Cloud Firestore: ${err?.message || 'Database error'}`);
     } finally {
       setLoading(false);
     }
@@ -318,117 +462,165 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0A84FF]/25 to-[#BF5AF2]/25 border border-white/20 flex items-center justify-center text-[#0A84FF]">
-              <Layers className="w-5 h-5 text-[#0A84FF]" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0A84FF]/20 to-[#BF5AF2]/20 border border-white/20 flex items-center justify-center text-[#0A84FF]">
+              <Package className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="heading-font text-lg sm:text-xl font-bold text-white">
-                {isEditing && initialItem ? `Edit ${initialItem.title}` : `Add New Content`}
+              <h2 className="heading-font text-lg font-bold text-white uppercase tracking-tight">
+                {isEditing ? `Edit: ${initialItem?.title}` : `Publish New ${type.toUpperCase()}`}
               </h2>
-              <p className="text-xs text-slate-400">
-                Manage basic attributes, multiple mirrors, formatted file sizes, and image assets.
+              <p className="text-xs text-slate-300">
+                Upload packages to Firebase Cloud Storage and sync instantly with public visitors.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-2xl liquid-glass-subtle hover:bg-white/20 text-slate-300 hover:text-white"
+            className="p-2 rounded-2xl liquid-glass-subtle hover:bg-white/20 text-slate-300 hover:text-white border border-white/15 transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Scrollable Form Content */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto custom-scrollbar flex-grow py-5 space-y-6">
-          {error && (
-            <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
+        {/* Upload Progress Bar Floating Banner */}
+        {activeUpload && (
+          <div className="my-3 p-3.5 rounded-2xl bg-[#0A84FF]/20 border border-[#0A84FF]/40 text-white space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold">
+              <span className="flex items-center gap-2 truncate">
+                <Loader2 className="w-4 h-4 animate-spin text-[#0A84FF] flex-shrink-0" />
+                <span className="truncate">Uploading {activeUpload.filename} to Cloud Storage...</span>
+              </span>
+              <span className="font-mono text-[#0A84FF] flex-shrink-0 ml-2">
+                {activeUpload.progress.percentage}%
+              </span>
             </div>
-          )}
+            <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-[#0A84FF] to-[#BF5AF2] h-full transition-all duration-200"
+                style={{ width: `${activeUpload.progress.percentage}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-300">
+              <span>
+                {(activeUpload.progress.bytesTransferred / (1024 * 1024)).toFixed(1)} MB /{' '}
+                {(activeUpload.progress.totalBytes / (1024 * 1024)).toFixed(1)} MB
+              </span>
+              {activeUpload.cancel && (
+                <button
+                  type="button"
+                  onClick={activeUpload.cancel}
+                  className="text-rose-400 hover:text-rose-300 font-bold underline cursor-pointer"
+                >
+                  Cancel Upload
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
+        {/* Feedback Notices */}
+        {uploadSuccessFeedback && (
+          <div className="my-3 p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{uploadSuccessFeedback}</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="my-3 p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="space-y-6 pt-4 overflow-y-auto pr-1 flex-grow">
           {/* Section 1: Basic Information */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-[#0A84FF] uppercase tracking-wider flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              <span>1. Basic Information</span>
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
-                  Content Type *
-                </label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as ItemType)}
-                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
-                >
-                  <option value="game" className="bg-[#0f172a]">Game</option>
-                  <option value="mod" className="bg-[#0f172a]">Mod</option>
-                  <option value="app" className="bg-[#0f172a]">App</option>
-                </select>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
-                  Title / Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Hollow Knight, Stardew Valley Expanded"
-                  value={title}
-                  onChange={(e) => handleTitleChange(e.target.value)}
-                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
-                />
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-[#0A84FF] uppercase tracking-wider flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                <span>1. General Information</span>
+              </h3>
+              {/* Type Switcher */}
+              <div className="flex rounded-xl bg-white/10 p-0.5 border border-white/15">
+                {(['game', 'mod', 'app'] as ItemType[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setType(t)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
+                      type === t
+                        ? 'bg-[#0A84FF] text-white shadow-sm'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
-                  Custom URL Slug *
+                  Title *
                 </label>
-                <div className="flex items-center bg-white/[0.08] rounded-2xl border border-white/15 px-3.5 py-2.5">
-                  <span className="text-xs text-slate-400 font-mono">/{type}/</span>
-                  <input
-                    type="text"
-                    required
-                    placeholder="custom-slug"
-                    value={slug}
-                    onChange={(e) => setSlug(slugify(e.target.value))}
-                    className="w-full bg-transparent text-sm text-white focus:outline-none font-mono"
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Hollow Knight Mobile"
+                  value={title}
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
+                  URL Slug *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="hollow-knight-mobile"
+                  value={slug}
+                  onChange={(e) => setSlug(slugify(e.target.value))}
+                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 font-mono text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
+                  Version *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="v1.0.5"
+                  value={version}
+                  onChange={(e) => setVersion(e.target.value)}
+                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
+                />
               </div>
 
               <div>
                 <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
                   Category *
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Action, Simulation, Adventure"
+                <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
-                  Version
-                </label>
-                <input
-                  type="text"
-                  value={version}
-                  onChange={(e) => setVersion(e.target.value)}
-                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 font-mono"
-                />
+                >
+                  {categories.map((c) => (
+                    <option key={c.id || c.name} value={c.name} className="bg-[#0f172a]">
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -440,19 +632,25 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   onChange={(e) => setStatus(e.target.value as any)}
                   className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
                 >
-                  <option value="Unofficial" className="bg-[#0f172a]">Unofficial / Mod</option>
-                  <option value="Official" className="bg-[#0f172a]">Official</option>
+                  <option value="Unofficial" className="bg-[#0f172a]">
+                    Unofficial Port / Mod
+                  </option>
+                  <option value="Official" className="bg-[#0f172a]">
+                    Official Release
+                  </option>
                 </select>
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
                   Developer
                 </label>
                 <input
                   type="text"
+                  placeholder="Team Cherry"
                   value={developer}
-                  placeholder="Original Studio"
                   onChange={(e) => setDeveloper(e.target.value)}
                   className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
                 />
@@ -460,16 +658,42 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
               <div>
                 <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
-                  Porter / Maintainer
+                  Porter / Modder
                 </label>
                 <input
                   type="text"
+                  placeholder="APXELUZ Port Team"
                   value={porter}
-                  placeholder="e.g. Danil_05"
                   onChange={(e) => setPorter(e.target.value)}
                   className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
                 />
               </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
+                  Min Android
+                </label>
+                <input
+                  type="text"
+                  placeholder="Android 8.0+"
+                  value={minAndroid}
+                  onChange={(e) => setMinAndroid(e.target.value)}
+                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
+                Tags (Comma separated)
+              </label>
+              <input
+                type="text"
+                placeholder="Metroidvania, 2D, Action, Port"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
+              />
             </div>
 
             <div>
@@ -478,8 +702,8 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               </label>
               <input
                 type="text"
+                placeholder="Brief one-line summary for cards"
                 value={shortDescription}
-                placeholder="One sentence summary for search and previews..."
                 onChange={(e) => setShortDescription(e.target.value)}
                 className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
               />
@@ -487,18 +711,18 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
             <div>
               <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
-                Full Description & Features
+                Full Description
               </label>
               <textarea
                 rows={3}
+                placeholder="Detailed features, controls, and installation notes..."
                 value={description}
-                placeholder="Comprehensive game description, mod features, gameplay instructions..."
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 resize-none"
               />
             </div>
 
-            <div className="flex gap-4 items-center pt-1">
+            <div className="flex flex-wrap gap-4 items-center pt-1">
               <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
                 <input
                   type="checkbox"
@@ -526,21 +750,54 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   onChange={(e) => setVisibility(e.target.value as any)}
                   className="bg-white/[0.08] text-xs text-white rounded-xl px-2.5 py-1 border border-white/15 focus:outline-none"
                 >
-                  <option value="published" className="bg-[#0f172a]">Published</option>
-                  <option value="draft" className="bg-[#0f172a]">Draft (Hidden)</option>
+                  <option value="published" className="bg-[#0f172a]">
+                    Published
+                  </option>
+                  <option value="draft" className="bg-[#0f172a]">
+                    Draft (Hidden)
+                  </option>
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Section 2: Download Information */}
+          {/* Section 2: Package File Upload & Cloud Storage */}
           <div className="space-y-4 pt-4 border-t border-white/10">
-            <h3 className="text-xs font-bold text-[#0A84FF] uppercase tracking-wider flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              <span>2. Download Information & File Size</span>
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-[#0A84FF] uppercase tracking-wider flex items-center gap-2">
+                <HardDrive className="w-4 h-4" />
+                <span>2. Package Upload (Firebase Cloud Storage)</span>
+              </h3>
+              <span className="text-[10px] text-emerald-400 font-medium">
+                Cloud Bucket: gen-lang-client-0303975467
+              </span>
+            </div>
 
-            {/* File size value + Unit Selector (MB / GB) per requirement 6 */}
+            {/* Direct Package Upload Box */}
+            <div className="p-4 rounded-2xl liquid-glass-subtle border border-[#0A84FF]/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-white block">
+                    Upload Package File (.APK, .ZIP, .JAR, .OBB)
+                  </span>
+                  <span className="text-[11px] text-slate-300">
+                    Directly uploads to Firebase Storage with percentage progress and permanent cloud delivery.
+                  </span>
+                </div>
+                <label className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0A84FF] to-[#BF5AF2] text-white text-xs font-bold cursor-pointer hover:opacity-90 flex items-center gap-1.5 shadow-md flex-shrink-0">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Choose Package</span>
+                  <input
+                    type="file"
+                    accept=".apk,.zip,.jar,.mcaddon,.mcpack,.xapk,.obb"
+                    className="hidden"
+                    onChange={handlePackageUpload}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* File size value + Unit Selector (MB / GB) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl liquid-glass-subtle">
               <div>
                 <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
@@ -566,8 +823,12 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   onChange={(e) => setFileSizeUnit(e.target.value as 'MB' | 'GB')}
                   className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 font-bold"
                 >
-                  <option value="MB" className="bg-[#0f172a]">MB (Megabytes)</option>
-                  <option value="GB" className="bg-[#0f172a]">GB (Gigabytes)</option>
+                  <option value="MB" className="bg-[#0f172a]">
+                    MB (Megabytes)
+                  </option>
+                  <option value="GB" className="bg-[#0f172a]">
+                    GB (Gigabytes)
+                  </option>
                 </select>
               </div>
 
@@ -590,9 +851,15 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 onChange={(e) => setArchitecture(e.target.value)}
                 className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
               >
-                <option value="ARM64" className="bg-[#0f172a]">ARM64 (64-bit)</option>
-                <option value="ARM32" className="bg-[#0f172a]">ARM32 (32-bit)</option>
-                <option value="Universal" className="bg-[#0f172a]">Universal (ARM64 / ARM32)</option>
+                <option value="ARM64" className="bg-[#0f172a]">
+                  ARM64 (64-bit)
+                </option>
+                <option value="ARM32" className="bg-[#0f172a]">
+                  ARM32 (32-bit)
+                </option>
+                <option value="Universal" className="bg-[#0f172a]">
+                  Universal (ARM64 / ARM32)
+                </option>
               </select>
             </div>
 
@@ -603,9 +870,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   <span className="w-2 h-2 rounded-full bg-[#0A84FF] animate-pulse" />
                   Primary Download Destination (Active)
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  Default Target
-                </span>
+                <span className="text-[10px] text-slate-400 font-mono">Default Target</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -616,7 +881,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Primary Download, Google Drive"
+                    placeholder="e.g. Firebase Cloud Storage"
                     value={primaryName}
                     onChange={(e) => setPrimaryName(e.target.value)}
                     className="w-full bg-white/[0.08] text-xs text-white rounded-xl px-3 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
@@ -625,12 +890,12 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
                 <div className="sm:col-span-2">
                   <label className="text-[10px] font-semibold text-slate-300 uppercase block mb-1">
-                    Destination URL (HTTP / HTTPS) *
+                    Destination URL (HTTP / HTTPS / Storage URL) *
                   </label>
                   <input
                     type="url"
                     required
-                    placeholder="https://example.com/download/game-package"
+                    placeholder="https://firebasestorage.googleapis.com/... or https://..."
                     value={primaryUrl}
                     onChange={(e) => setPrimaryUrl(e.target.value)}
                     className="w-full bg-white/[0.08] text-xs text-white rounded-xl px-3 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 font-mono"
@@ -641,7 +906,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               <div>
                 <input
                   type="text"
-                  placeholder="Optional notes: e.g. Direct HTTP/3 • Zero Queue"
+                  placeholder="Optional notes: e.g. Direct Firebase Cloud CDN • Zero Queue"
                   value={downloadNotes}
                   onChange={(e) => setDownloadNotes(e.target.value)}
                   className="w-full bg-white/[0.05] text-[11px] text-slate-300 rounded-xl px-3 py-1.5 border border-white/10 placeholder-slate-500"
@@ -659,28 +924,21 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleAddAltLink('Google Drive')}
-                    className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-[#0A84FF]/20 text-[11px] text-slate-200 hover:text-white border border-white/15 transition-colors"
+                    className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-[#0A84FF]/20 text-[11px] text-slate-200 hover:text-white border border-white/15 transition-colors cursor-pointer"
                   >
                     + Google Drive
                   </button>
                   <button
                     type="button"
                     onClick={() => handleAddAltLink('MediaFire')}
-                    className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-[#0A84FF]/20 text-[11px] text-slate-200 hover:text-white border border-white/15 transition-colors"
+                    className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-[#0A84FF]/20 text-[11px] text-slate-200 hover:text-white border border-white/15 transition-colors cursor-pointer"
                   >
                     + MediaFire
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleAddAltLink(`Alternative Download ${altLinks.length + 1}`)}
-                    className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-[#0A84FF]/20 text-[11px] text-slate-200 hover:text-white border border-white/15 transition-colors"
-                  >
-                    + Alternative Download
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => handleAddAltLink('Custom Mirror')}
-                    className="px-2.5 py-1 rounded-xl bg-[#0A84FF]/20 text-[11px] text-[#0A84FF] border border-[#0A84FF]/40 hover:bg-[#0A84FF]/30 transition-colors flex items-center gap-1"
+                    className="px-2.5 py-1 rounded-xl bg-[#0A84FF]/20 text-[11px] text-[#0A84FF] border border-[#0A84FF]/40 hover:bg-[#0A84FF]/30 transition-colors flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Add Mirror</span>
@@ -729,7 +987,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleSetPrimary(idx)}
-                          className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-[#0A84FF] text-[10px] text-slate-300 hover:text-white font-semibold transition-colors"
+                          className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-[#0A84FF] text-[10px] text-slate-300 hover:text-white font-semibold transition-colors cursor-pointer"
                           title="Set this mirror as the primary destination"
                         >
                           Set Primary
@@ -737,7 +995,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleRemoveAltLink(idx)}
-                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-colors"
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer"
                           title="Delete mirror"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -748,13 +1006,35 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Preserved Versions Notice */}
+            {initialItem?.versions && initialItem.versions.length > 0 && (
+              <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                  <History className="w-4 h-4 text-[#0A84FF]" />
+                  <span>Version History ({initialItem.versions.length} archived releases)</span>
+                </div>
+                <div className="space-y-1">
+                  {initialItem.versions.map((v, i) => (
+                    <div
+                      key={v.id || i}
+                      className="text-[11px] text-slate-300 flex items-center justify-between py-1 border-b border-white/5"
+                    >
+                      <span className="font-mono text-[#0A84FF] font-bold">{v.version}</span>
+                      <span className="text-slate-400">{v.releaseDate}</span>
+                      <span className="text-slate-400">{v.formattedFileSize || 'Unknown size'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Section 3: Image Management & Live Previews */}
           <div className="space-y-4 pt-4 border-t border-white/10">
             <h3 className="text-xs font-bold text-[#0A84FF] uppercase tracking-wider flex items-center gap-2">
               <ImageIcon className="w-4 h-4" />
-              <span>3. Image Management & Uploads</span>
+              <span>3. Image Management (Cloud Storage)</span>
             </h3>
 
             {/* Cover Image */}
@@ -765,12 +1045,12 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 </label>
                 <label className="cursor-pointer text-xs text-[#0A84FF] hover:underline flex items-center gap-1">
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Upload File</span>
+                  <span>Upload Cover File</span>
                   <input
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => handleFileUpload(e, 'cover')}
+                    onChange={(e) => handleImageUpload(e, 'cover')}
                   />
                 </label>
               </div>
@@ -804,12 +1084,12 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 </label>
                 <label className="cursor-pointer text-xs text-[#0A84FF] hover:underline flex items-center gap-1">
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Upload File</span>
+                  <span>Upload Banner File</span>
                   <input
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => handleFileUpload(e, 'banner')}
+                    onChange={(e) => handleImageUpload(e, 'banner')}
                   />
                 </label>
               </div>
@@ -843,12 +1123,12 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 </label>
                 <label className="cursor-pointer text-xs text-[#0A84FF] hover:underline flex items-center gap-1">
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Upload Screenshot</span>
+                  <span>Upload Screenshot File</span>
                   <input
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => handleFileUpload(e, 'screenshot')}
+                    onChange={(e) => handleImageUpload(e, 'screenshot')}
                   />
                 </label>
               </div>
@@ -864,7 +1144,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 <button
                   type="button"
                   onClick={handleAddScreenshot}
-                  className="px-4 py-2 rounded-xl liquid-glass-button text-xs font-bold text-white flex-shrink-0"
+                  className="px-4 py-2 rounded-xl liquid-glass-button text-xs font-bold text-white flex-shrink-0 cursor-pointer"
                 >
                   Add URL
                 </button>
@@ -872,12 +1152,15 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
                 {screenshots.map((shot, idx) => (
-                  <div key={idx} className="relative aspect-video rounded-xl overflow-hidden bg-white/10 border border-white/20 group">
+                  <div
+                    key={idx}
+                    className="relative aspect-video rounded-xl overflow-hidden bg-white/10 border border-white/20 group"
+                  >
                     <img src={shot} alt="" className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => handleRemoveScreenshot(idx)}
-                      className="absolute top-1 right-1 p-1 rounded-lg bg-black/60 text-rose-400 hover:text-rose-300"
+                      className="absolute top-1 right-1 p-1 rounded-lg bg-black/60 text-rose-400 hover:text-rose-300 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -892,16 +1175,25 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-2xl liquid-glass-subtle text-xs font-semibold text-slate-300 hover:text-white"
+              className="px-5 py-2.5 rounded-2xl liquid-glass-subtle text-xs font-semibold text-slate-300 hover:text-white cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="px-7 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white shadow-lg disabled:opacity-50"
+              disabled={loading || Boolean(activeUpload)}
+              className="px-7 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white shadow-lg disabled:opacity-50 cursor-pointer flex items-center gap-2"
             >
-              {loading ? 'Saving...' : isEditing ? 'Update Content' : 'Publish Content'}
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Saving to Firebase...</span>
+                </>
+              ) : isEditing ? (
+                'Update in Firestore'
+              ) : (
+                'Publish to Repository'
+              )}
             </button>
           </div>
         </form>

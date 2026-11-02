@@ -32,6 +32,17 @@ import { Item, Category, WebsiteSettings, AdminStats, ItemType } from '../types/
 import { ItemFormModal } from './ItemFormModal';
 import { PRIMARY_ADMIN_EMAIL } from '../lib/auth';
 import { safeFetchJson } from '../utils/apiClient';
+import {
+  subscribeToAllAdminItems,
+  subscribeToCategories,
+  subscribeToSettings,
+  deleteItemFromFirestore,
+  toggleItemVisibilityInFirestore,
+  saveCategoryToFirestore,
+  deleteCategoryFromFirestore,
+  saveSettingsToFirestore,
+} from '../lib/firestoreService';
+import { uploadToFirebaseStorage } from '../lib/storageService';
 
 interface AdminDashboardProps {
   adminToken: string;
@@ -116,8 +127,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  // Real-time Firestore subscriptions for Administrator
   useEffect(() => {
+    const unsubItems = subscribeToAllAdminItems((liveItems) => {
+      setItems(liveItems);
+      setLoading(false);
+      // Auto-compute live stats from Firestore collection
+      const games = liveItems.filter((i) => i.type === 'game').length;
+      const mods = liveItems.filter((i) => i.type === 'mod').length;
+      const apps = liveItems.filter((i) => i.type === 'app').length;
+      const downloads = liveItems.reduce((acc, curr) => acc + (curr.downloadCount || 0), 0);
+      setStats((prev) => ({
+        totalGames: games,
+        totalMods: mods,
+        totalApps: apps,
+        totalCategories: prev?.totalCategories || 8,
+        totalDownloads: downloads,
+        recentItems: liveItems.slice(0, 5),
+      }));
+    });
+
+    const unsubCats = subscribeToCategories((liveCats) => {
+      if (liveCats && liveCats.length > 0) {
+        setCategories(liveCats);
+        setStats((prev) => prev ? { ...prev, totalCategories: liveCats.length } : null);
+      }
+    });
+
+    const unsubSett = subscribeToSettings((liveSettings) => {
+      if (liveSettings) setSettings(liveSettings);
+    });
+
     fetchData();
+
+    return () => {
+      unsubItems();
+      unsubCats();
+      unsubSett();
+    };
   }, [adminToken]);
 
   // Copy public URL
@@ -130,95 +177,77 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
-  // Delete Item
+  // Delete Item from Cloud Firestore
   const handleConfirmDeleteItem = async () => {
     if (!deletingItem) return;
     try {
-      const res = await fetch(`/api/admin/items/${deletingItem.id}`, {
+      await deleteItemFromFirestore(deletingItem.id);
+      fetch(`/api/admin/items/${deletingItem.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${adminToken}` },
-      });
-      if (res.ok) {
-        setItems(items.filter((i) => i.id !== deletingItem.id));
-        setDeletingItem(null);
-        fetchData();
-      }
+      }).catch(() => {});
+      setItems((prev) => prev.filter((i) => i.id !== deletingItem.id));
+      setDeletingItem(null);
     } catch (err) {
       console.error('Delete item error', err);
     }
   };
 
-  // Toggle Item Visibility
+  // Toggle Item Visibility in Cloud Firestore
   const handleToggleVisibility = async (item: Item) => {
     const newVis = item.visibility === 'published' ? 'draft' : 'published';
     try {
-      const apiRes = await safeFetchJson<Item>(`/api/admin/items/${item.id}`, {
+      await toggleItemVisibilityInFirestore(item.id, newVis);
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, visibility: newVis } : i)));
+      safeFetchJson<Item>(`/api/admin/items/${item.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${adminToken}`,
         },
         body: JSON.stringify({ visibility: newVis }),
-      });
-      if (apiRes.ok && apiRes.data) {
-        setItems(items.map((i) => (i.id === item.id ? apiRes.data! : i)));
-      }
+      }).catch(() => {});
     } catch (err) {
       console.error('Update visibility error', err);
     }
   };
 
-  // Create or Update Category
+  // Create or Update Category in Cloud Firestore
   const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
 
+    const catId = editingCategory ? editingCategory.id : `cat-${Date.now()}`;
+    const catObj: Category = {
+      id: catId,
+      name: newCatName.trim(),
+      slug: newCatName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      icon: newCatIcon,
+      order: editingCategory ? editingCategory.order : categories.length,
+      itemCount: editingCategory ? editingCategory.itemCount : 0,
+    };
+
     try {
+      await saveCategoryToFirestore(catObj);
       if (editingCategory) {
-        const apiRes = await safeFetchJson<Category>(`/api/admin/categories/${editingCategory.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${adminToken}`,
-          },
-          body: JSON.stringify({ name: newCatName.trim(), icon: newCatIcon }),
-        });
-        if (apiRes.ok && apiRes.data) {
-          setCategories(categories.map((c) => (c.id === editingCategory.id ? apiRes.data! : c)));
-          setEditingCategory(null);
-          setNewCatName('');
-        }
+        setCategories((prev) => prev.map((c) => (c.id === editingCategory.id ? catObj : c)));
+        setEditingCategory(null);
       } else {
-        const apiRes = await safeFetchJson<Category>('/api/admin/categories', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${adminToken}`,
-          },
-          body: JSON.stringify({ name: newCatName.trim(), icon: newCatIcon }),
-        });
-        if (apiRes.ok && apiRes.data) {
-          setCategories([...categories, apiRes.data]);
-          setNewCatName('');
-        }
+        setCategories((prev) => [...prev, catObj]);
       }
+      setNewCatName('');
     } catch (err) {
       console.error('Category save error', err);
     }
   };
 
-  // Delete Category
+  // Delete Category from Cloud Firestore
   const handleConfirmDeleteCategory = async () => {
     if (!deletingCategory) return;
     try {
-      const res = await fetch(`/api/admin/categories/${deletingCategory.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-      if (res.ok) {
-        setCategories(categories.filter((c) => c.id !== deletingCategory.id));
-        setDeletingCategory(null);
-      }
+      await deleteCategoryFromFirestore(deletingCategory.id);
+      setCategories((prev) => prev.filter((c) => c.id !== deletingCategory.id));
+      setDeletingCategory(null);
     } catch (err) {
       console.error('Delete category error', err);
     }
@@ -250,61 +279,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Save Website Settings
+  // Save Website Settings to Cloud Firestore
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settings) return;
 
     try {
-      const res = await fetch('/api/admin/settings', {
+      await saveSettingsToFirestore(settings);
+      fetch('/api/admin/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${adminToken}`,
         },
         body: JSON.stringify(settings),
-      });
-      if (res.ok) {
-        setSettingsFeedback('Website settings saved successfully!');
-        setTimeout(() => setSettingsFeedback(null), 2500);
-      }
+      }).catch(() => {});
+      setSettingsFeedback('Website settings saved to Firebase successfully!');
+      setTimeout(() => setSettingsFeedback(null), 3000);
     } catch (err) {
       console.error('Settings save error', err);
     }
   };
 
-  // Image Upload Tester
+  // Image Upload Tester directly to Firebase Cloud Storage
   const handleImageUploadTester = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const base64Data = reader.result as string;
-        const apiRes = await safeFetchJson<{ url: string }>('/api/admin/upload-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${adminToken}`,
-          },
-          body: JSON.stringify({
-            filename: file.name,
-            base64Data,
-          }),
-        });
+    try {
+      const storagePath = `gallery/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const { promise } = uploadToFirebaseStorage(file, storagePath);
+      const res = await promise;
+      setUploadedImages([res.downloadUrl, ...uploadedImages]);
+      setImageUploadFeedback(`Uploaded to Firebase Storage: ${res.downloadUrl}`);
+      setTimeout(() => setImageUploadFeedback(null), 4000);
+    } catch (storageErr) {
+      console.warn('Storage upload fallback:', storageErr);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result as string;
+          const apiRes = await safeFetchJson<{ url: string }>('/api/admin/upload-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${adminToken}`,
+            },
+            body: JSON.stringify({
+              filename: file.name,
+              base64Data,
+            }),
+          });
 
-        if (apiRes.ok && apiRes.data?.url) {
-          const uploaded = apiRes.data.url;
-          setUploadedImages([uploaded, ...uploadedImages]);
-          setImageUploadFeedback(`Uploaded: ${uploaded}`);
-          setTimeout(() => setImageUploadFeedback(null), 3000);
+          if (apiRes.ok && apiRes.data?.url) {
+            const uploaded = apiRes.data.url;
+            setUploadedImages([uploaded, ...uploadedImages]);
+            setImageUploadFeedback(`Uploaded: ${uploaded}`);
+            setTimeout(() => setImageUploadFeedback(null), 3000);
+          }
+        } catch (err) {
+          console.error('Tester upload error', err);
         }
-      } catch (err) {
-        console.error('Tester upload error', err);
-      }
-    };
-    reader.readAsDataURL(file);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const gamesList = items.filter((i) => i.type === 'game');

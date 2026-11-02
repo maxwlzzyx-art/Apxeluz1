@@ -20,9 +20,11 @@ import {
   Link as LinkIcon,
   ExternalLink,
   Server,
+  History,
 } from 'lucide-react';
 import { Game } from '../types/game';
 import { safeOpenExternalUrl, getHostingProvider } from '../utils/urlValidation';
+import { incrementDownloadCounter } from '../lib/firestoreService';
 
 interface ModPageProps {
   slug: string;
@@ -466,8 +468,11 @@ export const ModPage: React.FC<ModPageProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => safeOpenExternalUrl(mirror.url, '_blank')}
-                          className="w-full py-2.5 px-4 rounded-xl liquid-glass-button text-white text-xs font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 shadow-md"
+                          onClick={() => {
+                            incrementDownloadCounter(mod.id).catch(() => {});
+                            safeOpenExternalUrl(mirror.url, '_blank');
+                          }}
+                          className="w-full py-2.5 px-4 rounded-xl liquid-glass-button text-white text-xs font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 shadow-md cursor-pointer"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                           <span>Open {mirror.name}</span>
@@ -476,6 +481,62 @@ export const ModPage: React.FC<ModPageProps> = ({
                     );
                   })}
                 </div>
+
+                {/* Previous Versions Archive if available */}
+                {mod.versions && mod.versions.length > 0 && (
+                  <div className="mt-6 pt-5 border-t border-white/10 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="heading-font text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <History className="w-4 h-4 text-[#0A84FF]" />
+                        <span>Previous Version Releases ({mod.versions.length})</span>
+                      </h4>
+                      <span className="text-[11px] text-slate-400">Archived Releases</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {mod.versions.map((ver, vIdx) => {
+                        const verPrimaryMirror = ver.downloadLinks?.[0];
+                        return (
+                          <div
+                            key={ver.id || vIdx}
+                            className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                          >
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-xs font-bold text-[#0A84FF] px-2 py-0.5 rounded-md bg-[#0A84FF]/20 border border-[#0A84FF]/30">
+                                  {ver.version}
+                                </span>
+                                <span className="text-xs text-slate-300 font-medium">
+                                  {ver.formattedFileSize || `${ver.fileSizeValue || ''} ${ver.fileSizeUnit || 'MB'}`}
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  • {ver.releaseDate}
+                                </span>
+                              </div>
+                              {ver.notes && (
+                                <p className="text-[11px] text-slate-400 italic">{ver.notes}</p>
+                              )}
+                            </div>
+
+                            {verPrimaryMirror && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  incrementDownloadCounter(mod.id).catch(() => {});
+                                  safeOpenExternalUrl(verPrimaryMirror.url, '_blank');
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-[#0A84FF] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>Download {ver.version}</span>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

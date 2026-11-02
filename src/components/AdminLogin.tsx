@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  signOut,
-  User,
-} from 'firebase/auth';
-import { auth } from '../lib/firebase';
-import { isAuthorizedAdminEmail } from '../lib/auth';
-import { safeFetchJson } from '../utils/apiClient';
+import { ArrowLeft, Shield, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface AdminLoginProps {
   onLoginSuccess: (token: string, username: string) => void;
@@ -40,140 +30,28 @@ const GoogleLogo = () => (
 );
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNavigateHome }) => {
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { status, user, adminToken, adminUsername, authError, signInWithGoogle, clearAuthError } =
+    useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Core administrative verification logic
-  const handleAuthenticatedUser = async (user: User) => {
-    if (!user.email) {
-      await signOut(auth);
-      setError('No email address was provided by Google Authentication.');
-      setLoading(false);
-      return;
-    }
-
-    // Role check: Only authorized Google account can access admin panel
-    if (!isAuthorizedAdminEmail(user.email)) {
-      await signOut(auth);
-      setError(
-        `Access Denied: Google account "${user.email}" is not authorized for administrator access. Please sign in with an authorized administrator account.`
-      );
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Obtain Firebase ID token for authentication
-      const idToken = await user.getIdToken();
-
-      // Attempt optional backend session sync (safely guarded against 404/non-JSON on Vercel)
-      const apiRes = await safeFetchJson<{ token: string; success: boolean }>('/api/auth/google-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: user.email,
-          name: user.displayName || user.email,
-          photoURL: user.photoURL || '',
-          idToken,
-        }),
-      });
-
-      // Use backend token if available, or Firebase ID token on static deployments (Vercel)
-      const sessionToken = apiRes.ok && apiRes.data?.token ? apiRes.data.token : idToken;
-      localStorage.setItem('apxeluz_admin_token', sessionToken);
-
-      setSuccessMsg(`Authenticated successfully! Accessing Admin Panel...`);
-      setTimeout(() => {
-        onLoginSuccess(sessionToken, user.displayName || user.email || 'Admin');
-      }, 500);
-    } catch (err: any) {
-      console.error('Error establishing administrative session:', err);
-      setError('Failed to establish administrative session. Please try again.');
-      setLoading(false);
-    }
-  };
-
-  // Check for redirect result on mount (for mobile browsers and redirect sign-in flow)
+  // Automatically transition to Admin Panel as soon as authenticated
   useEffect(() => {
-    let isMounted = true;
-    const checkRedirect = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && result.user && isMounted) {
-          setLoading(true);
-          await handleAuthenticatedUser(result.user);
-        }
-      } catch (err: any) {
-        console.error('Firebase redirect sign-in error:', err);
-        if (isMounted) {
-          handleAuthError(err);
-        }
-      }
-    };
-
-    checkRedirect();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Format descriptive, user-friendly error messages
-  const handleAuthError = (err: any) => {
-    const code = err?.code;
-    if (code === 'auth/unauthorized-domain') {
-      setError(
-        `Authentication domain error: "${window.location.hostname}" is not authorized in Firebase. Please add this domain to Firebase Console > Authentication > Settings > Authorized domains.`
-      );
-    } else if (code === 'auth/popup-blocked') {
-      setError('Google Sign-In popup was blocked by your browser. Please allow popups for this site or try again.');
-    } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-      setError('Sign-in process was canceled before completion.');
-    } else if (code === 'auth/network-request-failed') {
-      setError('Network connection failed while communicating with Google. Please check your internet connection.');
-    } else {
-      setError(err?.message || 'Authentication failed. Please verify your connection and try again.');
+    if (status === 'authenticated' && adminToken) {
+      onLoginSuccess(adminToken, adminUsername || user?.displayName || user?.email || 'Admin');
     }
-  };
+  }, [status, adminToken, adminUsername, user, onLoginSuccess]);
 
-  // Primary Google Sign-In with popup, with fallback to redirect on mobile or if popups are blocked
   const handleGoogleSignIn = async () => {
-    setError(null);
-    setSuccessMsg(null);
-    setLoading(true);
-
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-
-    // Check if mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
+    clearAuthError();
+    setIsSubmitting(true);
     try {
-      if (isMobile) {
-        // Use redirect on mobile browsers for optimal compatibility
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-
-      const result = await signInWithPopup(auth, provider);
-      await handleAuthenticatedUser(result.user);
-    } catch (err: any) {
-      console.error('Google Sign-In error:', err);
-
-      // If popup was blocked or mobile-related error, fall back to redirect
-      if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/operation-not-supported-in-this-environment') {
-        try {
-          await signInWithRedirect(auth, provider);
-          return;
-        } catch (redirectErr: any) {
-          handleAuthError(redirectErr);
-        }
-      } else {
-        handleAuthError(err);
-      }
-      setLoading(false);
+      await signInWithGoogle();
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const isLoading = status === 'loading' || isSubmitting;
 
   return (
     <div className="w-full max-w-md mx-auto py-12 px-4 sm:px-6">
@@ -201,18 +79,18 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
         </div>
 
         {/* Error Alert */}
-        {error && (
+        {authError && (
           <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{error}</span>
+            <span className="leading-relaxed">{authError}</span>
           </div>
         )}
 
-        {/* Success Alert */}
-        {successMsg && (
+        {/* Success Alert if already authenticated */}
+        {status === 'authenticated' && (
           <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-            <span>{successMsg}</span>
+            <span>Authenticated successfully. Entering Admin Panel...</span>
           </div>
         )}
 
@@ -221,11 +99,20 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            disabled={loading}
+            disabled={isLoading || status === 'authenticated'}
             className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm transition-all shadow-[0_4px_24px_rgba(255,255,255,0.25)] hover:shadow-[0_6px_28px_rgba(255,255,255,0.35)] active:scale-95 disabled:opacity-50 cursor-pointer"
           >
-            <GoogleLogo />
-            <span>{loading ? 'Connecting with Google...' : 'Sign in with Google'}</span>
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin text-[#0A84FF]" />
+                <span>Connecting with Google...</span>
+              </>
+            ) : (
+              <>
+                <GoogleLogo />
+                <span>Sign in with Google</span>
+              </>
+            )}
           </button>
         </div>
       </div>

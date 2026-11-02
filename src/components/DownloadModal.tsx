@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Game } from '../types/game';
 import { isValidHttpUrl, safeOpenExternalUrl, getHostingProvider } from '../utils/urlValidation';
+import { incrementDownloadCounter } from '../lib/firestoreService';
 
 interface DownloadModalProps {
   game: Game | null;
@@ -58,7 +59,8 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
       setRedirectedUrl(url);
       setRedirectedName(name);
 
-      // Optionally ping download metric
+      // Increment Cloud Firestore download metric atomically
+      incrementDownloadCounter(game.id).catch(() => {});
       try {
         fetch(`/api/items/${game.id}/download`, { method: 'POST' }).catch(() => {});
       } catch {

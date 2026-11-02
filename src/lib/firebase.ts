@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 import localFirebaseConfig from '../../firebase-applet-config.json';
 
 // Support Vercel production environment variables with seamless fallback to firebase-applet-config.json
@@ -22,6 +23,7 @@ export const db = effectiveFirebaseConfig.firestoreDatabaseId
   : getFirestore(app);
 
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 
 // Retain Firebase Auth state so the user remains logged in across sessions
 if (typeof window !== 'undefined') {
