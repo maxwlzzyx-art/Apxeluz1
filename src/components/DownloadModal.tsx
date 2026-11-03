@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Game } from '../types/game';
 import { isValidHttpUrl, safeOpenExternalUrl, getHostingProvider } from '../utils/urlValidation';
-import { incrementDownloadCounter } from '../lib/firestoreService';
+import { incrementDownloadCounter } from '../lib/supabaseService';
 
 interface DownloadModalProps {
   game: Game | null;

@@ -1,26 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  User,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-} from 'firebase/auth';
-import { auth } from '../lib/firebase';
-import { isAuthorizedAdminEmail, PRIMARY_ADMIN_EMAIL } from '../lib/auth';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+import { PRIMARY_ADMIN_EMAIL, isAuthorizedAdminEmail } from '../lib/auth';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'unauthorized';
 
 interface AuthContextType {
   status: AuthStatus;
   user: User | null;
+  session: Session | null;
   adminToken: string;
   adminUsername: string;
   adminEmail: string;
   authError: string | null;
-  signInWithGoogle: (preferRedirect?: boolean) => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   clearAuthError: () => void;
 }
@@ -28,168 +21,254 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   status: 'loading',
   user: null,
+  session: null,
   adminToken: '',
   adminUsername: '',
   adminEmail: '',
   authError: null,
-  signInWithGoogle: async () => {},
+  signInWithPassword: async () => ({ success: false }),
   signOut: async () => {},
   clearAuthError: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
+/**
+ * Verifies if the authenticated user has an administrator role in Supabase.
+ */
+async function verifyAdminAuthorization(user: User): Promise<boolean> {
+  if (!user || !user.id) return false;
+
+  try {
+    // 1. Query the admin_users table in Supabase
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('role, email')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!error && data && (data.role === 'admin' || data.role === 'superadmin')) {
+      return true;
+    }
+  } catch (err) {
+    console.warn('Could not query admin_users table (may be initializing):', err);
+  }
+
+  // 2. Verified admin email check fallback
+  if (isAuthorizedAdminEmail(user.email)) {
+    // Automatically link in admin_users table for seamless persistent role access
+    try {
+      await supabase
+        .from('admin_users')
+        .upsert(
+          { user_id: user.id, email: user.email, role: 'admin' },
+          { onConflict: 'user_id' }
+        );
+    } catch (e) {
+      // Non-fatal
+    }
+    return true;
+  }
+
+  return false;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [adminToken, setAdminToken] = useState<string>('');
   const [adminUsername, setAdminUsername] = useState<string>('');
   const [adminEmail, setAdminEmail] = useState<string>('');
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Core administrative user handler
-  const processUserAuth = async (firebaseUser: User | null) => {
-    if (!firebaseUser) {
-      setUser(null);
-      setAdminToken('');
-      setAdminUsername('');
-      setAdminEmail('');
-      setStatus('unauthenticated');
-      localStorage.removeItem('apxeluz_admin_token');
-      return;
-    }
-
-    const email = firebaseUser.email;
-    if (!email) {
-      await firebaseSignOut(auth);
-      setUser(null);
-      setAdminToken('');
-      setStatus('unauthorized');
-      setAuthError('No email was provided by Google authentication.');
-      return;
-    }
-
-    // Secure Case-Insensitive Email Verification
-    if (!isAuthorizedAdminEmail(email)) {
-      console.warn(`Unauthorized login attempt from: ${email}`);
-      await firebaseSignOut(auth);
-      setUser(null);
-      setAdminToken('');
-      setStatus('unauthorized');
-      setAuthError(
-        `Access Denied: Google account "${email}" is not authorized for administrator access. Only authorized administrators (${PRIMARY_ADMIN_EMAIL}) are permitted.`
-      );
-      return;
-    }
-
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      setUser(firebaseUser);
-      setAdminToken(idToken);
-      setAdminUsername(firebaseUser.displayName || email);
-      setAdminEmail(email);
-      setAuthError(null);
-      setStatus('authenticated');
-      localStorage.setItem('apxeluz_admin_token', idToken);
-    } catch (err: any) {
-      console.error('Error obtaining Firebase ID token:', err);
-      setAuthError('Failed to retrieve authentication token.');
-      setStatus('unauthenticated');
-    }
-  };
-
+  // Initialize and preserve session across navigation and refreshes
   useEffect(() => {
     let isMounted = true;
 
-    // Check redirect result first (mobile and redirect sign-in flows)
-    getRedirectResult(auth)
-      .then((result) => {
+    const initializeSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
         if (!isMounted) return;
-        if (result && result.user) {
-          processUserAuth(result.user);
-        }
-      })
-      .catch((err) => {
-        if (!isMounted) return;
-        console.error('Redirect sign-in error:', err);
-        setAuthError(err?.message || 'Redirect authentication failed.');
-      });
 
-    // Single source of truth listener for Firebase Auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (error || !data.session || !data.session.user) {
+          setUser(null);
+          setSession(null);
+          setAdminToken('');
+          setAdminUsername('');
+          setAdminEmail('');
+          setStatus('unauthenticated');
+          return;
+        }
+
+        const currentSession = data.session;
+        const currentUser = currentSession.user;
+        const isAuthorized = await verifyAdminAuthorization(currentUser);
+
+        if (!isMounted) return;
+
+        if (isAuthorized) {
+          setUser(currentUser);
+          setSession(currentSession);
+          setAdminToken(currentSession.access_token);
+          setAdminUsername(
+            currentUser.user_metadata?.name ||
+              currentUser.email?.split('@')[0] ||
+              'Administrator'
+          );
+          setAdminEmail(currentUser.email || '');
+          setStatus('authenticated');
+          setAuthError(null);
+        } else {
+          setUser(currentUser);
+          setSession(currentSession);
+          setAdminToken('');
+          setAdminUsername('');
+          setAdminEmail(currentUser.email || '');
+          setStatus('unauthorized');
+          setAuthError('Access Denied: Your account is not authorized for administrator access.');
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        console.error('Session initialization error:', err);
+        setStatus('unauthenticated');
+      }
+    };
+
+    initializeSession();
+
+    // Listen for auth state transitions (login, logout, token refresh)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!isMounted) return;
-      await processUserAuth(firebaseUser);
+
+      if (event === 'SIGNED_OUT' || !newSession || !newSession.user) {
+        setUser(null);
+        setSession(null);
+        setAdminToken('');
+        setAdminUsername('');
+        setAdminEmail('');
+        setStatus('unauthenticated');
+        return;
+      }
+
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'TOKEN_REFRESHED' ||
+        event === 'USER_UPDATED'
+      ) {
+        const isAuthorized = await verifyAdminAuthorization(newSession.user);
+        if (!isMounted) return;
+
+        if (isAuthorized) {
+          setUser(newSession.user);
+          setSession(newSession);
+          setAdminToken(newSession.access_token);
+          setAdminUsername(
+            newSession.user.user_metadata?.name ||
+              newSession.user.email?.split('@')[0] ||
+              'Administrator'
+          );
+          setAdminEmail(newSession.user.email || '');
+          setStatus('authenticated');
+          setAuthError(null);
+        } else {
+          setUser(newSession.user);
+          setSession(newSession);
+          setAdminToken('');
+          setAdminUsername('');
+          setAdminEmail(newSession.user.email || '');
+          setStatus('unauthorized');
+          setAuthError('Access Denied: Your account is not authorized for administrator access.');
+        }
+      }
     });
 
     return () => {
       isMounted = false;
-      unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
-  const signInWithGoogle = async (preferRedirect = false) => {
+  /**
+   * Supabase Email & Password Sign In
+   */
+  const signInWithPassword = async (email: string, password: string) => {
     setAuthError(null);
-    setStatus('loading');
 
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent
-    );
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
+      const msg = 'Please enter both email and password.';
+      setAuthError(msg);
+      return { success: false, error: msg };
+    }
 
     try {
-      if (preferRedirect || isMobile) {
-        await signInWithRedirect(auth, provider);
-        return;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
+
+      if (error) {
+        // Clear message without revealing if email exists
+        const displayErr = 'Invalid email or password. Please verify your credentials and try again.';
+        setAuthError(displayErr);
+        return { success: false, error: displayErr };
       }
 
-      const result = await signInWithPopup(auth, provider);
-      await processUserAuth(result.user);
-    } catch (err: any) {
-      console.error('Google sign-in error:', err);
-      // Auto-fallback if popup was blocked
-      if (
-        err?.code === 'auth/popup-blocked' ||
-        err?.code === 'auth/operation-not-supported-in-this-environment'
-      ) {
-        try {
-          await signInWithRedirect(auth, provider);
-          return;
-        } catch (redirectErr: any) {
-          setAuthError(redirectErr?.message || 'Failed to complete redirect sign-in.');
-          setStatus('unauthenticated');
-        }
-      } else if (err?.code === 'auth/unauthorized-domain') {
-        setAuthError(
-          `Domain "${window.location.hostname}" is not authorized in Firebase Authentication. Please add it to Firebase Console > Authentication > Settings > Authorized domains.`
-        );
-        setStatus('unauthenticated');
-      } else if (
-        err?.code === 'auth/popup-closed-by-user' ||
-        err?.code === 'auth/cancelled-popup-request'
-      ) {
-        setAuthError('Sign-in popup was closed before completing authentication.');
-        setStatus('unauthenticated');
-      } else {
-        setAuthError(err?.message || 'Authentication failed. Please try again.');
-        setStatus('unauthenticated');
+      if (!data.user || !data.session) {
+        const msg = 'Authentication failed. Please try again.';
+        setAuthError(msg);
+        return { success: false, error: msg };
       }
+
+      const isAuthorized = await verifyAdminAuthorization(data.user);
+
+      if (!isAuthorized) {
+        await supabase.auth.signOut();
+        const accessDenied = `Access Denied: The account "${data.user.email}" is not authorized for administrator access. Only authorized administrators (${PRIMARY_ADMIN_EMAIL}) are permitted.`;
+        setAuthError(accessDenied);
+        setStatus('unauthorized');
+        return { success: false, error: accessDenied };
+      }
+
+      setUser(data.user);
+      setSession(data.session);
+      setAdminToken(data.session.access_token);
+      setAdminUsername(
+        data.user.user_metadata?.name ||
+          data.user.email?.split('@')[0] ||
+          'Administrator'
+      );
+      setAdminEmail(data.user.email || '');
+      setStatus('authenticated');
+      setAuthError(null);
+
+      return { success: true };
+    } catch (err: any) {
+      const msg = err?.message || 'Authentication request failed. Please check your network connection.';
+      setAuthError(msg);
+      return { success: false, error: msg };
     }
   };
 
+  /**
+   * Supabase Sign Out
+   */
   const signOut = async () => {
     try {
-      await firebaseSignOut(auth);
-    } catch (e) {
-      console.warn('Firebase sign-out warning:', e);
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Supabase sign-out notice:', err);
     }
     setUser(null);
+    setSession(null);
     setAdminToken('');
     setAdminUsername('');
     setAdminEmail('');
     setStatus('unauthenticated');
-    localStorage.removeItem('apxeluz_admin_token');
+    setAuthError(null);
   };
 
   const clearAuthError = () => setAuthError(null);
@@ -199,11 +278,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         status,
         user,
+        session,
         adminToken,
         adminUsername,
         adminEmail,
         authError,
-        signInWithGoogle,
+        signInWithPassword,
         signOut,
         clearAuthError,
       }}

@@ -19,7 +19,7 @@ import {
 import { Game } from '../types/game';
 import { GameCard } from './GameCard';
 import { safeOpenExternalUrl, getHostingProvider } from '../utils/urlValidation';
-import { incrementDownloadCounter } from '../lib/firestoreService';
+import { incrementDownloadCounter } from '../lib/supabaseService';
 
 interface GameDetailModalProps {
   game: Game | null;

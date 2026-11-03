@@ -29,7 +29,7 @@ import {
   subscribeToPublishedItems,
   subscribeToCategories,
   subscribeToSettings,
-} from './lib/firestoreService';
+} from './lib/supabaseService';
 import { safeFetchJson } from './utils/apiClient';
 
 function itemToGame(item: Item): Game {
@@ -416,7 +416,7 @@ function AppContent() {
                 Verifying Administrator Session...
               </p>
               <p className="text-xs text-slate-400">
-                Synchronizing with Firebase Authentication
+                Synchronizing with Supabase Authentication
               </p>
             </div>
           ) : status === 'unauthorized' ? (
@@ -427,7 +427,7 @@ function AppContent() {
                 </div>
                 <h2 className="heading-font text-xl font-bold text-white">Access Denied</h2>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  The Google account {user?.email ? `"${user.email}"` : ''} is not authorized for administrator access. Only authorized administrators are permitted.
+                  The account {user?.email ? `"${user.email}"` : ''} is not authorized for administrator access. Only authorized administrators are permitted.
                 </p>
                 <div className="pt-2 flex flex-col gap-2">
                   <button
@@ -448,7 +448,7 @@ function AppContent() {
           ) : status === 'authenticated' ? (
             <AdminDashboard
               adminToken={adminToken}
-              adminUsername={adminUsername || user?.displayName || user?.email || 'Admin'}
+              adminUsername={adminUsername || user?.user_metadata?.name || user?.email || 'Admin'}
               onLogout={handleAdminLogout}
               onNavigateHome={() => navigateTo('/')}
             />

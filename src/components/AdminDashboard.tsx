@@ -36,13 +36,13 @@ import {
   subscribeToAllAdminItems,
   subscribeToCategories,
   subscribeToSettings,
-  deleteItemFromFirestore,
-  toggleItemVisibilityInFirestore,
-  saveCategoryToFirestore,
-  deleteCategoryFromFirestore,
-  saveSettingsToFirestore,
-} from '../lib/firestoreService';
-import { uploadToFirebaseStorage } from '../lib/storageService';
+  deleteItemFromSupabase as deleteItemFromFirestore,
+  toggleItemVisibilityInSupabase as toggleItemVisibilityInFirestore,
+  saveCategoryToSupabase as saveCategoryToFirestore,
+  deleteCategoryFromSupabase as deleteCategoryFromFirestore,
+  saveSettingsToSupabase as saveSettingsToFirestore,
+} from '../lib/supabaseService';
+import { uploadToSupabaseStorage as uploadToFirebaseStorage } from '../lib/storageService';
 
 interface AdminDashboardProps {
   adminToken: string;
@@ -1011,7 +1011,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               Administrator Authentication
             </h2>
             <p className="text-xs text-slate-400">
-              Your administrative session is protected by Firebase Google Authentication and persistent OAuth 2.0 authorization.
+              Your administrative session is protected by Supabase Authentication with Row-Level Security and Role-Based Authorization.
             </p>
           </div>
 
@@ -1027,7 +1027,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     Authorized Admin
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">Firebase Google OAuth Provider</p>
+                <p className="text-xs text-slate-400 mt-0.5">Supabase Auth Provider (Email & Password)</p>
               </div>
             </div>
 

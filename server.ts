@@ -109,10 +109,26 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
 
-  if (!validateSession(token)) {
-    return res.status(401).json({ error: 'Unauthorized: Valid admin session token required.' });
+  if (validateSession(token)) {
+    return next();
   }
-  next();
+
+  // Check Supabase JWT token
+  if (token && token.split('.').length === 3) {
+    try {
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));
+      if (payload && payload.exp && payload.exp * 1000 > Date.now()) {
+        const email = payload.email;
+        if (isAuthorizedAdminEmail(email)) {
+          return next();
+        }
+      }
+    } catch {
+      // Continue to unauthorized response
+    }
+  }
+
+  return res.status(401).json({ error: 'Unauthorized: Valid admin session token required.' });
 }
 
 async function startServer() {
@@ -129,33 +145,8 @@ async function startServer() {
   readDb();
 
   // -------------------------------------------------------------
-  // FIREBASE GOOGLE AUTH & SESSION ROUTES
+  // AUTH & SESSION ROUTES
   // -------------------------------------------------------------
-  app.post('/api/auth/google-login', (req: Request, res: Response) => {
-    const { email, name, photoURL } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Google account email is required.' });
-    }
-
-    if (!isAuthorizedAdminEmail(email)) {
-      return res.status(403).json({
-        error: `Access Denied: Google account "${email}" is not authorized for administrator access. Only authorized administrators (${PRIMARY_ADMIN_EMAIL}) are permitted.`,
-      });
-    }
-
-    const token = createSession(email);
-    return res.json({
-      success: true,
-      token,
-      user: {
-        username: name || email,
-        email,
-        photoURL: photoURL || '',
-        role: 'ADMIN',
-      },
-    });
-  });
-
   app.get('/api/auth/me', (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;

@@ -17,8 +17,8 @@ import { Item, ItemType, Category, DownloadLink, ItemVersion } from '../types/ad
 import { formatFileSize, slugify, validateSlug } from '../utils/adminValidation';
 import { isValidHttpUrl } from '../utils/urlValidation';
 import { safeFetchJson } from '../utils/apiClient';
-import { uploadToFirebaseStorage, UploadProgress } from '../lib/storageService';
-import { saveItemToFirestore } from '../lib/firestoreService';
+import { uploadToSupabaseStorage, UploadProgress } from '../lib/storageService';
+import { saveItemToSupabase } from '../lib/supabaseService';
 
 interface ItemFormModalProps {
   initialItem?: Item | null;
@@ -170,16 +170,17 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     setUploadSuccessFeedback(null);
 
     const cleanSlug = slugify(slug) || 'package';
-    const storagePath = `items/${cleanSlug}/packages/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+    const cleanVersion = version.trim() || 'v1.0.0';
+    const storagePath = `apps/${cleanSlug}/${cleanVersion}/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
 
-    const { promise, cancel } = uploadToFirebaseStorage(file, storagePath, (progress) => {
+    const { promise, cancel } = uploadToSupabaseStorage(file, storagePath, (progress) => {
       setActiveUpload({
         target: 'package',
         progress,
         filename: file.name,
         cancel,
       });
-    });
+    }, 'apps');
 
     setActiveUpload({
       target: 'package',
@@ -190,9 +191,9 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
     try {
       const result = await promise;
-      // Auto-set the primary download URL to the Firebase Cloud Storage download URL
+      // Auto-set the primary download URL to the Supabase Storage download URL
       setPrimaryUrl(result.downloadUrl);
-      setPrimaryName(`Firebase Cloud Storage (${file.name})`);
+      setPrimaryName(`Supabase Storage (${file.name})`);
       setDownloadNotes(`Direct High-Speed Mirror • ${file.name}`);
 
       // Calculate file size value and unit automatically
@@ -206,12 +207,12 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       }
 
       setUploadSuccessFeedback(
-        `Package "${file.name}" uploaded to Firebase Cloud Storage! Download URL configured automatically.`
+        `Package "${file.name}" uploaded to Supabase Storage! Download URL configured automatically.`
       );
       setTimeout(() => setUploadSuccessFeedback(null), 6000);
     } catch (err: any) {
-      if (err?.code !== 'storage/canceled') {
-        console.error('Firebase storage upload error:', err);
+      if (err?.code !== 'storage/canceled' && err?.message !== 'Upload cancelled') {
+        console.error('Supabase storage upload error:', err);
         setError(`Package upload failed: ${err?.message || 'Storage error'}`);
       }
     } finally {
@@ -220,7 +221,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     }
   };
 
-  // Upload handler for Images (Cover, Banner, Icon, Screenshots) directly to Firebase Cloud Storage
+  // Upload handler for Images (Cover, Banner, Icon, Screenshots) directly to Supabase Storage
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     target: 'icon' | 'cover' | 'banner' | 'screenshot'
@@ -230,16 +231,19 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
     setError(null);
     const cleanSlug = slugify(slug) || 'item';
-    const storagePath = `items/${cleanSlug}/images/${Date.now()}_${target}_${file.name.replace(/\s+/g, '_')}`;
+    const bucket = target === 'icon' ? 'app-icons' : 'screenshots';
+    const storagePath = target === 'icon'
+      ? `app-icons/${cleanSlug}/${Date.now()}_${file.name.replace(/\s+/g, '_')}`
+      : `screenshots/${cleanSlug}/${Date.now()}_${target}_${file.name.replace(/\s+/g, '_')}`;
 
-    const { promise, cancel } = uploadToFirebaseStorage(file, storagePath, (progress) => {
+    const { promise, cancel } = uploadToSupabaseStorage(file, storagePath, (progress) => {
       setActiveUpload({
         target,
         progress,
         filename: file.name,
         cancel,
       });
-    });
+    }, bucket);
 
     setActiveUpload({
       target,
@@ -419,8 +423,8 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     };
 
     try {
-      // 1. Direct Firestore Cloud Persistence (Single Source of Truth)
-      await saveItemToFirestore(completeItem);
+      // 1. Direct Supabase Cloud Persistence (Single Source of Truth)
+      await saveItemToSupabase(completeItem);
 
       // 2. Also replicate to server REST API if available (non-blocking fallback)
       try {
@@ -895,7 +899,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   <input
                     type="url"
                     required
-                    placeholder="https://firebasestorage.googleapis.com/... or https://..."
+                    placeholder="https://tgkldegrzhtmcpojkygh.supabase.co/storage/v1/object/public/... or https://..."
                     value={primaryUrl}
                     onChange={(e) => setPrimaryUrl(e.target.value)}
                     className="w-full bg-white/[0.08] text-xs text-white rounded-xl px-3 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 font-mono"
@@ -906,7 +910,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               <div>
                 <input
                   type="text"
-                  placeholder="Optional notes: e.g. Direct Firebase Cloud CDN • Zero Queue"
+                  placeholder="Optional notes: e.g. Direct Supabase Storage CDN • Zero Queue"
                   value={downloadNotes}
                   onChange={(e) => setDownloadNotes(e.target.value)}
                   className="w-full bg-white/[0.05] text-[11px] text-slate-300 rounded-xl px-3 py-1.5 border border-white/10 placeholder-slate-500"

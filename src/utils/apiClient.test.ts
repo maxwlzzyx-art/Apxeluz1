@@ -68,7 +68,7 @@ test('safeFetchJson handles JSON error response gracefully', async () => {
     });
 
   try {
-    const res = await safeFetchJson('/api/auth/google-login');
+    const res = await safeFetchJson('/api/admin/items');
     assert.equal(res.ok, false);
     assert.equal(res.status, 403);
     assert.equal(res.error, 'Access Denied: unauthorized user');
