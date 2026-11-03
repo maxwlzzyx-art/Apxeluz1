@@ -40,19 +40,17 @@ export function safeOpenExternalUrl(url: string, target: string = '_blank'): boo
   }
 
   try {
-    const newWindow = window.open(url, target, 'noopener,noreferrer');
-    if (!newWindow && typeof window !== 'undefined') {
-      // In case popups are blocked, create a temporary anchor without download attribute
+    if (typeof document !== 'undefined') {
       const anchor = document.createElement('a');
       anchor.href = url;
       anchor.target = target;
       anchor.rel = 'noopener noreferrer';
-      // Never attach the HTML download attribute
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
+      return true;
     }
-    return true;
+    return false;
   } catch (err) {
     console.error('Failed to open external download URL:', err);
     return false;
