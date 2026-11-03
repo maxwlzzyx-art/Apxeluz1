@@ -211,8 +211,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        // Clear message without revealing if email exists
-        const displayErr = 'Invalid email or password. Please verify your credentials and try again.';
+        let displayErr = error.message || 'Authentication failed. Please verify your credentials and try again.';
+        const lowerMsg = error.message.toLowerCase();
+
+        if (lowerMsg.includes('captcha')) {
+          displayErr = 'Captcha Protection aktif di Supabase! Harap nonaktifkan "Enable Captcha protection" di Supabase Dashboard > Authentication > Attack Protection.';
+        } else if (lowerMsg.includes('email not confirmed')) {
+          displayErr = 'Email belum dikonfirmasi di Supabase! Harap buka Supabase Dashboard > Authentication > Users, klik user, lalu pilih "Confirm user".';
+        } else if (lowerMsg.includes('invalid login credentials')) {
+          displayErr = 'Email atau password salah. Pastikan password yang dimasukkan sesuai dengan akun di Supabase.';
+        }
+
         setAuthError(displayErr);
         return { success: false, error: displayErr };
       }
