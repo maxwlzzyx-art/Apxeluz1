@@ -153,20 +153,33 @@ export function subscribeToPublishedItems(
   fetchPublished();
 
   // Listen to live database changes via Supabase Realtime
-  const channel = supabase
-    .channel('realtime_public_apps')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'apps' },
-      () => {
-        fetchPublished();
-      }
-    )
-    .subscribe();
+  const channelName = `realtime_public_apps_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+  let channel: any = null;
+
+  try {
+    channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'apps' },
+        () => {
+          if (isSubscribed) fetchPublished();
+        }
+      )
+      .subscribe();
+  } catch (rtErr) {
+    console.warn('Realtime public apps channel warning:', rtErr);
+  }
 
   return () => {
     isSubscribed = false;
-    supabase.removeChannel(channel);
+    if (channel) {
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        // Safe cleanup
+      }
+    }
   };
 }
 
@@ -198,20 +211,33 @@ export function subscribeToAllAdminItems(
 
   fetchAll();
 
-  const channel = supabase
-    .channel('realtime_admin_apps')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'apps' },
-      () => {
-        fetchAll();
-      }
-    )
-    .subscribe();
+  const channelName = `realtime_admin_apps_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+  let channel: any = null;
+
+  try {
+    channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'apps' },
+        () => {
+          if (isSubscribed) fetchAll();
+        }
+      )
+      .subscribe();
+  } catch (rtErr) {
+    console.warn('Realtime admin apps channel warning:', rtErr);
+  }
 
   return () => {
     isSubscribed = false;
-    supabase.removeChannel(channel);
+    if (channel) {
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        // Safe cleanup
+      }
+    }
   };
 }
 
@@ -252,20 +278,33 @@ export function subscribeToCategories(
 
   fetchCategories();
 
-  const channel = supabase
-    .channel('realtime_categories')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'categories' },
-      () => {
-        fetchCategories();
-      }
-    )
-    .subscribe();
+  const channelName = `realtime_categories_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+  let channel: any = null;
+
+  try {
+    channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'categories' },
+        () => {
+          if (isSubscribed) fetchCategories();
+        }
+      )
+      .subscribe();
+  } catch (rtErr) {
+    console.warn('Realtime categories channel warning:', rtErr);
+  }
 
   return () => {
     isSubscribed = false;
-    supabase.removeChannel(channel);
+    if (channel) {
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        // Safe cleanup
+      }
+    }
   };
 }
 
@@ -305,20 +344,33 @@ export function subscribeToSettings(
 
   fetchSettings();
 
-  const channel = supabase
-    .channel('realtime_settings')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'website_settings' },
-      () => {
-        fetchSettings();
-      }
-    )
-    .subscribe();
+  const channelName = `realtime_settings_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+  let channel: any = null;
+
+  try {
+    channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'website_settings' },
+        () => {
+          if (isSubscribed) fetchSettings();
+        }
+      )
+      .subscribe();
+  } catch (rtErr) {
+    console.warn('Realtime settings channel warning:', rtErr);
+  }
 
   return () => {
     isSubscribed = false;
-    supabase.removeChannel(channel);
+    if (channel) {
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        // Safe cleanup
+      }
+    }
   };
 }
 
