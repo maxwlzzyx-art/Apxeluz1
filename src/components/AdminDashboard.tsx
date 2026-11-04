@@ -36,13 +36,13 @@ import {
   subscribeToAllAdminItems,
   subscribeToCategories,
   subscribeToSettings,
-  deleteItemFromSupabase as deleteItemFromFirestore,
-  toggleItemVisibilityInSupabase as toggleItemVisibilityInFirestore,
-  saveCategoryToSupabase as saveCategoryToFirestore,
-  deleteCategoryFromSupabase as deleteCategoryFromFirestore,
-  saveSettingsToSupabase as saveSettingsToFirestore,
+  deleteItemFromSupabase,
+  toggleItemVisibilityInSupabase,
+  saveCategoryToSupabase,
+  deleteCategoryFromSupabase,
+  saveSettingsToSupabase,
 } from '../lib/supabaseService';
-import { uploadToSupabaseStorage as uploadToFirebaseStorage } from '../lib/storageService';
+import { uploadToSupabaseStorage } from '../lib/storageService';
 
 interface AdminDashboardProps {
   adminToken: string;
@@ -127,12 +127,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Real-time Firestore subscriptions for Administrator
+  // Real-time Supabase subscriptions for Administrator
   useEffect(() => {
     const unsubItems = subscribeToAllAdminItems((liveItems) => {
       setItems(liveItems);
       setLoading(false);
-      // Auto-compute live stats from Firestore collection
+      // Auto-compute live stats from Supabase collection
       const games = liveItems.filter((i) => i.type === 'game').length;
       const mods = liveItems.filter((i) => i.type === 'mod').length;
       const apps = liveItems.filter((i) => i.type === 'app').length;
@@ -177,11 +177,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
-  // Delete Item from Cloud Firestore
+  // Delete Item from Supabase
   const handleConfirmDeleteItem = async () => {
     if (!deletingItem) return;
     try {
-      await deleteItemFromFirestore(deletingItem.id);
+      await deleteItemFromSupabase(deletingItem.id);
       fetch(`/api/admin/items/${deletingItem.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${adminToken}` },
@@ -193,11 +193,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Toggle Item Visibility in Cloud Firestore
+  // Toggle Item Visibility in Supabase
   const handleToggleVisibility = async (item: Item) => {
     const newVis = item.visibility === 'published' ? 'draft' : 'published';
     try {
-      await toggleItemVisibilityInFirestore(item.id, newVis);
+      await toggleItemVisibilityInSupabase(item.id, newVis);
       setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, visibility: newVis } : i)));
       safeFetchJson<Item>(`/api/admin/items/${item.id}`, {
         method: 'PUT',
@@ -212,7 +212,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Create or Update Category in Cloud Firestore
+  // Create or Update Category in Supabase
   const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
@@ -228,7 +228,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     try {
-      await saveCategoryToFirestore(catObj);
+      await saveCategoryToSupabase(catObj);
       if (editingCategory) {
         setCategories((prev) => prev.map((c) => (c.id === editingCategory.id ? catObj : c)));
         setEditingCategory(null);
@@ -241,11 +241,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Delete Category from Cloud Firestore
+  // Delete Category from Supabase
   const handleConfirmDeleteCategory = async () => {
     if (!deletingCategory) return;
     try {
-      await deleteCategoryFromFirestore(deletingCategory.id);
+      await deleteCategoryFromSupabase(deletingCategory.id);
       setCategories((prev) => prev.filter((c) => c.id !== deletingCategory.id));
       setDeletingCategory(null);
     } catch (err) {
@@ -279,13 +279,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Save Website Settings to Cloud Firestore
+  // Save Website Settings to Supabase
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settings) return;
 
     try {
-      await saveSettingsToFirestore(settings);
+      await saveSettingsToSupabase(settings);
       fetch('/api/admin/settings', {
         method: 'PUT',
         headers: {
@@ -294,24 +294,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         },
         body: JSON.stringify(settings),
       }).catch(() => {});
-      setSettingsFeedback('Website settings saved to Firebase successfully!');
+      setSettingsFeedback('Website settings saved to Supabase successfully!');
       setTimeout(() => setSettingsFeedback(null), 3000);
     } catch (err) {
       console.error('Settings save error', err);
     }
   };
 
-  // Image Upload Tester directly to Firebase Cloud Storage
+  // Image Upload Tester directly to Supabase Storage
   const handleImageUploadTester = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       const storagePath = `gallery/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-      const { promise } = uploadToFirebaseStorage(file, storagePath);
+      const { promise } = uploadToSupabaseStorage(file, storagePath, undefined, 'screenshots');
       const res = await promise;
       setUploadedImages([res.downloadUrl, ...uploadedImages]);
-      setImageUploadFeedback(`Uploaded to Firebase Storage: ${res.downloadUrl}`);
+      setImageUploadFeedback(`Uploaded to Supabase Storage: ${res.downloadUrl}`);
       setTimeout(() => setImageUploadFeedback(null), 4000);
     } catch (storageErr) {
       console.warn('Storage upload fallback:', storageErr);
@@ -1003,7 +1003,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* SECTION 8: ACCOUNT SETTINGS */}
-      {/* SECTION 8: FIREBASE GOOGLE ACCOUNT & SECURITY */}
       {activeSection === 'account' && (
         <div className="space-y-6">
           <div>

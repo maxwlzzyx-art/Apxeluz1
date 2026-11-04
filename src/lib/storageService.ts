@@ -137,10 +137,6 @@ export function uploadToSupabaseStorage(
   };
 }
 
-/**
- * Backward compatibility alias for uploadToSupabaseStorage
- */
-export const uploadToFirebaseStorage = uploadToSupabaseStorage;
 
 /**
  * Safely removes a file from Supabase Storage by its full storage path.
@@ -168,8 +164,3 @@ export async function deleteFromSupabaseStorage(
     return false;
   }
 }
-
-/**
- * Backward compatibility alias for deleteFromSupabaseStorage
- */
-export const deleteFromFirebaseStorage = deleteFromSupabaseStorage;

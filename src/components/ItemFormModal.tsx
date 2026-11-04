@@ -90,7 +90,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   );
   const [newScreenshotUrl, setNewScreenshotUrl] = useState('');
 
-  // Firebase Cloud Storage upload progress tracking
+  // Supabase Storage upload progress tracking
   const [activeUpload, setActiveUpload] = useState<{
     target: 'package' | 'cover' | 'banner' | 'icon' | 'screenshot';
     progress: UploadProgress;
@@ -161,7 +161,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     setScreenshots(screenshots.filter((_, i) => i !== index));
   };
 
-  // Upload handler for APK / Packages directly to Firebase Cloud Storage
+  // Upload handler for APK / Packages directly to Supabase Storage
   const handlePackageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -371,7 +371,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       preservedVersions = [previousReleaseArchive, ...preservedVersions];
     }
 
-    const itemId = initialItem?.id || `item-${Date.now()}-${cleanSlug}`;
+    const itemId = initialItem?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-4000-8000-${Date.now().toString(16).padStart(12, '0')}`);
 
     const completeItem: Item = {
       id: itemId,
@@ -439,14 +439,14 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
           body: JSON.stringify(completeItem),
         });
       } catch (restErr) {
-        console.warn('REST mirror sync notice (Firestore save succeeded):', restErr);
+        console.warn('REST mirror sync notice (Supabase save succeeded):', restErr);
       }
 
       onSaved(completeItem);
       onClose();
     } catch (err: any) {
       console.error('Save item error:', err);
-      setError(`Failed to save item to Cloud Firestore: ${err?.message || 'Database error'}`);
+      setError(`Failed to save item to Supabase Database: ${err?.message || 'Database error'}`);
     } finally {
       setLoading(false);
     }
@@ -474,7 +474,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 {isEditing ? `Edit: ${initialItem?.title}` : `Publish New ${type.toUpperCase()}`}
               </h2>
               <p className="text-xs text-slate-300">
-                Upload packages to Firebase Cloud Storage and sync instantly with public visitors.
+                Upload packages to Supabase Storage and sync instantly with public visitors.
               </p>
             </div>
           </div>
@@ -770,10 +770,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-[#0A84FF] uppercase tracking-wider flex items-center gap-2">
                 <HardDrive className="w-4 h-4" />
-                <span>2. Package Upload (Firebase Cloud Storage)</span>
+                <span>2. Package Upload (Supabase Storage)</span>
               </h3>
               <span className="text-[10px] text-emerald-400 font-medium">
-                Cloud Bucket: gen-lang-client-0303975467
+                Storage Bucket: apps
               </span>
             </div>
 
@@ -785,7 +785,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                     Upload Package File (.APK, .ZIP, .JAR, .OBB)
                   </span>
                   <span className="text-[11px] text-slate-300">
-                    Directly uploads to Firebase Storage with percentage progress and permanent cloud delivery.
+                    Directly uploads to Supabase Storage with percentage progress and permanent cloud delivery.
                   </span>
                 </div>
                 <label className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0A84FF] to-[#BF5AF2] text-white text-xs font-bold cursor-pointer hover:opacity-90 flex items-center gap-1.5 shadow-md flex-shrink-0">
@@ -885,7 +885,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Firebase Cloud Storage"
+                    placeholder="e.g. Supabase Storage"
                     value={primaryName}
                     onChange={(e) => setPrimaryName(e.target.value)}
                     className="w-full bg-white/[0.08] text-xs text-white rounded-xl px-3 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
@@ -1191,10 +1191,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  <span>Saving to Firebase...</span>
+                  <span>Saving to Supabase...</span>
                 </>
               ) : isEditing ? (
-                'Update in Firestore'
+                'Update in Supabase'
               ) : (
                 'Publish to Repository'
               )}

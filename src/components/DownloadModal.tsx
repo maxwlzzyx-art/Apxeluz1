@@ -59,7 +59,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
       setRedirectedUrl(url);
       setRedirectedName(name);
 
-      // Increment Cloud Firestore download metric atomically
+      // Increment Supabase download metric atomically
       incrementDownloadCounter(game.id).catch(() => {});
       try {
         fetch(`/api/items/${game.id}/download`, { method: 'POST' }).catch(() => {});

@@ -189,20 +189,20 @@ function AppContent() {
     }
   }, []);
 
-  // Real-Time Firestore Synchronization for Public Visitors & Admin
-  // Changes in Firestore update the UI dynamically without any redeployment!
+  // Real-Time Supabase Synchronization for Public Visitors & Admin
+  // Changes in Supabase update the UI dynamically without any redeployment!
   useEffect(() => {
     const unsubItems = subscribeToPublishedItems(
-      (firestoreItems) => {
-        if (firestoreItems && firestoreItems.length > 0) {
-          setRawItems(firestoreItems);
+      (supabaseItems) => {
+        if (supabaseItems && supabaseItems.length > 0) {
+          setRawItems(supabaseItems);
         } else {
-          // Fallback to REST if Firestore collection empty or initializing
+          // Fallback to REST if Supabase collection empty or initializing
           fetchPublicData();
         }
       },
       (err) => {
-        console.warn('Firestore subscription fallback:', err);
+        console.warn('Supabase subscription fallback:', err);
         fetchPublicData();
       }
     );

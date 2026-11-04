@@ -52,10 +52,25 @@ export function appRowToItem(row: any): Item {
   };
 }
 
+export function ensureUUID(id?: string): string {
+  if (id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return id;
+  }
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // Maps frontend Item to Supabase apps table insert/update row
 export function itemToAppRow(item: Item, userId?: string) {
+  const safeId = ensureUUID(item.id);
   return {
-    id: item.id,
+    id: safeId,
     name: item.title,
     title: item.title,
     slug: item.slug,
@@ -463,14 +478,4 @@ export async function saveSettingsToSupabase(settings: WebsiteSettings): Promise
     throw new Error(error.message);
   }
 }
-
-/**
- * Backward-compatible aliases
- */
-export const saveItemToFirestore = saveItemToSupabase;
-export const deleteItemFromFirestore = deleteItemFromSupabase;
-export const toggleItemVisibilityInFirestore = toggleItemVisibilityInSupabase;
-export const saveCategoryToFirestore = saveCategoryToSupabase;
-export const deleteCategoryFromFirestore = deleteCategoryFromSupabase;
-export const saveSettingsToFirestore = saveSettingsToSupabase;
 
