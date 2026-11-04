@@ -2,6 +2,7 @@ export const PRIMARY_ADMIN_EMAIL = 'pindahserverezeer@gmail.com';
 
 export const AUTHORIZED_ADMIN_EMAILS: string[] = [
   PRIMARY_ADMIN_EMAIL,
+  'maxwlzzyx@gmail.com',
 ];
 
 /**

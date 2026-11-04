@@ -36,12 +36,24 @@ export function appRowToItem(row: any): Item {
     ratingCount: typeof row.rating_count === 'number' ? row.rating_count : 1,
     downloads: String(row.download_count ?? 0),
     downloadCount: Number(row.download_count ?? 0),
-    releaseDate: row.published_at
-      ? new Date(row.published_at).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0],
-    updatedDate: row.updated_at
-      ? new Date(row.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    releaseDate: (() => {
+      try {
+        return row.published_at
+          ? new Date(row.published_at).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0];
+      } catch {
+        return new Date().toISOString().split('T')[0];
+      }
+    })(),
+    updatedDate: (() => {
+      try {
+        return row.updated_at
+          ? new Date(row.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch {
+        return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+    })(),
     isNewlyAdded: Boolean(row.is_newly_added),
     isFeatured: Boolean(row.featured),
     isPopular: Boolean(row.is_popular),

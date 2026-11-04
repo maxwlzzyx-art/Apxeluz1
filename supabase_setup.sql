@@ -156,11 +156,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Auto sync existing admin email (pindahserverezeer@gmail.com) into admin_users table
+-- Auto sync existing admin emails into admin_users table
 CREATE OR REPLACE FUNCTION public.sync_admin_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF NEW.email = 'pindahserverezeer@gmail.com' THEN
+  IF NEW.email IN ('pindahserverezeer@gmail.com', 'maxwlzzyx@gmail.com') THEN
     INSERT INTO public.admin_users (user_id, email, role)
     VALUES (NEW.id, NEW.email, 'admin')
     ON CONFLICT (user_id) DO UPDATE SET role = 'admin', email = NEW.email;
@@ -178,7 +178,7 @@ CREATE TRIGGER on_auth_user_created_sync_admin
 INSERT INTO public.admin_users (user_id, email, role)
 SELECT id, email, 'admin'
 FROM auth.users
-WHERE email = 'pindahserverezeer@gmail.com'
+WHERE email IN ('pindahserverezeer@gmail.com', 'maxwlzzyx@gmail.com')
 ON CONFLICT (user_id) DO NOTHING;
 
 -- ==============================================================================
@@ -202,7 +202,7 @@ BEGIN
         WHERE admin_users.user_id = auth.uid() 
         AND admin_users.role IN ('admin', 'superadmin')
       )
-      OR auth.jwt() ->> 'email' = 'pindahserverezeer@gmail.com'
+      OR auth.jwt() ->> 'email' IN ('pindahserverezeer@gmail.com', 'maxwlzzyx@gmail.com')
     )
   );
 END;

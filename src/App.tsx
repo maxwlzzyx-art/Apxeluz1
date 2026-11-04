@@ -9,6 +9,7 @@ import { DownloadModal } from './components/DownloadModal';
 import { ModPage } from './components/ModPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Footer } from './components/Footer';
 import { REGISTERED_MODS } from './data/games';
 import { Game, FilterOptions } from './types/game';
@@ -136,6 +137,7 @@ function AppContent() {
     if (window.location.pathname !== path) {
       window.history.pushState(null, '', path);
     }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (path === '/admin/login') {
       setCurrentRoute({ view: 'admin-login' });
     } else if (path === '/admin') {
@@ -446,12 +448,14 @@ function AppContent() {
               </div>
             </div>
           ) : status === 'authenticated' ? (
-            <AdminDashboard
-              adminToken={adminToken}
-              adminUsername={adminUsername || user?.user_metadata?.name || user?.email || 'Admin'}
-              onLogout={handleAdminLogout}
-              onNavigateHome={() => navigateTo('/')}
-            />
+            <ErrorBoundary fallbackTitle="Admin Panel Encountered an Issue">
+              <AdminDashboard
+                adminToken={adminToken}
+                adminUsername={adminUsername || user?.user_metadata?.name || user?.email || 'Admin'}
+                onLogout={handleAdminLogout}
+                onNavigateHome={() => navigateTo('/')}
+              />
+            </ErrorBoundary>
           ) : (
             <AdminLogin
               onLoginSuccess={handleAdminLoginSuccess}

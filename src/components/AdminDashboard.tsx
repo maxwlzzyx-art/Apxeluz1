@@ -72,7 +72,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [settings, setSettings] = useState<WebsiteSettings | null>(null);
+  const [settings, setSettings] = useState<WebsiteSettings>({
+    siteName: 'APXELUZ',
+    siteDescription: 'Next-generation app and mod repository designed with Apple\'s Liquid Glass interface.',
+    announcement: '',
+    enableDownloads: true,
+    maintenanceMode: false,
+    defaultArchitecture: 'ARM64',
+  });
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -100,9 +107,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Fetch all administrative data (safely handles both full-stack and static deployments)
   const fetchData = async () => {
-    setLoading(true);
     try {
-      const headers = { Authorization: `Bearer ${adminToken}` };
+      const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined;
 
       const [statsRes, itemsRes, catsRes, settingsRes] = await Promise.all([
         safeFetchJson<AdminStats>('/api/admin/stats', { headers }),
@@ -111,14 +117,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         safeFetchJson<WebsiteSettings>('/api/admin/settings', { headers }),
       ]);
 
-      if (statsRes.status === 401 || itemsRes.status === 401) {
-        onLogout();
-        return;
-      }
-
       if (statsRes.ok && statsRes.data) setStats(statsRes.data);
-      if (itemsRes.ok && Array.isArray(itemsRes.data)) setItems(itemsRes.data);
-      if (catsRes.ok && Array.isArray(catsRes.data)) setCategories(catsRes.data);
+      if (itemsRes.ok && Array.isArray(itemsRes.data) && itemsRes.data.length > 0) setItems(itemsRes.data);
+      if (catsRes.ok && Array.isArray(catsRes.data) && catsRes.data.length > 0) setCategories(catsRes.data);
       if (settingsRes.ok && settingsRes.data) setSettings(settingsRes.data);
     } catch (err) {
       console.warn('Administrative data load notice:', err);
@@ -130,27 +131,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Real-time Supabase subscriptions for Administrator
   useEffect(() => {
     const unsubItems = subscribeToAllAdminItems((liveItems) => {
-      setItems(liveItems);
+      const safeList = Array.isArray(liveItems) ? liveItems : [];
+      setItems(safeList);
       setLoading(false);
       // Auto-compute live stats from Supabase collection
-      const games = liveItems.filter((i) => i.type === 'game').length;
-      const mods = liveItems.filter((i) => i.type === 'mod').length;
-      const apps = liveItems.filter((i) => i.type === 'app').length;
-      const downloads = liveItems.reduce((acc, curr) => acc + (curr.downloadCount || 0), 0);
+      const games = safeList.filter((i) => i && i.type === 'game').length;
+      const mods = safeList.filter((i) => i && i.type === 'mod').length;
+      const apps = safeList.filter((i) => i && i.type === 'app').length;
+      const downloads = safeList.reduce((acc, curr) => acc + (curr?.downloadCount || 0), 0);
       setStats((prev) => ({
         totalGames: games,
         totalMods: mods,
         totalApps: apps,
         totalCategories: prev?.totalCategories || 8,
         totalDownloads: downloads,
-        recentItems: liveItems.slice(0, 5),
+        recentItems: safeList.slice(0, 5),
       }));
     });
 
     const unsubCats = subscribeToCategories((liveCats) => {
-      if (liveCats && liveCats.length > 0) {
+      if (Array.isArray(liveCats) && liveCats.length > 0) {
         setCategories(liveCats);
-        setStats((prev) => prev ? { ...prev, totalCategories: liveCats.length } : null);
+        setStats((prev) => (prev ? { ...prev, totalCategories: liveCats.length } : null));
       }
     });
 
@@ -345,9 +347,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const gamesList = items.filter((i) => i.type === 'game');
-  const modsList = items.filter((i) => i.type === 'mod');
-  const appsList = items.filter((i) => i.type === 'app');
+  const safeItems = Array.isArray(items) ? items : [];
+  const gamesList = safeItems.filter((i) => i && i.type === 'game');
+  const modsList = safeItems.filter((i) => i && i.type === 'mod');
+  const appsList = safeItems.filter((i) => i && i.type === 'app');
+  const safeCategories = Array.isArray(categories) ? categories : [];
 
   return (
     <div className="w-full max-w-7xl mx-auto py-6 px-4 sm:px-6 space-y-6 text-left">
@@ -396,7 +400,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           { id: 'games', label: 'Manage Games', icon: Gamepad2, count: gamesList.length },
           { id: 'mods', label: 'Manage Mods', icon: Sparkles, count: modsList.length },
           { id: 'apps', label: 'Manage Apps', icon: Smartphone, count: appsList.length },
-          { id: 'categories', label: 'Categories', icon: FolderTree, count: categories.length },
+          { id: 'categories', label: 'Categories', icon: FolderTree, count: safeCategories.length },
           { id: 'images', label: 'Image Storage', icon: ImageIcon, count: undefined },
           { id: 'settings', label: 'Website Settings', icon: Settings, count: undefined },
           { id: 'account', label: 'Account', icon: UserCheck, count: undefined },
@@ -1050,8 +1054,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-1">
-                <span className="text-[11px] text-slate-400 uppercase font-semibold block">Authorization Token</span>
-                <span className="text-slate-300 font-mono text-[11px]">Bearer ••••••••{adminToken.slice(-6)}</span>
+                <span className="text-slate-300 font-mono text-[11px]">
+                  Bearer ••••••••{(adminToken || '').slice(-6) || 'active'}
+                </span>
               </div>
             </div>
 
