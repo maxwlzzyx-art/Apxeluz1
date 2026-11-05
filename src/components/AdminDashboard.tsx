@@ -38,6 +38,7 @@ import { ItemFormModal } from './ItemFormModal';
 import { AdminPremiumModal } from './AdminPremiumModal';
 import { PRIMARY_ADMIN_EMAIL } from '../lib/auth';
 import { safeFetchJson } from '../utils/apiClient';
+import { slugify } from '../utils/adminValidation';
 import {
   subscribeToAllAdminItems,
   subscribeToCategories,
@@ -50,6 +51,7 @@ import {
   saveSettingsToSupabase,
   savePremiumGameToSupabase,
   deletePremiumGameFromSupabase,
+  ensureUUID,
 } from '../lib/supabaseService';
 import { uploadToSupabaseStorage } from '../lib/storageService';
 
@@ -139,7 +141,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (itemsRes.ok && Array.isArray(itemsRes.data) && itemsRes.data.length > 0) setItems(itemsRes.data);
       if (catsRes.ok && Array.isArray(catsRes.data) && catsRes.data.length > 0) setCategories(catsRes.data);
       if (settingsRes.ok && settingsRes.data) setSettings(settingsRes.data);
-      if (premRes.ok && Array.isArray(premRes.data)) setPremiumGames(premRes.data);
+
+      if (premRes.ok && Array.isArray(premRes.data) && premRes.data.length > 0) {
+        setPremiumGames(premRes.data);
+      } else {
+        // Fallback: public endpoint /api/v1/premium-games
+        const pubPremRes = await safeFetchJson<PremiumGame[]>('/api/v1/premium-games');
+        if (pubPremRes.ok && Array.isArray(pubPremRes.data) && pubPremRes.data.length > 0) {
+          setPremiumGames(pubPremRes.data);
+        } else {
+          // Fallback: localStorage cached premium games
+          try {
+            const cached = localStorage.getItem('apxeluz_cached_premium_games');
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setPremiumGames(parsed);
+              }
+            }
+          } catch {
+            // Ignore
+          }
+        }
+      }
+
       if (ordersRes.ok && Array.isArray(ordersRes.data?.orders)) setOrders(ordersRes.data.orders);
     } catch (err) {
       console.warn('Administrative data load notice:', err);
