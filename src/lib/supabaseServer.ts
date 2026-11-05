@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const SUPABASE_URL =
-  process.env.SUPABASE_URL || 'https://tgkldegrzhtmcpojkygh.supabase.co';
+const rawServerUrl =
+  (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://tgkldegrzhtmcpojkygh.supabase.co').trim();
+
+export const SUPABASE_URL = rawServerUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
 export const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY ||

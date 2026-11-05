@@ -27,20 +27,29 @@ import {
   Shield,
   HardDrive,
   Download,
+  Crown,
+  ShoppingBag,
+  CreditCard,
+  CheckCircle2,
 } from 'lucide-react';
 import { Item, Category, WebsiteSettings, AdminStats, ItemType } from '../types/admin';
+import { PremiumGame, Order } from '../types/premium';
 import { ItemFormModal } from './ItemFormModal';
+import { AdminPremiumModal } from './AdminPremiumModal';
 import { PRIMARY_ADMIN_EMAIL } from '../lib/auth';
 import { safeFetchJson } from '../utils/apiClient';
 import {
   subscribeToAllAdminItems,
   subscribeToCategories,
   subscribeToSettings,
+  subscribeToPremiumGames,
   deleteItemFromSupabase,
   toggleItemVisibilityInSupabase,
   saveCategoryToSupabase,
   deleteCategoryFromSupabase,
   saveSettingsToSupabase,
+  savePremiumGameToSupabase,
+  deletePremiumGameFromSupabase,
 } from '../lib/supabaseService';
 import { uploadToSupabaseStorage } from '../lib/storageService';
 
@@ -60,8 +69,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeSection, setActiveSection] = useState<
     | 'overview'
     | 'games'
-    | 'mods'
     | 'apps'
+    | 'premium'
     | 'categories'
     | 'images'
     | 'settings'
@@ -80,6 +89,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     maintenanceMode: false,
     defaultArchitecture: 'ARM64',
   });
+  const [premiumGames, setPremiumGames] = useState<PremiumGame[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -88,6 +99,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [itemModalDefaultType, setItemModalDefaultType] = useState<ItemType>('game');
   const [deletingItem, setDeletingItem] = useState<Item | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+
+  // Premium modal states
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
+  const [editingPremiumGame, setEditingPremiumGame] = useState<PremiumGame | null>(null);
+  const [deletingPremiumGame, setDeletingPremiumGame] = useState<PremiumGame | null>(null);
 
   // Category editing state
   const [newCatName, setNewCatName] = useState('');
@@ -110,17 +126,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined;
 
-      const [statsRes, itemsRes, catsRes, settingsRes] = await Promise.all([
+      const [statsRes, itemsRes, catsRes, settingsRes, premRes, ordersRes] = await Promise.all([
         safeFetchJson<AdminStats>('/api/admin/stats', { headers }),
         safeFetchJson<Item[]>('/api/admin/items', { headers }),
         safeFetchJson<Category[]>('/api/categories'),
         safeFetchJson<WebsiteSettings>('/api/admin/settings', { headers }),
+        safeFetchJson<PremiumGame[]>('/api/admin/premium-games', { headers }),
+        safeFetchJson<{ orders: Order[] }>('/api/admin/orders', { headers }),
       ]);
 
       if (statsRes.ok && statsRes.data) setStats(statsRes.data);
       if (itemsRes.ok && Array.isArray(itemsRes.data) && itemsRes.data.length > 0) setItems(itemsRes.data);
       if (catsRes.ok && Array.isArray(catsRes.data) && catsRes.data.length > 0) setCategories(catsRes.data);
       if (settingsRes.ok && settingsRes.data) setSettings(settingsRes.data);
+      if (premRes.ok && Array.isArray(premRes.data)) setPremiumGames(premRes.data);
+      if (ordersRes.ok && Array.isArray(ordersRes.data?.orders)) setOrders(ordersRes.data.orders);
     } catch (err) {
       console.warn('Administrative data load notice:', err);
     } finally {
@@ -135,13 +155,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setItems(safeList);
       setLoading(false);
       // Auto-compute live stats from Supabase collection
-      const games = safeList.filter((i) => i && i.type === 'game').length;
-      const mods = safeList.filter((i) => i && i.type === 'mod').length;
+      const games = safeList.filter((i) => i && (i.type === 'game' || i.type === 'mod')).length;
       const apps = safeList.filter((i) => i && i.type === 'app').length;
       const downloads = safeList.reduce((acc, curr) => acc + (curr?.downloadCount || 0), 0);
       setStats((prev) => ({
         totalGames: games,
-        totalMods: mods,
+        totalMods: 0,
         totalApps: apps,
         totalCategories: prev?.totalCategories || 8,
         totalDownloads: downloads,
@@ -160,12 +179,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (liveSettings) setSettings(liveSettings);
     });
 
+    const unsubPrem = subscribeToPremiumGames((livePrem) => {
+      if (Array.isArray(livePrem) && livePrem.length > 0) {
+        setPremiumGames(livePrem);
+      }
+    });
+
     fetchData();
 
     return () => {
       unsubItems();
       unsubCats();
       unsubSett();
+      unsubPrem();
     };
   }, [adminToken]);
 
@@ -347,9 +373,87 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  // Premium Games Handlers (Requirement 4 & 5)
+  const handleSavePremiumGame = async (gameData: Partial<PremiumGame>) => {
+    try {
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+      };
+
+      if (gameData.id) {
+        await safeFetchJson(`/api/admin/premium-games/${gameData.id}`, {
+          method: 'PUT',
+          headers: authHeaders,
+          body: JSON.stringify(gameData),
+        });
+      } else {
+        await safeFetchJson('/api/admin/premium-games', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify(gameData),
+        });
+      }
+      try {
+        await savePremiumGameToSupabase(gameData);
+      } catch (e) {
+        // Non-fatal
+      }
+      fetchData();
+    } catch (err) {
+      console.error('Save premium game error:', err);
+    }
+  };
+
+  const handleDeletePremiumGame = async () => {
+    if (!deletingPremiumGame) return;
+    try {
+      const authHeaders: Record<string, string> = adminToken
+        ? { Authorization: `Bearer ${adminToken}` }
+        : {};
+      await safeFetchJson(`/api/admin/premium-games/${deletingPremiumGame.id}`, {
+        method: 'DELETE',
+        headers: authHeaders,
+      });
+      try {
+        await deletePremiumGameFromSupabase(deletingPremiumGame.id);
+      } catch (e) {
+        // Non-fatal
+      }
+      setPremiumGames((prev) => prev.filter((p) => p.id !== deletingPremiumGame.id));
+      setDeletingPremiumGame(null);
+    } catch (err) {
+      console.error('Delete premium game error:', err);
+    }
+  };
+
+  const handleTogglePremiumActive = async (game: PremiumGame) => {
+    try {
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+      };
+
+      const updated = { ...game, isActive: !game.isActive };
+      await safeFetchJson(`/api/admin/premium-games/${game.id}`, {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify({ isActive: !game.isActive }),
+      });
+      try {
+        await savePremiumGameToSupabase(updated);
+      } catch (e) {
+        // Non-fatal
+      }
+      setPremiumGames((prev) => prev.map((p) => (p.id === game.id ? updated : p)));
+    } catch (err) {
+      console.error('Toggle premium active error:', err);
+    }
+  };
+
   const safeItems = Array.isArray(items) ? items : [];
-  const gamesList = safeItems.filter((i) => i && i.type === 'game');
-  const modsList = safeItems.filter((i) => i && i.type === 'mod');
+  // Requirement 2: Merge Game and Mod into Games; Merge App and Mod into Apps
+  const gamesList = safeItems.filter((i) => i && (i.type === 'game' || i.type === 'mod'));
   const appsList = safeItems.filter((i) => i && i.type === 'app');
   const safeCategories = Array.isArray(categories) ? categories : [];
 
@@ -397,9 +501,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
         {[
           { id: 'overview', label: 'Overview', icon: LayoutDashboard, count: undefined },
-          { id: 'games', label: 'Manage Games', icon: Gamepad2, count: gamesList.length },
-          { id: 'mods', label: 'Manage Mods', icon: Sparkles, count: modsList.length },
-          { id: 'apps', label: 'Manage Apps', icon: Smartphone, count: appsList.length },
+          { id: 'games', label: 'Games & Mods', icon: Gamepad2, count: gamesList.length },
+          { id: 'apps', label: 'Apps & Tools', icon: Smartphone, count: appsList.length },
+          { id: 'premium', label: 'Premium Games', icon: Crown, count: premiumGames.length },
           { id: 'categories', label: 'Categories', icon: FolderTree, count: safeCategories.length },
           { id: 'images', label: 'Image Storage', icon: ImageIcon, count: undefined },
           { id: 'settings', label: 'Website Settings', icon: Settings, count: undefined },
@@ -583,41 +687,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* SECTIONS 2, 3, 4: CONTENT MANAGEMENT (GAMES / MODS / APPS) */}
-      {(activeSection === 'games' || activeSection === 'mods' || activeSection === 'apps') && (
+      {/* SECTIONS 2 & 3: CONTENT MANAGEMENT (GAMES & MODS / APPS) */}
+      {(activeSection === 'games' || activeSection === 'apps') && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="heading-font text-lg font-bold text-white uppercase tracking-wider">
-                Manage {activeSection.toUpperCase()}
+                Manage {activeSection === 'games' ? 'Games & Mods' : 'Apps'}
               </h2>
               <p className="text-xs text-slate-400">
-                Create, edit, toggle visibility, and delete {activeSection}. All changes reflect instantly on the public website.
+                Create, edit, toggle visibility, and delete {activeSection === 'games' ? 'games and mods' : 'apps'}. All changes reflect instantly on the public website.
               </p>
             </div>
             <button
               onClick={() => {
-                setItemModalDefaultType(activeSection === 'games' ? 'game' : activeSection === 'mods' ? 'mod' : 'app');
+                setItemModalDefaultType(activeSection === 'games' ? 'game' : 'app');
                 setEditingItem(null);
                 setIsItemModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white self-start sm:self-auto"
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white self-start sm:self-auto cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add New {activeSection.slice(0, -1)}</span>
+              <span>+ Add New {activeSection === 'games' ? 'Game/Mod' : 'App'}</span>
             </button>
           </div>
 
           {/* Table / List */}
           <div className="p-4 sm:p-6 rounded-3xl liquid-glass border border-white/15 overflow-x-auto shadow-2xl">
-            {items.filter((i) => i.type === (activeSection === 'games' ? 'game' : activeSection === 'mods' ? 'mod' : 'app')).length === 0 ? (
+            {(activeSection === 'games' ? gamesList : appsList).length === 0 ? (
               <div className="text-center py-16 space-y-3">
                 <div className="w-12 h-12 mx-auto rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-slate-400">
                   <Plus className="w-6 h-6" />
                 </div>
                 <h3 className="text-sm font-semibold text-white">No {activeSection} found in database</h3>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Click the "+ Add New" button above to publish your first {activeSection.slice(0, -1)}.
+                  Click the "+ Add New" button above to publish your first {activeSection === 'games' ? 'game' : 'app'}.
                 </p>
               </div>
             ) : (
@@ -633,8 +737,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
-                  {items
-                    .filter((i) => i.type === (activeSection === 'games' ? 'game' : activeSection === 'mods' ? 'mod' : 'app'))
+                  {(activeSection === 'games' ? gamesList : appsList)
                     .map((item) => (
                       <tr key={item.id} className="hover:bg-white/5 transition-colors">
                         <td className="py-3 pl-2">
@@ -1069,6 +1172,291 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Sign Out of Admin</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 4: PREMIUM GAMES & QIOSPAY TRANSACTIONS (Requirement 4 & 5) */}
+      {activeSection === 'premium' && (
+        <div className="space-y-6">
+          {/* Top Actions & Summary */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl liquid-glass border border-white/15">
+            <div>
+              <h2 className="heading-font text-lg font-bold text-white flex items-center gap-2">
+                <Crown className="w-5 h-5 text-amber-400" />
+                <span>Manajemen Game Premium & Transaksi QiosPay</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Kelola katalog game berbayar, harga IDR, file unduhan, dan pantau status transaksi QiosPay secara real-time.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setEditingPremiumGame(null);
+                setIsPremiumModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-black font-extrabold text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Tambah Game Premium</span>
+            </button>
+          </div>
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-3xl liquid-glass border border-white/15 space-y-1">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Total Game Premium</span>
+              <div className="text-2xl font-bold text-white font-mono">{premiumGames.length}</div>
+            </div>
+
+            <div className="p-4 rounded-3xl liquid-glass border border-white/15 space-y-1">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Total Pesanan</span>
+              <div className="text-2xl font-bold text-white font-mono">{orders.length}</div>
+            </div>
+
+            <div className="p-4 rounded-3xl liquid-glass border border-white/15 space-y-1">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Pesanan Terbayar (PAID)</span>
+              <div className="text-2xl font-bold text-emerald-400 font-mono">
+                {orders.filter((o) => o.status === 'PAID').length}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-3xl liquid-glass border border-white/15 space-y-1">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Total Pendapatan (IDR)</span>
+              <div className="text-xl font-bold text-amber-300 font-mono">
+                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(
+                  orders.filter((o) => o.status === 'PAID').reduce((acc, curr) => acc + (curr.amount || 0), 0)
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Premium Games Table */}
+          <div className="rounded-3xl liquid-glass border border-white/15 overflow-hidden shadow-xl">
+            <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
+              <h3 className="heading-font text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <span>Daftar Produk Premium</span>
+                <span className="text-xs font-mono text-amber-400">({premiumGames.length})</span>
+              </h3>
+            </div>
+
+            {premiumGames.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-xs">
+                Belum ada produk game premium yang terdaftar. Klik "+ Tambah Game Premium" untuk menambahkan.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-white/[0.04] text-slate-400 border-b border-white/10">
+                    <tr>
+                      <th className="py-3 px-4">Game</th>
+                      <th className="py-3 px-4">Harga (IDR)</th>
+                      <th className="py-3 px-4">Versi & Ukuran</th>
+                      <th className="py-3 px-4">Status Aktif</th>
+                      <th className="py-3 px-4">Visibilitas</th>
+                      <th className="py-3 px-4 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-slate-200">
+                    {premiumGames.map((game) => (
+                      <tr key={game.id} className="hover:bg-white/[0.03] transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={game.iconUrl || game.coverUrl}
+                              alt={game.title}
+                              className="w-9 h-9 rounded-xl object-cover bg-slate-800 border border-white/10"
+                            />
+                            <div>
+                              <span className="font-bold text-white block">{game.title}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">/{game.slug}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 font-mono font-bold text-amber-300">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(game.price)}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-[11px] text-slate-300">
+                          {game.version} • {game.fileSize}
+                        </td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => handleTogglePremiumActive(game)}
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold cursor-pointer transition-all ${
+                              game.isActive
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                                : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
+                            }`}
+                          >
+                            {game.isActive ? 'Aktif' : 'Nonaktif'}
+                          </button>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono ${game.visibility === 'published' ? 'text-teal-300 bg-teal-500/15' : 'text-slate-400 bg-white/10'}`}>
+                            {game.visibility || 'published'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => {
+                                setEditingPremiumGame(game);
+                                setIsPremiumModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg liquid-glass-subtle hover:bg-white/15 text-slate-300 hover:text-white"
+                              title="Edit Produk"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setDeletingPremiumGame(game)}
+                              className="p-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30"
+                              title="Hapus Produk"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* QiosPay Orders & Transaction Logs Table */}
+          <div className="rounded-3xl liquid-glass border border-white/15 overflow-hidden shadow-xl">
+            <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
+              <h3 className="heading-font text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-[#0A84FF]" />
+                <span>Riwayat Transaksi & Pembayaran QiosPay</span>
+                <span className="text-xs font-mono text-[#0A84FF]">({orders.length})</span>
+              </h3>
+            </div>
+
+            {orders.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-xs">
+                Belum ada transaksi pembayaran yang tercatat. Transaksi pembelian akan muncul otomatis di sini.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-white/[0.04] text-slate-400 border-b border-white/10">
+                    <tr>
+                      <th className="py-3 px-4">Order ID & QiosPay Invoice</th>
+                      <th className="py-3 px-4">Pembeli</th>
+                      <th className="py-3 px-4">Produk</th>
+                      <th className="py-3 px-4">Nominal</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Tanggal Transaksi</th>
+                      <th className="py-3 px-4 text-right">Akses Unduhan</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-slate-200">
+                    {orders.map((order) => (
+                      <tr key={order.id} className="hover:bg-white/[0.03] transition-colors">
+                        <td className="py-3 px-4">
+                          <span className="font-mono font-bold text-white block">{order.id}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">{order.qiospayInvoiceId || '-'}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-semibold text-white block">{order.customerName}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">{order.customerEmail}</span>
+                        </td>
+                        <td className="py-3 px-4 font-medium text-slate-200">
+                          {order.gameTitle}
+                        </td>
+                        <td className="py-3 px-4 font-mono font-bold text-amber-300">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(order.amount)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                              order.status === 'PAID'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                : order.status === 'EXPIRED' || order.status === 'CANCELLED'
+                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                          {new Date(order.createdAt).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-[10px]">
+                          {order.status === 'PAID' ? (
+                            <span className="text-emerald-400 font-bold flex items-center justify-end gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Token Diberikan</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">Menunggu Pembayaran</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Premium Game Form Modal */}
+      <AdminPremiumModal
+        isOpen={isPremiumModalOpen}
+        onClose={() => {
+          setIsPremiumModalOpen(false);
+          setEditingPremiumGame(null);
+        }}
+        onSave={handleSavePremiumGame}
+        initialGame={editingPremiumGame}
+      />
+
+      {/* Delete Premium Game Confirmation Dialog */}
+      {deletingPremiumGame && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#040714]/80 backdrop-blur-xl"
+          onClick={() => setDeletingPremiumGame(null)}
+        >
+          <div
+            className="w-full max-w-md liquid-glass rounded-3xl border border-rose-500/30 p-6 shadow-2xl text-left space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 text-rose-400">
+              <AlertTriangle className="w-6 h-6" />
+              <h3 className="heading-font text-base font-bold text-white uppercase tracking-wider">
+                Hapus Game Premium
+              </h3>
+            </div>
+            <p className="text-xs text-slate-300">
+              Apakah Anda yakin ingin menghapus produk game premium <strong className="text-white font-bold">{deletingPremiumGame.title}</strong>? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                onClick={() => setDeletingPremiumGame(null)}
+                className="px-4 py-2 rounded-2xl liquid-glass-subtle text-xs text-slate-300 hover:text-white"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDeletePremiumGame}
+                className="px-5 py-2 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-md"
+              >
+                Hapus Permanen
               </button>
             </div>
           </div>

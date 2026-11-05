@@ -1,15 +1,16 @@
 import React, { useRef } from 'react';
-import { Compass, Search, X, Bookmark, Filter, Layers, Shield } from 'lucide-react';
+import { Compass, Search, X, Bookmark, Filter, Layers, Shield, Crown } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'home' | 'saved' | 'admin' | 'all';
-  setActiveTab: (tab: 'home' | 'saved' | 'admin' | 'all') => void;
+  activeTab: 'home' | 'saved' | 'premium' | 'admin' | 'all';
+  setActiveTab: (tab: 'home' | 'saved' | 'premium' | 'admin' | 'all') => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   savedCount: number;
   onOpenFilters?: () => void;
   isFiltersOpen?: boolean;
   onNavigateHome: () => void;
+  onNavigatePremium?: () => void;
   onOpenAdminLogin: () => void;
   isAdminAuthenticated: boolean;
 }
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenFilters,
   isFiltersOpen,
   onNavigateHome,
+  onNavigatePremium,
   onOpenAdminLogin,
   isAdminAuthenticated,
 }) => {
@@ -80,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </button>
 
-          {/* Navigation Items (Notice: Community link is removed completely per requirement 1) */}
+          {/* Navigation Items */}
           <nav className="flex items-center gap-2">
             {/* Discover / Home */}
             <button
@@ -88,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setActiveTab('home');
                 onNavigateHome();
               }}
-              className={`relative flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 ${
+              className={`relative flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 cursor-pointer ${
                 activeTab === 'home'
                   ? 'text-white bg-white/15 border border-white/25 shadow-[0_4px_20px_rgba(10,132,255,0.25),inset_0_1px_1px_rgba(255,255,255,0.4)] backdrop-blur-xl'
                   : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'
@@ -102,6 +104,26 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
+            {/* Premium Game Tab (Requirement 4) */}
+            <button
+              onClick={() => {
+                setActiveTab('premium');
+                if (onNavigatePremium) onNavigatePremium();
+              }}
+              className={`relative flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${
+                activeTab === 'premium'
+                  ? 'text-amber-300 bg-amber-500/20 border border-amber-400/40 shadow-[0_4px_20px_rgba(245,158,11,0.25)] backdrop-blur-xl'
+                  : 'text-amber-400/90 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-400/20'
+              }`}
+              aria-label="Premium Game"
+            >
+              <Crown className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+              <span>Premium Game</span>
+              <span className="hidden sm:inline-block px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase bg-gradient-to-r from-amber-500 to-rose-500 text-black">
+                VIP
+              </span>
+            </button>
+
             {/* Saved Items */}
             <button
               onClick={() => {
@@ -110,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
                   window.history.pushState(null, '', '/saved');
                 }
               }}
-              className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 ${
+              className={`relative flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 cursor-pointer ${
                 activeTab === 'saved'
                   ? 'text-white bg-white/15 border border-white/25 shadow-[0_4px_20px_rgba(10,132,255,0.25),inset_0_1px_1px_rgba(255,255,255,0.4)] backdrop-blur-xl'
                   : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'

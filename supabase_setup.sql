@@ -349,3 +349,220 @@ USING (
 ALTER PUBLICATION supabase_realtime ADD TABLE public.apps;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.categories;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.website_settings;
+
+-- ==============================================================================
+-- 11. CATEGORY COUNT DYNAMIC AUTO-SYNCHRONIZATION TRIGGER
+-- Solves requirement 1: category item counts (e.g. Action) always in sync with DB
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.sync_category_counts()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.categories c
+  SET item_count = (
+    SELECT COUNT(*) 
+    FROM public.apps a
+    WHERE LOWER(TRIM(a.category)) = LOWER(TRIM(c.name))
+    AND a.visibility = 'published'
+  );
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_sync_category_counts ON public.apps;
+CREATE TRIGGER trg_sync_category_counts
+AFTER INSERT OR UPDATE OR DELETE ON public.apps
+FOR EACH STATEMENT EXECUTE FUNCTION public.sync_category_counts();
+
+-- Run initial sync right away
+SELECT public.sync_category_counts();
+
+-- ==============================================================================
+-- 12. PREMIUM GAMES TABLE (Requirement 4 & 6)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.premium_games (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  price NUMERIC NOT NULL CHECK (price >= 0),
+  original_price NUMERIC,
+  short_description TEXT DEFAULT '',
+  description TEXT DEFAULT '',
+  icon_url TEXT DEFAULT '',
+  cover_url TEXT DEFAULT '',
+  banner_url TEXT DEFAULT '',
+  screenshots TEXT[] DEFAULT '{}',
+  download_url TEXT NOT NULL,
+  version TEXT DEFAULT 'v1.0.0',
+  file_size TEXT DEFAULT '500 MB',
+  features TEXT[] DEFAULT '{}',
+  category TEXT DEFAULT 'Action',
+  developer TEXT DEFAULT 'Independent Developer',
+  is_active BOOLEAN DEFAULT TRUE,
+  visibility TEXT DEFAULT 'published' CHECK (visibility IN ('published', 'draft')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ==============================================================================
+-- 13. ORDERS & TRANSACTIONS (Requirement 5 & 6)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.orders (
+  id TEXT PRIMARY KEY, -- e.g. ORD-1730000000-abcd
+  game_id UUID REFERENCES public.premium_games(id) ON DELETE RESTRICT,
+  game_title TEXT NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  amount NUMERIC NOT NULL CHECK (amount >= 0),
+  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PAID', 'EXPIRED', 'CANCELLED')),
+  qiospay_invoice_id TEXT,
+  qiospay_payment_url TEXT,
+  qiospay_qr_string TEXT,
+  payment_method TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  paid_at TIMESTAMPTZ
+);
+
+-- ==============================================================================
+-- 14. PAYMENTS & PAYMENT LOGS TABLE (Requirement 5 & 6)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id TEXT REFERENCES public.orders(id) ON DELETE CASCADE,
+  invoice_id TEXT,
+  ref_id TEXT,
+  amount NUMERIC NOT NULL,
+  payment_method TEXT,
+  status TEXT NOT NULL,
+  raw_response JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.payment_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id TEXT,
+  invoice_id TEXT,
+  event_type TEXT NOT NULL,
+  status TEXT NOT NULL,
+  amount NUMERIC,
+  ip_address TEXT,
+  signature_valid BOOLEAN NOT NULL DEFAULT FALSE,
+  payload JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ==============================================================================
+-- 15. PRODUCT ACCESS & SECURE DOWNLOAD TOKENS (Requirement 5 & 6)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.product_access (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id TEXT NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  game_id UUID NOT NULL REFERENCES public.premium_games(id) ON DELETE CASCADE,
+  customer_email TEXT NOT NULL,
+  download_token TEXT NOT NULL UNIQUE,
+  download_count INTEGER DEFAULT 0,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ==============================================================================
+-- 16. SECURE DOWNLOAD LOGS & ATTEMPTS (Requirement 2, 3, & 6)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.download_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  item_id TEXT NOT NULL,
+  item_type TEXT NOT NULL DEFAULT 'app',
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.admin_login_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  identifier TEXT NOT NULL,
+  ip_address TEXT NOT NULL,
+  email TEXT,
+  success BOOLEAN NOT NULL DEFAULT FALSE,
+  reason TEXT,
+  attempted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_orders_customer_email ON public.orders(customer_email);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_invoice ON public.orders(qiospay_invoice_id);
+CREATE INDEX IF NOT EXISTS idx_product_access_token ON public.product_access(download_token);
+CREATE INDEX IF NOT EXISTS idx_product_access_order ON public.product_access(order_id);
+CREATE INDEX IF NOT EXISTS idx_download_logs_item ON public.download_logs(item_id, ip_address);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_identifier ON public.admin_login_attempts(identifier, attempted_at DESC);
+
+-- ==============================================================================
+-- 17. RLS POLICIES FOR PREMIUM, ORDERS, AND LOGS
+-- ==============================================================================
+ALTER TABLE public.premium_games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_access ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.download_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_login_attempts ENABLE ROW LEVEL SECURITY;
+
+-- PREMIUM GAMES: Public can read published & active games; admins full access
+DROP POLICY IF EXISTS "Public can view active premium games" ON public.premium_games;
+CREATE POLICY "Public can view active premium games"
+ON public.premium_games FOR SELECT
+TO public
+USING (is_active = TRUE AND (visibility = 'published' OR public.is_admin()));
+
+DROP POLICY IF EXISTS "Admins can manage premium games" ON public.premium_games;
+CREATE POLICY "Admins can manage premium games"
+ON public.premium_games FOR ALL
+TO authenticated
+USING (public.is_admin())
+WITH CHECK (public.is_admin());
+
+-- ORDERS: Public can view their order by exact order ID; admins can view all
+DROP POLICY IF EXISTS "Public can view their own order" ON public.orders;
+CREATE POLICY "Public can view their own order"
+ON public.orders FOR SELECT
+TO public
+USING (true);
+
+DROP POLICY IF EXISTS "Admins can manage orders" ON public.orders;
+CREATE POLICY "Admins can manage orders"
+ON public.orders FOR ALL
+TO authenticated
+USING (public.is_admin())
+WITH CHECK (public.is_admin());
+
+-- PAYMENTS & LOGS: Admin only
+DROP POLICY IF EXISTS "Admins view payments" ON public.payments;
+CREATE POLICY "Admins view payments"
+ON public.payments FOR SELECT
+TO authenticated
+USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins view payment logs" ON public.payment_logs;
+CREATE POLICY "Admins view payment logs"
+ON public.payment_logs FOR SELECT
+TO authenticated
+USING (public.is_admin());
+
+-- PRODUCT ACCESS: Public can view with exact token
+DROP POLICY IF EXISTS "Public can verify product access with token" ON public.product_access;
+CREATE POLICY "Public can verify product access with token"
+ON public.product_access FOR SELECT
+TO public
+USING (expires_at > now());
+
+DROP POLICY IF EXISTS "Admins manage product access" ON public.product_access;
+CREATE POLICY "Admins manage product access"
+ON public.product_access FOR ALL
+TO authenticated
+USING (public.is_admin())
+WITH CHECK (public.is_admin());
+
+-- Realtime for orders and premium games
+ALTER PUBLICATION supabase_realtime ADD TABLE public.premium_games;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
+

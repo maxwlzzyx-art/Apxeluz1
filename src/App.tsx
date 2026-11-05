@@ -11,6 +11,7 @@ import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Footer } from './components/Footer';
+import { PremiumGamesView } from './components/PremiumGamesView';
 import { REGISTERED_MODS } from './data/games';
 import { Game, FilterOptions } from './types/game';
 import { Item, Category, WebsiteSettings } from './types/admin';
@@ -82,7 +83,7 @@ function AppContent() {
 
   // Routing State based on browser URL
   const [currentRoute, setCurrentRoute] = useState<{
-    view: 'home' | 'saved' | 'item-detail' | 'admin-login' | 'admin-dashboard';
+    view: 'home' | 'saved' | 'premium' | 'item-detail' | 'admin-login' | 'admin-dashboard';
     slug?: string;
     itemType?: 'game' | 'app' | 'mod';
   }>(() => {
@@ -92,6 +93,9 @@ function AppContent() {
     }
     if (path === '/admin') {
       return { view: 'admin-dashboard' };
+    }
+    if (path === '/premium') {
+      return { view: 'premium' };
     }
     if (path.startsWith('/mod/')) {
       return { view: 'item-detail', slug: path.slice('/mod/'.length).trim(), itemType: 'mod' };
@@ -116,6 +120,8 @@ function AppContent() {
         setCurrentRoute({ view: 'admin-login' });
       } else if (path === '/admin') {
         setCurrentRoute({ view: 'admin-dashboard' });
+      } else if (path === '/premium') {
+        setCurrentRoute({ view: 'premium' });
       } else if (path.startsWith('/mod/')) {
         setCurrentRoute({ view: 'item-detail', slug: path.slice('/mod/'.length).trim(), itemType: 'mod' });
       } else if (path.startsWith('/game/')) {
@@ -142,6 +148,8 @@ function AppContent() {
       setCurrentRoute({ view: 'admin-login' });
     } else if (path === '/admin') {
       setCurrentRoute({ view: 'admin-dashboard' });
+    } else if (path === '/premium') {
+      setCurrentRoute({ view: 'premium' });
     } else if (path.startsWith('/mod/')) {
       setCurrentRoute({ view: 'item-detail', slug: path.slice('/mod/'.length).trim(), itemType: 'mod' });
     } else if (path.startsWith('/game/')) {
@@ -320,23 +328,47 @@ function AppContent() {
     return sortGames(filtered, filters.sortBy);
   }, [repositoryGames, filters]);
 
-  // Homepage collections
-  const newlyAddedGames = useMemo(() => repositoryGames.filter((g) => g.isNewlyAdded), [repositoryGames]);
-  const featuredGames = useMemo(() => repositoryGames.filter((g) => g.isFeatured), [repositoryGames]);
-  const popularGames = useMemo(() => repositoryGames.filter((g) => g.isPopular), [repositoryGames]);
+  // Dynamic category item count synchronization (Requirement 1: Action and all categories never 0 if items exist)
+  const dynamicCategoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of repositoryGames) {
+      if (item.category) {
+        const k = item.category.trim().toLowerCase();
+        counts[k] = (counts[k] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [repositoryGames]);
+
+  // Homepage collections (Requirement 1: Newly Added sorted by latest addition; Requirement 2: Popular by highest downloadCount; Featured Games removed)
+  const newlyAddedGames = useMemo(() => {
+    return [...repositoryGames]
+      .sort((a, b) => new Date(b.releaseDate || b.updatedDate || 0).getTime() - new Date(a.releaseDate || a.updatedDate || 0).getTime())
+      .slice(0, 15);
+  }, [repositoryGames]);
+
+  const popularGames = useMemo(() => {
+    return [...repositoryGames]
+      .sort((a, b) => (b.downloadCount || 0) - (a.downloadCount || 0))
+      .slice(0, 15);
+  }, [repositoryGames]);
+
   const latestMods = useMemo(() => repositoryGames.filter((g) => g.type === 'mod'), [repositoryGames]);
   const savedGames = useMemo(() => repositoryGames.filter((g) => savedGameIds.has(g.id)), [repositoryGames, savedGameIds]);
 
-  // Format categories for HotCategories component
+  // Format categories for HotCategories component with dynamic synchronization
   const hotCategoryItems = useMemo(() => {
-    return categories.map((c) => ({
-      id: c.name as any,
-      name: c.name,
-      icon: c.icon || 'Sparkles',
-      count: c.itemCount || 0,
-      color: 'from-[#0A84FF]/20 to-[#BF5AF2]/20',
-    }));
-  }, [categories]);
+    return categories.map((c) => {
+      const realCount = dynamicCategoryCounts[c.name.trim().toLowerCase()] ?? c.itemCount ?? 0;
+      return {
+        id: c.name as any,
+        name: c.name,
+        icon: c.icon || 'Sparkles',
+        count: realCount,
+        color: 'from-[#0A84FF]/20 to-[#BF5AF2]/20',
+      };
+    });
+  }, [categories, dynamicCategoryCounts]);
 
   const isBrowsingOrSearching = searchQuery.trim().length > 0 || (filters.category !== 'All' && repositoryGames.length > 0);
 
@@ -362,11 +394,14 @@ function AppContent() {
             ? 'admin'
             : currentRoute.view === 'saved'
             ? 'saved'
+            : currentRoute.view === 'premium'
+            ? 'premium'
             : 'home'
         }
         setActiveTab={(tab) => {
           if (tab === 'home') navigateTo('/');
           else if (tab === 'saved') navigateTo('/saved');
+          else if (tab === 'premium') navigateTo('/premium');
           else if (tab === 'admin') navigateTo('/admin');
         }}
         searchQuery={searchQuery}
@@ -378,6 +413,7 @@ function AppContent() {
           handleResetFilters();
           navigateTo('/');
         }}
+        onNavigatePremium={() => navigateTo('/premium')}
         onOpenAdminLogin={() => navigateTo('/admin/login')}
         isAdminAuthenticated={isAdminAuthenticated}
       />
@@ -462,6 +498,9 @@ function AppContent() {
               onNavigateHome={() => navigateTo('/')}
             />
           )
+        ) : currentRoute.view === 'premium' ? (
+          /* VIEW: Dedicated Premium Games Page (Requirement 4) */
+          <PremiumGamesView onNavigateHome={() => navigateTo('/')} />
         ) : currentRoute.view === 'saved' ? (
           /* VIEW 4: Saved Items Collection */
           <section className="py-4 space-y-6">
@@ -620,7 +659,7 @@ function AppContent() {
               onReset={handleResetFilters}
             />
 
-            {/* 3. Newly Added Section */}
+            {/* 3. Newly Added Section (Requirement 1: Sorted dynamically by newest addition) */}
             <GameRow
               title="NEWLY ADDED"
               iconType="package"
@@ -631,18 +670,7 @@ function AppContent() {
               emptyMessage="No newly added releases currently listed. The repository is cleared and ready for new uploads."
             />
 
-            {/* 4. Featured Games Section */}
-            <GameRow
-              title="FEATURED GAMES"
-              iconType="lightning"
-              games={featuredGames}
-              onSelectGame={setSelectedGame}
-              savedGameIds={savedGameIds}
-              onToggleSave={handleToggleSave}
-              emptyMessage="No featured games curated at this time. Editorial picks will appear here."
-            />
-
-            {/* 5. Popular Games Section */}
+            {/* 4. Popular Games Section (Requirement 2: Sorted by highest download count from valid DB data; Featured Games removed) */}
             <GameRow
               title="POPULAR GAMES"
               iconType="trophy"
@@ -654,7 +682,7 @@ function AppContent() {
               emptyMessage="No trending download statistics recorded yet."
             />
 
-            {/* 6. Latest Mods Section */}
+            {/* 5. Latest Mods Section */}
             <GameRow
               title="LATEST MODS"
               iconType="sparkles"

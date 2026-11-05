@@ -537,9 +537,150 @@ export async function saveSettingsToSupabase(settings: WebsiteSettings): Promise
       },
     );
 
+}
+
+// ==============================================================================
+// PREMIUM GAMES & ORDERS (Requirement 4, 5, & 6)
+// ==============================================================================
+
+import type { PremiumGame, Order, ProductAccess } from '../types/premium';
+
+export function premiumRowToGame(row: any): PremiumGame {
+  return {
+    id: row.id,
+    title: row.title || 'Untitled Premium Game',
+    slug: row.slug,
+    price: Number(row.price || 0),
+    originalPrice: row.original_price ? Number(row.original_price) : undefined,
+    shortDescription: row.short_description || '',
+    description: row.description || '',
+    iconUrl: row.icon_url || '',
+    coverUrl: row.cover_url || '',
+    bannerUrl: row.banner_url || '',
+    screenshots: Array.isArray(row.screenshots) ? row.screenshots : [],
+    downloadUrl: row.download_url || '',
+    version: row.version || 'v1.0.0',
+    fileSize: row.file_size || '500 MB',
+    features: Array.isArray(row.features) ? row.features : [],
+    category: row.category || 'Action',
+    developer: row.developer || 'Independent Developer',
+    isActive: row.is_active !== false,
+    visibility: (row.visibility as 'published' | 'draft') || 'published',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * Real-time subscriber for public & admin premium games.
+ */
+export function subscribeToPremiumGames(
+  onUpdate: (games: PremiumGame[]) => void,
+  onError?: (err: any) => void
+): Unsubscribe {
+  const channelId = `realtime_premium_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+  const fetchGames = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('premium_games')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        if (onError) onError(error);
+        return;
+      }
+      onUpdate((data || []).map(premiumRowToGame));
+    } catch (err) {
+      if (onError) onError(err);
+    }
+  };
+
+  fetchGames();
+
+  let channel: any = null;
+  try {
+    channel = supabase
+      .channel(channelId)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'premium_games' },
+        () => {
+          fetchGames();
+        }
+      )
+      .subscribe();
+  } catch (rtErr) {
+    console.warn('Realtime premium games channel notice:', rtErr);
+  }
+
+  return () => {
+    if (channel) {
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        // Safe cleanup
+      }
+    }
+  };
+}
+
+/**
+ * Saves or updates a premium game.
+ */
+export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Promise<PremiumGame> {
+  const safeId = ensureUUID(game.id);
+  const row = {
+    id: safeId,
+    title: game.title,
+    slug: game.slug,
+    price: game.price,
+    original_price: game.originalPrice || null,
+    short_description: game.shortDescription || '',
+    description: game.description || '',
+    icon_url: game.iconUrl || '',
+    cover_url: game.coverUrl || '',
+    banner_url: game.bannerUrl || '',
+    screenshots: game.screenshots || [],
+    download_url: game.downloadUrl || '',
+    version: game.version || 'v1.0.0',
+    file_size: game.fileSize || '500 MB',
+    features: game.features || [],
+    category: game.category || 'Action',
+    developer: game.developer || 'Independent Developer',
+    is_active: game.isActive !== false,
+    visibility: game.visibility || 'published',
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from('premium_games')
+    .upsert(row, { onConflict: 'id' })
+    .select()
+    .single();
+
   if (error) {
-    console.error('Supabase saveSettings error:', error);
+    console.error('Supabase savePremiumGame error:', error);
+    throw new Error(error.message);
+  }
+
+  return premiumRowToGame(data);
+}
+
+/**
+ * Deletes a premium game.
+ */
+export async function deletePremiumGameFromSupabase(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('premium_games')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Supabase deletePremiumGame error:', error);
     throw new Error(error.message);
   }
 }
+
 

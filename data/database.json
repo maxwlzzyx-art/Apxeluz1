@@ -70,5 +70,174 @@
     "enableDownloads": true,
     "maintenanceMode": false,
     "defaultArchitecture": "ARM64"
-  }
+  },
+  "premiumGames": [
+    {
+      "id": "prem-gta-sa",
+      "title": "Grand Theft Auto: San Andreas — Definitive HD Edition",
+      "slug": "gta-san-andreas-definitive-hd",
+      "price": 35000,
+      "originalPrice": 65000,
+      "shortDescription": "Visual remaster 60FPS dengan tekstur 4K HD, audio lossless, dan controller support penuh.",
+      "description": "Nikmati petualangan Carl Johnson di Los Santos dengan grafis Definitive Edition yang telah dioptimasi khusus untuk perangkat Android ARM64. Menggunakan lighting shader modern, HD textures pack, dan kompatibilitas gamepad Bluetooth.",
+      "iconUrl": "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=256&q=80",
+      "coverUrl": "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80",
+      "bannerUrl": "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80"
+      ],
+      "downloadUrl": "https://apxeluz.my.id/downloads/premium/gta_sa_def_v2.0_full.apk",
+      "version": "v2.1.0-DEF",
+      "fileSize": "2.4 GB",
+      "features": [
+        "Full 60FPS Unlock",
+        "4K Textures Pack",
+        "Full Gamepad Support",
+        "All Radio Stations Unlocked"
+      ],
+      "category": "Action",
+      "developer": "Rockstar Games / Port Community",
+      "isActive": true,
+      "visibility": "published",
+      "createdAt": "2026-11-05T16:03:38.710Z",
+      "updatedAt": "2026-11-05T16:03:38.710Z"
+    },
+    {
+      "id": "prem-hollow-knight",
+      "title": "Hollow Knight: Voidheart Mobile Edition",
+      "slug": "hollow-knight-voidheart-mobile",
+      "price": 25000,
+      "originalPrice": 50000,
+      "shortDescription": "Port Android resmi komunitas dengan resolusi native 120Hz dan layar sentuh responsif.",
+      "description": "Jelajahi Hallownest yang megah di genggaman Anda. Seluruh 4 paket konten ekspansi (Hidden Dreams, The Grimm Troupe, Lifeblood, Godmaster) terintegrasi dengan optimalisasi performa Snapdragon & Dimensity.",
+      "iconUrl": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=256&q=80",
+      "coverUrl": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=800&q=80",
+      "bannerUrl": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=1200&q=80",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=800&q=80"
+      ],
+      "downloadUrl": "https://apxeluz.my.id/downloads/premium/hollow_knight_voidheart.apk",
+      "version": "v1.5.78",
+      "fileSize": "1.2 GB",
+      "features": [
+        "Native 120Hz Support",
+        "Godmaster DLC included",
+        "Custom On-Screen Controls"
+      ],
+      "category": "Adventure",
+      "developer": "Team Cherry / Community Porters",
+      "isActive": true,
+      "visibility": "published",
+      "createdAt": "2026-11-05T16:03:38.710Z",
+      "updatedAt": "2026-11-05T16:03:38.710Z"
+    },
+    {
+      "id": "prem-re4-hd",
+      "title": "Resident Evil 4 Mobile Remake Remastered",
+      "slug": "re4-mobile-remake-hd",
+      "price": 40000,
+      "originalPrice": 70000,
+      "shortDescription": "Survival horror legendaris dengan texture modding HD dan kontrol modern over-the-shoulder.",
+      "description": "Penyelamatan putri Presiden Ashley Graham kini lebih mendebarkan dengan audio 3D spasial, kontrol bidikan halus, dan mod grafis Definitive.",
+      "iconUrl": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=256&q=80",
+      "coverUrl": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80",
+      "bannerUrl": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80"
+      ],
+      "downloadUrl": "https://apxeluz.my.id/downloads/premium/re4_remake_hd.apk",
+      "version": "v1.1.2",
+      "fileSize": "1.8 GB",
+      "features": [
+        "Over-the-shoulder Camera",
+        "English & Japanese Voices",
+        "Weapon Upgrades Unlocked"
+      ],
+      "category": "Action",
+      "developer": "Capcom / Biohazard Porters",
+      "isActive": true,
+      "visibility": "published",
+      "createdAt": "2026-11-05T16:03:38.710Z",
+      "updatedAt": "2026-11-05T16:03:38.710Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ORD-1793894618710-OXVCY",
+      "gameId": "prem-gta-sa",
+      "gameTitle": "Grand Theft Auto: San Andreas — Definitive HD Edition",
+      "customerName": "Budi Pratama",
+      "customerEmail": "budi@gmail.com",
+      "amount": 35000,
+      "status": "PAID",
+      "qiospayInvoiceId": "QP-SANDBOX-MW3QJEJA-647Q",
+      "qiospayPaymentUrl": "https://my.qiospay.com/sandbox/checkout?inv=QP-SANDBOX-MW3QJEJA-647Q&ref=ORD-1793894618710-OXVCY&amt=35000",
+      "qiospayQrString": "00020101021226680016ID.CO.QIOSPAY.WWW01189360099900000000010215QP-SANDBOX-MW3QJEJA-647Q520458125303360540350005802ID5911APXELUZ6007JAKARTA6304",
+      "createdAt": "2026-11-05T16:03:38.710Z",
+      "updatedAt": "2026-11-05T16:03:38.710Z",
+      "paidAt": "2026-11-05T16:04:20.103Z",
+      "paymentMethod": "QRIS",
+      "downloadToken": "T1JELTE3OTM4OTQ2MTg3MTAtT1hWQ1l8cHJlbS1ndGEtc2F8YnVkaUBnbWFpbC5jb218MjAyNi0xMS0wN1QxNjowNDoyMC4xMDNafGExNjMwZWY2MzdmNDEwOWMzZmI4NGE1MmUxMTc3OTVi"
+    }
+  ],
+  "paymentLogs": [
+    {
+      "id": "plog-1793894666685-hq5c",
+      "orderId": "ORD-1793894618710-OXVCY",
+      "invoiceId": "QP-SANDBOX-MW3QJEJA-647Q",
+      "eventType": "invoice.paid",
+      "status": "PAID",
+      "amount": 35000,
+      "ipAddress": "127.0.0.1",
+      "signatureValid": true,
+      "createdAt": "2026-11-05T16:04:26.685Z"
+    },
+    {
+      "id": "plog-1793894660103-occe",
+      "orderId": "ORD-1793894618710-OXVCY",
+      "invoiceId": "QP-SANDBOX-MW3QJEJA-647Q",
+      "eventType": "invoice.paid",
+      "status": "PAID",
+      "amount": 35000,
+      "ipAddress": "127.0.0.1",
+      "signatureValid": true,
+      "createdAt": "2026-11-05T16:04:20.103Z"
+    },
+    {
+      "id": "plog-1793894649747-3dba",
+      "orderId": "ORD-1793894618710-OXVCY",
+      "invoiceId": "QP-SANDBOX-MW3QJEJA-647Q",
+      "eventType": "invoice.paid",
+      "status": "PAID",
+      "amount": 35000,
+      "ipAddress": "127.0.0.1",
+      "signatureValid": false,
+      "createdAt": "2026-11-05T16:04:09.748Z"
+    },
+    {
+      "id": "plog-1793894627643-le7f",
+      "orderId": "ORD-1793894618710-OXVCY",
+      "invoiceId": "QP-SANDBOX-MW3QJEJA-647Q",
+      "eventType": "invoice.paid",
+      "status": "PAID",
+      "amount": 35000,
+      "ipAddress": "127.0.0.1",
+      "signatureValid": false,
+      "createdAt": "2026-11-05T16:03:47.643Z"
+    }
+  ],
+  "productAccess": [
+    {
+      "id": "pa-1793894660103-02rj",
+      "orderId": "ORD-1793894618710-OXVCY",
+      "gameId": "prem-gta-sa",
+      "customerEmail": "budi@gmail.com",
+      "downloadToken": "T1JELTE3OTM4OTQ2MTg3MTAtT1hWQ1l8cHJlbS1ndGEtc2F8YnVkaUBnbWFpbC5jb218MjAyNi0xMS0wN1QxNjowNDoyMC4xMDNafGExNjMwZWY2MzdmNDEwOWMzZmI4NGE1MmUxMTc3OTVi",
+      "downloadCount": 0,
+      "expiresAt": "2026-11-07T16:04:20.103Z",
+      "createdAt": "2026-11-05T16:04:20.103Z"
+    }
+  ]
 }

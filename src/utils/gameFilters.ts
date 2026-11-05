@@ -19,10 +19,28 @@ export function filterGames(games: Game[], filters: Partial<FilterOptions>): Gam
       }
     }
 
-    // Category filter
+    // Category filter (Requirement 2: Merged Games and Apps categories with backward compatibility)
     if (filters.category && filters.category !== 'All') {
-      if (game.category.toLowerCase() !== filters.category.toLowerCase()) {
-        return false;
+      const filterCat = filters.category.toLowerCase();
+      const itemCat = game.category.toLowerCase();
+      const itemType = (game.type || '').toLowerCase();
+
+      if (filterCat === 'games') {
+        // Matches game type or mod type or category 'games'
+        const isGameOrMod = itemType === 'game' || itemType === 'mod' || itemCat === 'games' || !['app', 'tools'].includes(itemType);
+        if (!isGameOrMod && itemCat !== 'games') {
+          return false;
+        }
+      } else if (filterCat === 'apps') {
+        // Matches app type or app mods
+        const isApp = itemType === 'app' || itemCat === 'apps' || itemCat.includes('tools') || itemCat.includes('utility');
+        if (!isApp && itemCat !== 'apps') {
+          return false;
+        }
+      } else {
+        if (itemCat !== filterCat) {
+          return false;
+        }
       }
     }
 
