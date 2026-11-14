@@ -8,6 +8,7 @@ interface GameCardProps {
   isSaved?: boolean;
   onToggleSave?: (gameId: string, e: React.MouseEvent) => void;
   ranking?: number;
+  headingLevel?: 'h2' | 'h3';
 }
 
 export const GameCard: React.FC<GameCardProps> = ({
@@ -16,7 +17,9 @@ export const GameCard: React.FC<GameCardProps> = ({
   isSaved = false,
   onToggleSave,
   ranking,
+  headingLevel = 'h3',
 }) => {
+  const HeadingTag = headingLevel;
   return (
     <div
       onClick={() => onSelect(game)}
@@ -103,12 +106,12 @@ export const GameCard: React.FC<GameCardProps> = ({
       {/* Info Content Area */}
       <div className="p-3.5 flex flex-col flex-grow justify-between">
         <div>
-          <h3
+          <HeadingTag
             className="text-sm font-bold text-white group-hover:text-[#0A84FF] transition-colors truncate leading-snug"
             title={game.title}
           >
             {game.title}
-          </h3>
+          </HeadingTag>
 
           <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
             <span className="font-mono text-slate-300">{game.version}</span>

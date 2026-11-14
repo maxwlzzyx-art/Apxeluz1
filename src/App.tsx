@@ -463,7 +463,7 @@ function AppContent() {
                 <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
                   <ShieldAlert className="w-7 h-7" />
                 </div>
-                <h2 className="heading-font text-xl font-bold text-white">Access Denied</h2>
+                <h1 className="heading-font text-xl font-bold text-white">Access Denied</h1>
                 <p className="text-xs text-slate-300 leading-relaxed">
                   The account {user?.email ? `"${user.email}"` : ''} is not authorized for administrator access. Only authorized administrators are permitted.
                 </p>
@@ -523,7 +523,7 @@ function AppContent() {
             {savedGames.length === 0 ? (
               <div className="text-center py-16 liquid-glass rounded-3xl border border-white/15 space-y-3.5">
                 <Bookmark className="w-10 h-10 mx-auto text-slate-400" />
-                <h3 className="heading-font text-lg font-bold text-white">No Saved Items</h3>
+                <h2 className="heading-font text-lg font-bold text-white">No Saved Items</h2>
                 <p className="text-xs text-slate-300 max-w-sm mx-auto">
                   Bookmark any mod, game, or application card to store it in your personal collection.
                 </p>
@@ -543,6 +543,7 @@ function AppContent() {
                     onSelect={setSelectedGame}
                     isSaved={true}
                     onToggleSave={handleToggleSave}
+                    headingLevel="h2"
                   />
                 ))}
               </div>
@@ -607,9 +608,9 @@ function AppContent() {
             {filteredAndSortedGames.length === 0 ? (
               <div className="text-center py-20 liquid-glass rounded-3xl border border-white/15 space-y-3.5">
                 <Search className="w-12 h-12 mx-auto text-slate-400" />
-                <h3 className="heading-font text-lg font-bold text-white uppercase tracking-tight">
+                <h2 className="heading-font text-lg font-bold text-white uppercase tracking-tight">
                   No Matching Items Found
-                </h3>
+                </h2>
                 <p className="text-xs text-slate-300 max-w-sm mx-auto">
                   {searchQuery
                     ? `No releases matched query "${searchQuery}".`
@@ -633,6 +634,7 @@ function AppContent() {
                     onSelect={setSelectedGame}
                     isSaved={savedGameIds.has(game.id)}
                     onToggleSave={handleToggleSave}
+                    headingLevel="h2"
                   />
                 ))}
               </div>
@@ -641,6 +643,22 @@ function AppContent() {
         ) : (
           /* VIEW 6: Main Homepage in Liquid Glass */
           <div className="space-y-8">
+            {/* Primary Unique Homepage H1 */}
+            <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
+              <div>
+                <h1 className="heading-font text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+                  {websiteSettings?.siteName || 'APXELUZ'}{' '}
+                  <span className="bg-gradient-to-r from-[#0A84FF] to-[#BF5AF2] bg-clip-text text-transparent">
+                    App &amp; Mod Repository
+                  </span>
+                </h1>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {websiteSettings?.siteDescription ||
+                    'Verified Android games, applications, and community mods with checksum integrity.'}
+                </p>
+              </div>
+            </section>
+
             {/* 1. Hot Category Section */}
             <HotCategories
               selectedCategory={filters.category}

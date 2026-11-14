@@ -187,12 +187,12 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   )}
                 </div>
 
-                <h1
+                <h2
                   id="modal-game-title"
                   className="heading-font text-2xl sm:text-3xl font-bold tracking-tight text-white"
                 >
                   {game.title}
-                </h1>
+                </h2>
 
                 <div className="flex items-center gap-3 text-xs text-slate-300 flex-wrap">
                   <span>Developer: <strong className="text-white">{game.developer}</strong></span>

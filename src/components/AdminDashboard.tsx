@@ -492,7 +492,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-white tracking-wide">APXELUZ Control Center</span>
+              <h1 className="text-sm font-bold text-white tracking-wide">APXELUZ Control Center</h1>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0A84FF]/20 text-[#0A84FF] border border-[#0A84FF]/40">
                 Administrator
               </span>
@@ -606,9 +606,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* Quick Actions Bar */}
           <div className="p-5 rounded-3xl liquid-glass border border-white/15 space-y-3">
-            <h3 className="heading-font text-xs font-bold text-white uppercase tracking-wider">
+            <h2 className="heading-font text-xs font-bold text-white uppercase tracking-wider">
               Quick Administration Actions
-            </h3>
+            </h2>
             <div className="flex flex-wrap gap-2.5">
               <button
                 onClick={() => {
@@ -658,9 +658,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* Recently Added Content */}
           <div className="p-6 rounded-3xl liquid-glass border border-white/15 space-y-4">
-            <h3 className="heading-font text-sm font-bold text-white uppercase tracking-wider">
+            <h2 className="heading-font text-sm font-bold text-white uppercase tracking-wider">
               Recently Managed Content
-            </h3>
+            </h2>
             {items.length === 0 ? (
               <p className="text-xs text-slate-400">
                 Database currently empty. Use the quick actions above to add games, mods, or apps.

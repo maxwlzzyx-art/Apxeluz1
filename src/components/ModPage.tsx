@@ -100,9 +100,7 @@ export const ModPage: React.FC<ModPageProps> = ({
     try {
       const textArea = document.createElement('textarea');
       textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
+      textArea.className = 'fixed -left-[9999px] -top-[9999px] opacity-0 pointer-events-none';
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
@@ -359,9 +357,9 @@ export const ModPage: React.FC<ModPageProps> = ({
           {activeTab === 'about' && (
             <div className="space-y-6">
               <div>
-                <h3 className="heading-font text-sm font-bold text-white uppercase tracking-wider mb-2.5">
+                <h2 className="heading-font text-sm font-bold text-white uppercase tracking-wider mb-2.5">
                   About this {typeLabel}
-                </h3>
+                </h2>
                 <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line">
                   {mod.description || `Verified ${typeLabel.toLowerCase()} release published to APXELUZ.`}
                 </p>
@@ -370,9 +368,9 @@ export const ModPage: React.FC<ModPageProps> = ({
               {/* Screenshots Gallery */}
               {mod.screenshots && mod.screenshots.length > 0 && (
                 <div>
-                  <h3 className="heading-font text-sm font-bold text-white uppercase tracking-wider mb-3">
+                  <h2 className="heading-font text-sm font-bold text-white uppercase tracking-wider mb-3">
                     {typeLabel} Screenshots
-                  </h3>
+                  </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
                     {mod.screenshots.map((shot, idx) => (
                       <div
@@ -397,9 +395,9 @@ export const ModPage: React.FC<ModPageProps> = ({
               {/* Mod Features */}
               {mod.features && mod.features.length > 0 && (
                 <div>
-                  <h3 className="heading-font text-sm font-bold text-white uppercase tracking-wider mb-3">
+                  <h2 className="heading-font text-sm font-bold text-white uppercase tracking-wider mb-3">
                     Key Features
-                  </h3>
+                  </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {mod.features.map((feature, idx) => (
                       <div
@@ -417,10 +415,10 @@ export const ModPage: React.FC<ModPageProps> = ({
               {/* Download Destinations & Mirrors */}
               <div className="pt-2">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="heading-font text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <h2 className="heading-font text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                     <Server className="w-4 h-4 text-[#0A84FF]" />
                     <span>Download Destinations & Mirrors</span>
-                  </h3>
+                  </h2>
                   <span className="text-xs text-slate-400">
                     Safe External Redirect
                   </span>
@@ -486,10 +484,10 @@ export const ModPage: React.FC<ModPageProps> = ({
                 {mod.versions && mod.versions.length > 0 && (
                   <div className="mt-6 pt-5 border-t border-white/10 space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="heading-font text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="heading-font text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
                         <History className="w-4 h-4 text-[#0A84FF]" />
                         <span>Previous Version Releases ({mod.versions.length})</span>
-                      </h4>
+                      </h3>
                       <span className="text-[11px] text-slate-400">Archived Releases</span>
                     </div>
 

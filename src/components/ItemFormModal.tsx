@@ -498,12 +498,12 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 {activeUpload.progress.percentage}%
               </span>
             </div>
-            <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-[#0A84FF] to-[#BF5AF2] h-full transition-all duration-200"
-                style={{ width: `${activeUpload.progress.percentage}%` }}
-              />
-            </div>
+            <progress
+              value={activeUpload.progress.percentage}
+              max={100}
+              aria-label={`Upload progress for ${activeUpload.filename}`}
+              className="w-full h-2 rounded-full overflow-hidden appearance-none bg-white/10 [&::-webkit-progress-bar]:bg-white/10 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-[#0A84FF] [&::-webkit-progress-value]:to-[#BF5AF2] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:transition-all [&::-moz-progress-bar]:bg-[#0A84FF]"
+            />
             <div className="flex items-center justify-between text-[11px] text-slate-300">
               <span>
                 {(activeUpload.progress.bytesTransferred / (1024 * 1024)).toFixed(1)} MB /{' '}

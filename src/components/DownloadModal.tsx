@@ -116,9 +116,9 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
               </span>
               <span className="font-mono text-xs text-slate-300">{game.version}</span>
             </div>
-            <h3 id="download-title" className="heading-font text-lg font-bold text-white mt-1">
+            <h2 id="download-title" className="heading-font text-lg font-bold text-white mt-1">
               {game.title}
-            </h3>
+            </h2>
             <p className="text-xs text-slate-400">
               File Size: <span className="text-white font-medium">{game.fileSize}</span> • Arch:{' '}
               <span className="text-white font-medium">{game.architecture}</span>

@@ -17,6 +17,7 @@ import {
   verifyDownloadAccessToken,
   getQiosPayConfig,
 } from './src/lib/qiospayService';
+import { buildSecurityHeaders } from './src/lib/securityHeaders';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -252,7 +253,35 @@ const downloadDebounceMap = new Map<string, number>();
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+  app.disable('x-powered-by');
+  app.set('trust proxy', 1);
+
+  const isProd = process.env.NODE_ENV === 'production';
+  const supabaseOrigin = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || isProd;
+    const securityHeaders = buildSecurityHeaders({
+      isDev: !isProd,
+      isHttps,
+      supabaseUrl: supabaseOrigin,
+      allowPreviewFrame: !isProd || process.env.ALLOW_PREVIEW_FRAME === 'true',
+    });
+
+    for (const [headerName, headerValue] of Object.entries(securityHeaders)) {
+      res.setHeader(headerName, headerValue);
+    }
+    next();
+  });
+
+  const cliArgs = process.argv.slice(2);
+  const portArgIdx = cliArgs.indexOf('--port');
+  const portFromArg = portArgIdx !== -1 && cliArgs[portArgIdx + 1] ? parseInt(cliArgs[portArgIdx + 1], 10) : NaN;
+  const PORT = !isNaN(portFromArg) ? portFromArg : (process.env.PORT ? parseInt(process.env.PORT, 10) : 3000);
+
+  const hostArgIdx = cliArgs.indexOf('--host');
+  const hostFromArg = hostArgIdx !== -1 && cliArgs[hostArgIdx + 1] ? cliArgs[hostArgIdx + 1] : undefined;
+  const HOST = hostFromArg || process.env.HOST || '0.0.0.0';
 
   // JSON body parser with 15MB limit and RAW BODY preservation for HMAC-SHA256 webhooks
   app.use(
@@ -1307,8 +1336,8 @@ async function startServer() {
     app.use(vite.middlewares);
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`APXELUZ server running at http://0.0.0.0:${PORT}`);
+  app.listen(PORT, HOST, () => {
+    console.log(`APXELUZ server running at http://${HOST}:${PORT}`);
   });
 }
 

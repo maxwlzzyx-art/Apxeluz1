@@ -71,9 +71,9 @@ export const Footer: React.FC = () => {
             className="w-full max-w-md liquid-glass rounded-3xl border border-white/20 p-6 sm:p-7 shadow-2xl text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="heading-font text-lg font-bold text-white uppercase tracking-wider mb-3">
+            <h2 className="heading-font text-lg font-bold text-white uppercase tracking-wider mb-3">
               {modalContent.title}
-            </h3>
+            </h2>
             <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">
               {modalContent.body}
             </p>

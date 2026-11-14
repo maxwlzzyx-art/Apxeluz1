@@ -473,9 +473,9 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
             {/* Screenshots */}
             {selectedGame.screenshots && selectedGame.screenshots.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
                   Tangkapan Layar
-                </h4>
+                </h3>
                 <div className="grid grid-cols-2 gap-2">
                   {selectedGame.screenshots.map((s, idx) => (
                     <img
@@ -491,7 +491,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
 
             {/* Description */}
             <div className="space-y-2 text-xs text-slate-300 leading-relaxed">
-              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">Deskripsi</h4>
+              <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Deskripsi</h3>
               <p>{selectedGame.description || selectedGame.shortDescription}</p>
             </div>
 
