@@ -6,77 +6,247 @@
   }
 
   body {
-    background-color: #080c1f;
-    background-image: 
-      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(10, 132, 255, 0.22), transparent 70%),
-      radial-gradient(ellipse 60% 50% at 80% 15%, rgba(191, 90, 242, 0.20), transparent 65%),
-      radial-gradient(ellipse 70% 60% at 50% 90%, rgba(94, 92, 230, 0.18), transparent 70%),
-      linear-gradient(160deg, #070a1a 0%, #0d132d 40%, #151638 75%, #090e24 100%);
+    background-color: #eef9f5;
+    background-image:
+      radial-gradient(ellipse 75% 55% at 10% 4%, rgba(153, 232, 204, 0.56), transparent 68%),
+      radial-gradient(ellipse 70% 55% at 88% 12%, rgba(162, 221, 252, 0.58), transparent 66%),
+      radial-gradient(ellipse 78% 58% at 50% 96%, rgba(176, 235, 214, 0.45), transparent 72%),
+      linear-gradient(165deg, #f4fcf9 0%, #e7f6fa 44%, #edf9f3 78%, #e4f3fc 100%);
     background-attachment: fixed;
-    color: #F8FAFC;
-    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #0f2c38;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 }
 
-/* Liquid Glass Utilities */
+/* 3D Soft Text Depth (Zero Neon) */
+.text-3d {
+  text-shadow:
+    0 2px 6px rgba(15, 58, 72, 0.13),
+    0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.text-3d-subtle {
+  text-shadow:
+    0 1px 3px rgba(15, 58, 72, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+/* Serene Frosted Liquid Glass Panels with Soft 3D Layered Depth */
 .liquid-glass {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.32), inset 0 1px 1px 0 rgba(255, 255, 255, 0.22);
+  background: linear-gradient(
+    148deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(241, 251, 248, 0.62) 52%,
+    rgba(232, 246, 254, 0.68) 100%
+  );
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 14px 32px -10px rgba(24, 84, 96, 0.12),
+    0 4px 12px -2px rgba(24, 84, 96, 0.06),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.96),
+    inset 0 -2px 4px rgba(132, 188, 202, 0.16);
 }
 
 .liquid-glass-subtle {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(20px) saturate(170%);
-  -webkit-backdrop-filter: blur(20px) saturate(170%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(237, 250, 247, 0.56) 100%
+  );
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow:
+    0 6px 16px -6px rgba(24, 84, 96, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    inset 0 -2px 0 rgba(126, 182, 198, 0.16);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease;
 }
 
+.liquid-glass-subtle:active {
+  transform: translateY(1.5px) scale(0.975);
+  box-shadow:
+    0 2px 6px -2px rgba(24, 84, 96, 0.08),
+    inset 0 2px 4px rgba(24, 84, 96, 0.09);
+}
+
+/* 3D Tactile Liquid Glass Card */
 .liquid-glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  background: linear-gradient(
+    152deg,
+    rgba(255, 255, 255, 0.84) 0%,
+    rgba(239, 251, 247, 0.66) 54%,
+    rgba(229, 245, 254, 0.72) 100%
+  );
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 12px 26px -8px rgba(22, 82, 94, 0.13),
+    0 4px 10px -2px rgba(22, 82, 94, 0.06),
+    inset 0 2px 1px rgba(255, 255, 255, 0.98),
+    inset 0 -3px 0 rgba(124, 186, 200, 0.22);
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s ease;
+}
+
+.liquid-glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    130deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.08) 38%,
+    rgba(186, 230, 253, 0.12) 100%
+  );
+  opacity: 0.7;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
 .liquid-glass-card:hover {
-  border-color: rgba(10, 132, 255, 0.5);
-  box-shadow: 0 14px 38px -5px rgba(10, 132, 255, 0.22), inset 0 1px 2px rgba(255, 255, 255, 0.35);
+  border-color: rgba(13, 148, 136, 0.35);
+  box-shadow:
+    0 18px 34px -10px rgba(22, 82, 94, 0.16),
+    0 6px 14px -3px rgba(22, 82, 94, 0.08),
+    inset 0 2px 1px rgba(255, 255, 255, 1),
+    inset 0 -3px 0 rgba(13, 148, 136, 0.24);
   transform: translateY(-2px);
 }
 
+.liquid-glass-card:active {
+  transform: translateY(2px) scale(0.975);
+  box-shadow:
+    0 4px 10px -4px rgba(22, 82, 94, 0.11),
+    inset 0 2px 6px rgba(22, 82, 94, 0.10),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* 3D Tactile Primary Liquid Button (Pastel Ocean-Teal Depth, Zero Neon) */
 .liquid-glass-button {
-  background: linear-gradient(135deg, rgba(10, 132, 255, 0.9) 0%, rgba(94, 92, 230, 0.9) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  box-shadow: 0 4px 18px rgba(10, 132, 255, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, #22b8a6 0%, #0d9488 48%, #0284c7 100%);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow:
+    0 8px 18px -6px rgba(13, 148, 136, 0.28),
+    0 3px 6px -2px rgba(2, 132, 199, 0.16),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.52),
+    inset 0 -3px 0 rgba(7, 89, 133, 0.28);
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.16s ease;
+}
+
+.liquid-glass-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.04) 48%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 .liquid-glass-button:hover {
-  background: linear-gradient(135deg, rgba(30, 144, 255, 0.95) 0%, rgba(120, 115, 255, 0.95) 100%);
-  box-shadow: 0 6px 24px rgba(10, 132, 255, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.6);
-  transform: scale(1.02);
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 22px -6px rgba(13, 148, 136, 0.32),
+    0 4px 8px -2px rgba(2, 132, 199, 0.18),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.62),
+    inset 0 -3px 0 rgba(7, 89, 133, 0.28);
 }
 
+.liquid-glass-button:active {
+  transform: translateY(2px) scale(0.97);
+  box-shadow:
+    0 2px 6px -2px rgba(13, 148, 136, 0.22),
+    inset 0 2px 5px rgba(7, 89, 133, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* 3D Tactile Secondary Frosted Button */
 .liquid-glass-button-secondary {
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(232, 247, 244, 0.74) 100%
+  );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 6px 14px -5px rgba(22, 82, 94, 0.12),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -2.5px 0 rgba(124, 186, 200, 0.24);
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.16s ease;
 }
 
 .liquid-glass-button-secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: rgba(13, 148, 136, 0.32);
+  transform: translateY(-1px);
+}
+
+.liquid-glass-button-secondary:active {
+  transform: translateY(2px) scale(0.975);
+  box-shadow:
+    0 2px 5px -2px rgba(22, 82, 94, 0.10),
+    inset 0 2px 4px rgba(22, 82, 94, 0.12);
+}
+
+/* Soft Tactile Press Utility for Interactive Pills/Tabs/Chips */
+.tactile-press {
+  transition:
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.15s ease;
+}
+
+.tactile-press:active {
+  transform: translateY(1.5px) scale(0.96);
+}
+
+/* Subtle Liquid Blob Shimmer (No Neon, Soft Pastel Motion) */
+@keyframes liquidDrift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    border-radius: 58% 42% 52% 48% / 46% 56% 44% 54%;
+  }
+  50% {
+    transform: translate3d(6px, -4px, 0) scale(1.03);
+    border-radius: 44% 56% 46% 54% / 55% 42% 58% 45%;
+  }
+}
+
+.liquid-orb {
+  animation: liquidDrift 12s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-orb {
+    animation: none;
+  }
+  .liquid-glass-card,
+  .liquid-glass-button,
+  .liquid-glass-button-secondary,
+  .tactile-press {
+    transition: none;
+  }
 }
 
 /* Custom scrollbars */
@@ -93,19 +263,18 @@
   width: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(15, 44, 56, 0.04);
   border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(15, 44, 56, 0.16);
   border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(10, 132, 255, 0.6);
+  background: rgba(13, 148, 136, 0.45);
 }
 
 .heading-font {
   font-family: var(--font-heading);
   letter-spacing: -0.015em;
 }
-

@@ -483,38 +483,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const safeCategories = Array.isArray(categories) ? categories : [];
 
   return (
-    <div className="w-full max-w-7xl mx-auto py-6 px-4 sm:px-6 space-y-6 text-left">
+    <div className="w-full max-w-7xl mx-auto py-4 sm:py-6 px-2 sm:px-6 space-y-6 text-left">
       {/* Top Header Bar */}
-      <div className="p-5 sm:p-6 rounded-3xl liquid-glass border border-white/20 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="p-5 sm:p-6 rounded-[28px] liquid-glass flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#0A84FF]/25 to-[#BF5AF2]/25 border border-white/25 flex items-center justify-center text-[#0A84FF] shadow-[0_4px_16px_rgba(10,132,255,0.3)]">
+          <div className="w-11 h-11 rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#0d9488] flex-shrink-0">
             <Shield className="w-6 h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-white tracking-wide">APXELUZ Control Center</h1>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0A84FF]/20 text-[#0A84FF] border border-[#0A84FF]/40">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle tracking-tight">
+                APXELUZ Control Center
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#d7f5eb] text-[#0f766e] border border-[#99e8cc]">
                 Administrator
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Logged in as <strong className="text-white">{adminUsername}</strong> • Full CMS Write Access
+            <p className="text-xs text-[#355968]">
+              Logged in as <strong className="text-[#0f2c38]">{adminUsername}</strong> • Full CMS Write Access
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 w-full md:w-auto">
           <button
             onClick={onNavigateHome}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-subtle hover:bg-white/20 text-xs font-semibold text-slate-200 border border-white/15 transition-all"
+            className="flex-1 md:flex-initial min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button-secondary text-xs font-semibold text-[#0f2c38] cursor-pointer"
           >
-            <Eye className="w-4 h-4 text-[#0A84FF]" />
+            <Eye className="w-4 h-4 text-[#0284c7]" />
             <span>View Public Site</span>
           </button>
 
           <button
             onClick={onLogout}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-bold transition-all shadow-sm"
+            className="flex-1 md:flex-initial min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-colors tactile-press cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             <span>Log Out</span>
@@ -523,7 +525,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
 
       {/* Navigation Tabs for the 8 Admin Sections */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 snap-x">
         {[
           { id: 'overview', label: 'Overview', icon: LayoutDashboard, count: undefined },
           { id: 'games', label: 'Games & Mods', icon: Gamepad2, count: gamesList.length },
@@ -540,16 +542,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveSection(tab.id as any)}
-              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold border transition-all duration-300 ${
+              className={`snap-start flex-shrink-0 min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold cursor-pointer ${
                 isActive
-                  ? 'bg-gradient-to-r from-[#0A84FF]/25 to-[#BF5AF2]/25 text-white border-[#0A84FF]/60 shadow-[0_4px_18px_rgba(10,132,255,0.3)]'
-                  : 'liquid-glass-subtle text-slate-300 hover:text-white hover:bg-white/10 border-white/10'
+                  ? 'liquid-glass-button text-white'
+                  : 'liquid-glass-subtle text-[#355968] hover:text-[#0f2c38]'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-[#0A84FF]' : 'text-slate-400'}`} />
+              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#0284c7]'}`} />
               <span>{tab.label}</span>
               {tab.count !== undefined && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300 font-mono">
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                    isActive ? 'bg-white/25 text-white' : 'bg-white/80 text-[#0f2c38]'
+                  }`}
+                >
                   {tab.count}
                 </span>
               )}
@@ -562,51 +568,51 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeSection === 'overview' && (
         <div className="space-y-6">
           {/* Real Database Statistics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-5 rounded-3xl liquid-glass border border-white/15 space-y-1 shadow-lg">
-              <div className="flex items-center justify-between text-slate-400 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="p-4 sm:p-5 rounded-3xl liquid-glass-card space-y-1">
+              <div className="flex items-center justify-between text-[#4a6f7d] text-xs font-semibold">
                 <span>Total Games</span>
-                <Gamepad2 className="w-4 h-4 text-[#0A84FF]" />
+                <Gamepad2 className="w-4 h-4 text-[#0284c7]" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#0f2c38] text-3d-subtle font-mono">
                 {stats?.totalGames || 0}
               </div>
             </div>
 
-            <div className="p-5 rounded-3xl liquid-glass border border-white/15 space-y-1 shadow-lg">
-              <div className="flex items-center justify-between text-slate-400 text-xs">
+            <div className="p-4 sm:p-5 rounded-3xl liquid-glass-card space-y-1">
+              <div className="flex items-center justify-between text-[#4a6f7d] text-xs font-semibold">
                 <span>Total Mods</span>
-                <Sparkles className="w-4 h-4 text-[#BF5AF2]" />
+                <Sparkles className="w-4 h-4 text-[#0d9488]" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#0f2c38] text-3d-subtle font-mono">
                 {stats?.totalMods || 0}
               </div>
             </div>
 
-            <div className="p-5 rounded-3xl liquid-glass border border-white/15 space-y-1 shadow-lg">
-              <div className="flex items-center justify-between text-slate-400 text-xs">
+            <div className="p-4 sm:p-5 rounded-3xl liquid-glass-card space-y-1">
+              <div className="flex items-center justify-between text-[#4a6f7d] text-xs font-semibold">
                 <span>Total Apps</span>
-                <Smartphone className="w-4 h-4 text-[#0A84FF]" />
+                <Smartphone className="w-4 h-4 text-[#0284c7]" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#0f2c38] text-3d-subtle font-mono">
                 {stats?.totalApps || 0}
               </div>
             </div>
 
-            <div className="p-5 rounded-3xl liquid-glass border border-white/15 space-y-1 shadow-lg">
-              <div className="flex items-center justify-between text-slate-400 text-xs">
+            <div className="p-4 sm:p-5 rounded-3xl liquid-glass-card space-y-1">
+              <div className="flex items-center justify-between text-[#4a6f7d] text-xs font-semibold">
                 <span>Categories</span>
-                <FolderTree className="w-4 h-4 text-emerald-400" />
+                <FolderTree className="w-4 h-4 text-[#0d9488]" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#0f2c38] text-3d-subtle font-mono">
                 {stats?.totalCategories || 0}
               </div>
             </div>
           </div>
 
           {/* Quick Actions Bar */}
-          <div className="p-5 rounded-3xl liquid-glass border border-white/15 space-y-3">
-            <h2 className="heading-font text-xs font-bold text-white uppercase tracking-wider">
+          <div className="p-5 rounded-3xl liquid-glass space-y-3">
+            <h2 className="heading-font text-xs font-extrabold text-[#0f2c38] uppercase tracking-wider">
               Quick Administration Actions
             </h2>
             <div className="flex flex-wrap gap-2.5">
@@ -616,10 +622,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   setEditingItem(null);
                   setIsItemModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white"
+                className="min-h-[44px] flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Add Game</span>
+                <span>Add Game</span>
               </button>
 
               <button
@@ -628,10 +634,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   setEditingItem(null);
                   setIsItemModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white"
+                className="min-h-[44px] flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Add Mod</span>
+                <span>Add Mod</span>
               </button>
 
               <button
@@ -640,47 +646,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   setEditingItem(null);
                   setIsItemModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white"
+                className="min-h-[44px] flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Add App</span>
+                <span>Add App</span>
               </button>
 
               <button
                 onClick={() => setActiveSection('categories')}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-subtle hover:bg-white/20 text-xs font-semibold text-white border border-white/20"
+                className="min-h-[44px] flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button-secondary text-xs font-bold text-[#0f2c38] cursor-pointer"
               >
-                <FolderTree className="w-4 h-4 text-emerald-400" />
+                <FolderTree className="w-4 h-4 text-[#0d9488]" />
                 <span>Manage Categories</span>
               </button>
             </div>
           </div>
 
           {/* Recently Added Content */}
-          <div className="p-6 rounded-3xl liquid-glass border border-white/15 space-y-4">
-            <h2 className="heading-font text-sm font-bold text-white uppercase tracking-wider">
+          <div className="p-5 sm:p-6 rounded-3xl liquid-glass space-y-4">
+            <h2 className="heading-font text-sm font-extrabold text-[#0f2c38] uppercase tracking-wider">
               Recently Managed Content
             </h2>
             {items.length === 0 ? (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#4a6f7d]">
                 Database currently empty. Use the quick actions above to add games, mods, or apps.
               </p>
             ) : (
-              <div className="divide-y divide-white/10">
+              <div className="divide-y divide-[#0f2c38]/10">
                 {items.slice(0, 5).map((item) => (
-                  <div key={item.id} className="py-3 flex items-center justify-between gap-4">
+                  <div key={item.id} className="py-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-12 rounded-xl overflow-hidden bg-white/10 border border-white/20 flex-shrink-0">
-                        <img src={item.coverUrl} alt="" className="w-full h-full object-cover" />
+                      <div className="w-10 h-12 rounded-xl overflow-hidden bg-white/80 border border-white flex-shrink-0">
+                        <img src={item.coverUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white truncate">{item.title}</span>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-white/10 text-[#0A84FF]">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-bold text-[#0f2c38] truncate">{item.title}</span>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-[#dff1ff] text-[#0369a1]">
                             /{item.type}/{item.slug}
                           </span>
                         </div>
-                        <div className="text-xs text-slate-400">
+                        <div className="text-xs text-[#4a6f7d]">
                           {item.formattedFileSize} • {item.category} • {item.visibility}
                         </div>
                       </div>
@@ -688,20 +694,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <button
                         onClick={() => handleCopyPublicUrl(item)}
-                        className="p-2 rounded-xl liquid-glass-subtle hover:bg-white/20 text-slate-300 hover:text-white"
+                        className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
                         title="Copy Public URL"
                       >
-                        {copiedSlug === item.slug ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                        {copiedSlug === item.slug ? <Check className="w-4 h-4 text-[#0d9488]" /> : <Copy className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={() => {
                           setEditingItem(item);
                           setIsItemModalOpen(true);
                         }}
-                        className="p-2 rounded-xl liquid-glass-subtle hover:bg-white/20 text-slate-300 hover:text-white"
+                        className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl liquid-glass-subtle text-[#0284c7] cursor-pointer"
                         title="Edit Item"
                       >
-                        <Edit className="w-4 h-4 text-[#0A84FF]" />
+                        <Edit className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -717,10 +723,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="heading-font text-lg font-bold text-white uppercase tracking-wider">
+              <h2 className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle uppercase tracking-wider">
                 Manage {activeSection === 'games' ? 'Games & Mods' : 'Apps'}
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#355968]">
                 Create, edit, toggle visibility, and delete {activeSection === 'games' ? 'games and mods' : 'apps'}. All changes reflect instantly on the public website.
               </p>
             </div>
@@ -730,29 +736,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 setEditingItem(null);
                 setIsItemModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white self-start sm:self-auto cursor-pointer"
+              className="min-h-[44px] flex items-center gap-1.5 px-5 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white self-start sm:self-auto cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add New {activeSection === 'games' ? 'Game/Mod' : 'App'}</span>
+              <span>Add New {activeSection === 'games' ? 'Game/Mod' : 'App'}</span>
             </button>
           </div>
 
           {/* Table / List */}
-          <div className="p-4 sm:p-6 rounded-3xl liquid-glass border border-white/15 overflow-x-auto shadow-2xl">
+          <div className="p-4 sm:p-6 rounded-3xl liquid-glass overflow-x-auto">
             {(activeSection === 'games' ? gamesList : appsList).length === 0 ? (
-              <div className="text-center py-16 space-y-3">
-                <div className="w-12 h-12 mx-auto rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-slate-400">
+              <div className="text-center py-14 space-y-3">
+                <div className="w-12 h-12 mx-auto rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#4a6f7d]">
                   <Plus className="w-6 h-6" />
                 </div>
-                <h3 className="text-sm font-semibold text-white">No {activeSection} found in database</h3>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Click the "+ Add New" button above to publish your first {activeSection === 'games' ? 'game' : 'app'}.
+                <h3 className="text-sm font-bold text-[#0f2c38]">No {activeSection} found in database</h3>
+                <p className="text-xs text-[#4a6f7d] max-w-sm mx-auto">
+                  Click the "Add New" button above to publish your first {activeSection === 'games' ? 'game' : 'app'}.
                 </p>
               </div>
             ) : (
-              <table className="w-full text-left text-xs text-slate-300">
+              <table className="w-full text-left text-xs text-[#355968]">
                 <thead>
-                  <tr className="border-b border-white/10 text-slate-400 uppercase text-[10px] tracking-wider">
+                  <tr className="border-b border-[#0f2c38]/10 text-[#4a6f7d] uppercase text-[10px] tracking-wider">
                     <th className="pb-3 pl-2">Item</th>
                     <th className="pb-3">URL Slug</th>
                     <th className="pb-3">Category</th>
@@ -761,78 +767,79 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <th className="pb-3 pr-2 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/10">
-                  {(activeSection === 'games' ? gamesList : appsList)
-                    .map((item) => (
-                      <tr key={item.id} className="hover:bg-white/5 transition-colors">
-                        <td className="py-3 pl-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-12 rounded-xl overflow-hidden bg-white/10 border border-white/20 flex-shrink-0">
-                              <img src={item.coverUrl} alt="" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-white">{item.title}</div>
-                              <div className="text-[10px] text-slate-400">{item.version} • {item.developer}</div>
+                <tbody className="divide-y divide-[#0f2c38]/10">
+                  {(activeSection === 'games' ? gamesList : appsList).map((item) => (
+                    <tr key={item.id} className="hover:bg-white/40 transition-colors">
+                      <td className="py-3 pl-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-12 rounded-xl overflow-hidden bg-white/80 border border-white flex-shrink-0">
+                            <img src={item.coverUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-[#0f2c38]">{item.title}</div>
+                            <div className="text-[10px] text-[#4a6f7d]">
+                              {item.version} • {item.developer}
                             </div>
                           </div>
-                        </td>
-                        <td className="py-3 font-mono text-[#0A84FF]">
-                          /{item.type}/{item.slug}
-                        </td>
-                        <td className="py-3">{item.category}</td>
-                        <td className="py-3 font-mono">{item.formattedFileSize}</td>
-                        <td className="py-3">
+                        </div>
+                      </td>
+                      <td className="py-3 font-mono text-[#0284c7]">
+                        /{item.type}/{item.slug}
+                      </td>
+                      <td className="py-3">{item.category}</td>
+                      <td className="py-3 font-mono">{item.formattedFileSize}</td>
+                      <td className="py-3">
+                        <button
+                          onClick={() => handleToggleVisibility(item)}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 cursor-pointer ${
+                            item.visibility === 'published'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-white/80 text-[#4a6f7d] border-[#0f2c38]/15'
+                          }`}
+                        >
+                          {item.visibility === 'published' ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                          <span>{item.visibility}</span>
+                        </button>
+                      </td>
+                      <td className="py-3 pr-2 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => handleToggleVisibility(item)}
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 ${
-                              item.visibility === 'published'
-                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                                : 'bg-slate-700/50 text-slate-400 border-white/10'
-                            }`}
+                            onClick={() => handleCopyPublicUrl(item)}
+                            className="p-2 rounded-xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
+                            title="Copy URL"
                           >
-                            {item.visibility === 'published' ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                            <span>{item.visibility}</span>
+                            {copiedSlug === item.slug ? <Check className="w-3.5 h-3.5 text-[#0d9488]" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>
-                        </td>
-                        <td className="py-3 pr-2 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleCopyPublicUrl(item)}
-                              className="p-1.5 rounded-xl liquid-glass-subtle hover:bg-white/20 text-slate-300 hover:text-white"
-                              title="Copy URL"
-                            >
-                              {copiedSlug === item.slug ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                            </button>
-                            <a
-                              href={`/${item.type}/${item.slug}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 rounded-xl liquid-glass-subtle hover:bg-white/20 text-slate-300 hover:text-white"
-                              title="Open Public Preview"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                            <button
-                              onClick={() => {
-                                setEditingItem(item);
-                                setIsItemModalOpen(true);
-                              }}
-                              className="p-1.5 rounded-xl liquid-glass-subtle hover:bg-white/20 text-[#0A84FF]"
-                              title="Edit"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setDeletingItem(item)}
-                              className="p-1.5 rounded-xl liquid-glass-subtle hover:bg-white/20 text-rose-400 hover:text-rose-300"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          <a
+                            href={`/${item.type}/${item.slug}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 rounded-xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38]"
+                            title="Open Public Preview"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                          <button
+                            onClick={() => {
+                              setEditingItem(item);
+                              setIsItemModalOpen(true);
+                            }}
+                            className="p-2 rounded-xl liquid-glass-subtle text-[#0284c7] cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setDeletingItem(item)}
+                            className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             )}
@@ -844,18 +851,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeSection === 'categories' && (
         <div className="space-y-6">
           <div>
-            <h2 className="heading-font text-lg font-bold text-white uppercase tracking-wider">
+            <h2 className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle uppercase tracking-wider">
               Category Management
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#355968]">
               Create, rename, reorder, and remove categories. Visitors only view categories and browse their assigned items.
             </p>
           </div>
 
           {/* Create Category Form */}
-          <form onSubmit={handleSaveCategory} className="p-5 rounded-3xl liquid-glass border border-white/15 flex flex-col sm:flex-row gap-3 items-end">
+          <form onSubmit={handleSaveCategory} className="p-5 rounded-3xl liquid-glass flex flex-col sm:flex-row gap-3 items-end">
             <div className="flex-grow w-full">
-              <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
+              <label className="text-[11px] font-bold text-[#0f2c38] uppercase block mb-1">
                 Category Name
               </label>
               <input
@@ -864,33 +871,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 placeholder="e.g. Action, RPG, Simulation, Tools"
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
+                className="w-full min-h-[44px] bg-white/80 text-sm text-[#0f2c38] placeholder-[#648896] rounded-2xl px-3.5 py-2.5 border border-white/90 focus:outline-none focus:border-[#0d9488] shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
 
             <div className="w-full sm:w-48">
-              <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
+              <label className="text-[11px] font-bold text-[#0f2c38] uppercase block mb-1">
                 Icon
               </label>
               <select
                 value={newCatIcon}
                 onChange={(e) => setNewCatIcon(e.target.value)}
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60"
+                className="w-full min-h-[44px] bg-white/80 text-sm text-[#0f2c38] rounded-2xl px-3.5 py-2.5 border border-white/90 focus:outline-none focus:border-[#0d9488]"
               >
-                <option value="Sparkles" className="bg-[#0f172a]">Sparkles</option>
-                <option value="Sword" className="bg-[#0f172a]">Sword</option>
-                <option value="Compass" className="bg-[#0f172a]">Compass</option>
-                <option value="Layers" className="bg-[#0f172a]">Layers</option>
-                <option value="Shield" className="bg-[#0f172a]">Shield</option>
-                <option value="Cpu" className="bg-[#0f172a]">Cpu</option>
-                <option value="Gauge" className="bg-[#0f172a]">Gauge</option>
-                <option value="Trophy" className="bg-[#0f172a]">Trophy</option>
+                <option value="Sparkles" className="bg-[#f2faf7] text-[#0f2c38]">Sparkles</option>
+                <option value="Sword" className="bg-[#f2faf7] text-[#0f2c38]">Sword</option>
+                <option value="Compass" className="bg-[#f2faf7] text-[#0f2c38]">Compass</option>
+                <option value="Layers" className="bg-[#f2faf7] text-[#0f2c38]">Layers</option>
+                <option value="Shield" className="bg-[#f2faf7] text-[#0f2c38]">Shield</option>
+                <option value="Cpu" className="bg-[#f2faf7] text-[#0f2c38]">Cpu</option>
+                <option value="Gauge" className="bg-[#f2faf7] text-[#0f2c38]">Gauge</option>
+                <option value="Trophy" className="bg-[#f2faf7] text-[#0f2c38]">Trophy</option>
               </select>
             </div>
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white flex-shrink-0"
+              className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white flex-shrink-0 cursor-pointer"
             >
               {editingCategory ? 'Update Category' : '+ Create Category'}
             </button>
@@ -901,7 +908,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   setEditingCategory(null);
                   setNewCatName('');
                 }}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-2xl liquid-glass-subtle text-xs text-slate-400 hover:text-white"
+                className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-2xl liquid-glass-button-secondary text-xs font-semibold text-[#355968] hover:text-[#0f2c38] cursor-pointer"
               >
                 Cancel
               </button>
@@ -909,9 +916,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </form>
 
           {/* Categories List */}
-          <div className="p-4 sm:p-6 rounded-3xl liquid-glass border border-white/15 space-y-3">
+          <div className="p-4 sm:p-6 rounded-3xl liquid-glass space-y-3">
             {categories.length === 0 ? (
-              <p className="text-xs text-slate-400 py-6 text-center">
+              <p className="text-xs text-[#4a6f7d] py-6 text-center">
                 No categories created yet. Use the form above to add your first category.
               </p>
             ) : (
@@ -922,15 +929,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     className="p-3.5 rounded-2xl liquid-glass-subtle flex items-center justify-between gap-4"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-6 text-center font-mono text-xs text-slate-500 font-bold">
+                      <span className="w-6 text-center font-mono text-xs text-[#4a6f7d] font-bold">
                         #{idx + 1}
                       </span>
-                      <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-[#0A84FF]">
+                      <div className="w-9 h-9 rounded-xl bg-white/80 border border-white flex items-center justify-center text-[#0d9488]">
                         <FolderTree className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="font-bold text-white">{cat.name}</div>
-                        <div className="text-[10px] text-slate-400">/{cat.slug} • {cat.itemCount || 0} items assigned</div>
+                        <div className="font-bold text-[#0f2c38]">{cat.name}</div>
+                        <div className="text-[11px] text-[#4a6f7d]">
+                          /{cat.slug} • {cat.itemCount || 0} items assigned
+                        </div>
                       </div>
                     </div>
 
@@ -938,7 +947,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <button
                         onClick={() => handleMoveCategory(idx, 'up')}
                         disabled={idx === 0}
-                        className="p-1.5 rounded-xl liquid-glass-subtle text-slate-300 disabled:opacity-30"
+                        className="p-2 rounded-xl liquid-glass-subtle text-[#355968] disabled:opacity-30 cursor-pointer"
                         title="Move Up"
                       >
                         <ArrowUp className="w-3.5 h-3.5" />
@@ -946,7 +955,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <button
                         onClick={() => handleMoveCategory(idx, 'down')}
                         disabled={idx === categories.length - 1}
-                        className="p-1.5 rounded-xl liquid-glass-subtle text-slate-300 disabled:opacity-30"
+                        className="p-2 rounded-xl liquid-glass-subtle text-[#355968] disabled:opacity-30 cursor-pointer"
                         title="Move Down"
                       >
                         <ArrowDown className="w-3.5 h-3.5" />
@@ -957,14 +966,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           setNewCatName(cat.name);
                           setNewCatIcon(cat.icon);
                         }}
-                        className="p-1.5 rounded-xl liquid-glass-subtle text-[#0A84FF]"
+                        className="p-2 rounded-xl liquid-glass-subtle text-[#0284c7] cursor-pointer"
                         title="Edit"
                       >
                         <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setDeletingCategory(cat)}
-                        className="p-1.5 rounded-xl liquid-glass-subtle text-rose-400"
+                        className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 cursor-pointer"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -982,29 +991,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeSection === 'images' && (
         <div className="space-y-6">
           <div>
-            <h2 className="heading-font text-lg font-bold text-white uppercase tracking-wider">
+            <h2 className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle uppercase tracking-wider">
               Image Management & Uploads
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#355968]">
               Upload images directly to server storage (/uploads), validate remote image URLs, and preview media.
             </p>
           </div>
 
           {imageUploadFeedback && (
-            <div className="p-3.5 rounded-2xl bg-[#0A84FF]/20 border border-[#0A84FF]/40 text-[#0A84FF] text-xs">
+            <div className="p-3.5 rounded-2xl bg-[#dff1ff] border border-[#a2ddfc] text-[#0369a1] text-xs font-medium">
               {imageUploadFeedback}
             </div>
           )}
 
           {/* Upload Widget */}
-          <div className="p-6 rounded-3xl liquid-glass border border-white/15 space-y-4">
-            <h3 className="heading-font text-xs font-bold text-white uppercase tracking-wider">
+          <div className="p-6 rounded-3xl liquid-glass space-y-4">
+            <h3 className="heading-font text-xs font-bold text-[#0f2c38] uppercase tracking-wider">
               Direct File Upload to Server
             </h3>
-            <label className="border-2 border-dashed border-white/20 hover:border-[#0A84FF]/60 rounded-3xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors bg-white/5">
-              <Upload className="w-8 h-8 text-[#0A84FF] mb-2" />
-              <span className="text-sm font-semibold text-white">Click or drag an image here to upload</span>
-              <span className="text-xs text-slate-400 mt-1">Supports PNG, JPEG, WEBP, SVG (up to 8MB)</span>
+            <label className="border-2 border-dashed border-[#0d9488]/35 hover:border-[#0d9488] rounded-3xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors bg-white/55">
+              <Upload className="w-8 h-8 text-[#0284c7] mb-2" />
+              <span className="text-sm font-bold text-[#0f2c38]">Click or drag an image here to upload</span>
+              <span className="text-xs text-[#4a6f7d] mt-1">Supports PNG, JPEG, WEBP, SVG (up to 8MB)</span>
               <input
                 type="file"
                 accept="image/*"
@@ -1015,8 +1024,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* URL Tester */}
-          <div className="p-6 rounded-3xl liquid-glass border border-white/15 space-y-4">
-            <h3 className="heading-font text-xs font-bold text-white uppercase tracking-wider">
+          <div className="p-6 rounded-3xl liquid-glass space-y-4">
+            <h3 className="heading-font text-xs font-bold text-[#0f2c38] uppercase tracking-wider">
               Test & Preview Image URL
             </h3>
             <div className="flex gap-2">
@@ -1025,7 +1034,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 placeholder="https://example.com/cover.png"
                 value={testImageUrl}
                 onChange={(e) => setTestImageUrl(e.target.value)}
-                className="w-full bg-white/[0.08] text-xs text-white rounded-2xl px-3.5 py-2.5 border border-white/15 font-mono"
+                className="w-full min-h-[44px] bg-white/80 text-xs text-[#0f2c38] placeholder-[#648896] rounded-2xl px-3.5 py-2.5 border border-white/90 font-mono outline-none focus:border-[#0d9488]"
               />
             </div>
             {testImageUrl && (
@@ -1033,8 +1042,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <img
                   src={testImageUrl}
                   alt="Test preview"
-                  className="max-h-60 rounded-2xl object-contain border border-white/15"
-                  onError={() => alert('Failed loading image. URL may be blocked by CORS or invalid.')}
+                  referrerPolicy="no-referrer"
+                  className="max-h-60 rounded-2xl object-contain border border-white"
+                  onError={() =>
+                    setImageUploadFeedback('Gagal memuat pratinjau gambar. Pastikan URL valid atau tidak diblokir CORS.')
+                  }
                 />
               </div>
             )}
@@ -1046,48 +1058,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeSection === 'settings' && (
         <div className="space-y-6">
           <div>
-            <h2 className="heading-font text-lg font-bold text-white uppercase tracking-wider">
+            <h2 className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle uppercase tracking-wider">
               Website Settings
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#355968]">
               Configure repository branding, global download toggles, and system maintenance mode.
             </p>
           </div>
 
           {settingsFeedback && (
-            <div className="p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs">
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
               {settingsFeedback}
             </div>
           )}
 
           {settings && (
-            <form onSubmit={handleSaveSettings} className="p-6 rounded-3xl liquid-glass border border-white/15 space-y-4">
+            <form onSubmit={handleSaveSettings} className="p-6 rounded-3xl liquid-glass space-y-4">
               <div>
-                <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
+                <label className="text-[11px] font-bold text-[#0f2c38] uppercase block mb-1">
                   Site Name
                 </label>
                 <input
                   type="text"
                   value={settings.siteName}
                   onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none"
+                  className="w-full min-h-[44px] bg-white/80 text-sm text-[#0f2c38] rounded-2xl px-3.5 py-2.5 border border-white/90 focus:outline-none focus:border-[#0d9488]"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
+                <label className="text-[11px] font-bold text-[#0f2c38] uppercase block mb-1">
                   Site Description
                 </label>
                 <input
                   type="text"
                   value={settings.siteDescription}
                   onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
-                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none"
+                  className="w-full min-h-[44px] bg-white/80 text-sm text-[#0f2c38] rounded-2xl px-3.5 py-2.5 border border-white/90 focus:outline-none focus:border-[#0d9488]"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-300 uppercase block mb-1">
+                <label className="text-[11px] font-bold text-[#0f2c38] uppercase block mb-1">
                   Announcement Banner (Optional)
                 </label>
                 <input
@@ -1095,36 +1107,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   placeholder="e.g. Server maintenance scheduled for midnight UTC"
                   value={settings.announcement || ''}
                   onChange={(e) => setSettings({ ...settings, announcement: e.target.value })}
-                  className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none"
+                  className="w-full min-h-[44px] bg-white/80 text-sm text-[#0f2c38] placeholder-[#648896] rounded-2xl px-3.5 py-2.5 border border-white/90 focus:outline-none focus:border-[#0d9488]"
                 />
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-4">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-[#355968] font-medium">
                   <input
                     type="checkbox"
                     checked={settings.enableDownloads}
                     onChange={(e) => setSettings({ ...settings, enableDownloads: e.target.checked })}
-                    className="rounded text-[#0A84FF]"
+                    className="w-4 h-4 rounded accent-[#0d9488]"
                   />
                   <span>Enable Public Downloads</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-[#355968] font-medium">
                   <input
                     type="checkbox"
                     checked={settings.maintenanceMode}
                     onChange={(e) => setSettings({ ...settings, maintenanceMode: e.target.checked })}
-                    className="rounded text-rose-500"
+                    className="w-4 h-4 rounded accent-rose-600"
                   />
                   <span>Maintenance Mode (Public site displays maintenance notification)</span>
                 </label>
               </div>
 
-              <div className="pt-4 border-t border-white/10 flex justify-end">
+              <div className="pt-4 border-t border-[#0f2c38]/10 flex justify-end">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white shadow-lg"
+                  className="min-h-[44px] px-6 py-2.5 rounded-2xl liquid-glass-button text-xs font-bold text-white cursor-pointer"
                 >
                   Save Settings
                 </button>
@@ -1138,62 +1150,62 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeSection === 'account' && (
         <div className="space-y-6">
           <div>
-            <h2 className="heading-font text-lg font-bold text-white uppercase tracking-wider">
+            <h2 className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle uppercase tracking-wider">
               Administrator Authentication
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#355968]">
               Your administrative session is protected by Supabase Authentication with Row-Level Security and Role-Based Authorization.
             </p>
           </div>
 
-          <div className="p-6 rounded-3xl liquid-glass border border-white/15 space-y-5 max-w-xl shadow-xl">
-            <div className="flex items-center gap-3 pb-4 border-b border-white/10">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0A84FF]/25 to-[#BF5AF2]/25 border border-white/20 flex items-center justify-center text-[#0A84FF]">
-                <Shield className="w-6 h-6 text-[#0A84FF]" />
+          <div className="p-6 rounded-3xl liquid-glass space-y-5 max-w-xl">
+            <div className="flex items-center gap-3 pb-4 border-b border-[#0f2c38]/10">
+              <div className="w-12 h-12 rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#0d9488]">
+                <Shield className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-[#0f2c38] flex flex-wrap items-center gap-2">
                   <span>{adminUsername}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                     Authorized Admin
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">Supabase Auth Provider (Email & Password)</p>
+                <p className="text-xs text-[#4a6f7d] mt-0.5">Supabase Auth Provider (Email & Password)</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-1">
-                <span className="text-[11px] text-slate-400 uppercase font-semibold block">Primary Admin</span>
-                <span className="text-white font-mono text-[11px] font-medium">{PRIMARY_ADMIN_EMAIL}</span>
+              <div className="p-3.5 rounded-2xl liquid-glass-subtle space-y-1">
+                <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold block">Primary Admin</span>
+                <span className="text-[#0f2c38] font-mono text-[11px] font-semibold break-all">{PRIMARY_ADMIN_EMAIL}</span>
               </div>
 
-              <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-1">
-                <span className="text-[11px] text-slate-400 uppercase font-semibold block">Session Persistence</span>
-                <span className="text-emerald-300 font-semibold flex items-center gap-1.5">
+              <div className="p-3.5 rounded-2xl liquid-glass-subtle space-y-1">
+                <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold block">Session Persistence</span>
+                <span className="text-[#0d9488] font-semibold flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" />
                   <span>Retained Across Sessions</span>
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-1">
-                <span className="text-[11px] text-slate-400 uppercase font-semibold block">Access Role</span>
-                <span className="text-white font-semibold">Full Repository CMS & Downloads</span>
+              <div className="p-3.5 rounded-2xl liquid-glass-subtle space-y-1">
+                <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold block">Access Role</span>
+                <span className="text-[#0f2c38] font-semibold">Full Repository CMS & Downloads</span>
               </div>
 
-              <div className="p-3.5 rounded-2xl liquid-glass-subtle border border-white/10 space-y-1">
-                <span className="text-slate-300 font-mono text-[11px]">
+              <div className="p-3.5 rounded-2xl liquid-glass-subtle space-y-1">
+                <span className="text-[#355968] font-mono text-[11px]">
                   Bearer ••••••••{(adminToken || '').slice(-6) || 'active'}
                 </span>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-              <span className="text-xs text-slate-400">Want to terminate this session?</span>
+            <div className="pt-3 border-t border-[#0f2c38]/10 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs text-[#4a6f7d]">Want to terminate this session?</span>
               <button
                 type="button"
                 onClick={onLogout}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-semibold transition-all cursor-pointer"
+                className="min-h-[42px] flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-semibold transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Sign Out of Admin</span>
@@ -1207,13 +1219,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeSection === 'premium' && (
         <div className="space-y-6">
           {/* Top Actions & Summary */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl liquid-glass border border-white/15">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl liquid-glass">
             <div>
-              <h2 className="heading-font text-lg font-bold text-white flex items-center gap-2">
-                <Crown className="w-5 h-5 text-amber-400" />
+              <h2 className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle flex items-center gap-2">
+                <Crown className="w-5 h-5 text-amber-600" />
                 <span>Manajemen Game Premium & Transaksi QiosPay</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-[#355968] mt-1">
                 Kelola katalog game berbayar, harga IDR, file unduhan, dan pantau status transaksi QiosPay secara real-time.
               </p>
             </div>
@@ -1223,35 +1235,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 setEditingPremiumGame(null);
                 setIsPremiumModalOpen(true);
               }}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-black font-extrabold text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+              className="min-h-[44px] flex items-center justify-center gap-2 px-5 py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer flex-shrink-0"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
+              <Plus className="w-4 h-4" />
               <span>Tambah Game Premium</span>
             </button>
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-4 rounded-3xl liquid-glass border border-white/15 space-y-1">
-              <span className="text-[11px] text-slate-400 uppercase font-semibold">Total Game Premium</span>
-              <div className="text-2xl font-bold text-white font-mono">{premiumGames.length}</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="p-4 rounded-3xl liquid-glass-card space-y-1">
+              <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Total Game Premium</span>
+              <div className="text-2xl font-extrabold text-[#0f2c38] font-mono">{premiumGames.length}</div>
             </div>
 
-            <div className="p-4 rounded-3xl liquid-glass border border-white/15 space-y-1">
-              <span className="text-[11px] text-slate-400 uppercase font-semibold">Total Pesanan</span>
-              <div className="text-2xl font-bold text-white font-mono">{orders.length}</div>
+            <div className="p-4 rounded-3xl liquid-glass-card space-y-1">
+              <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Total Pesanan</span>
+              <div className="text-2xl font-extrabold text-[#0f2c38] font-mono">{orders.length}</div>
             </div>
 
-            <div className="p-4 rounded-3xl liquid-glass border border-white/15 space-y-1">
-              <span className="text-[11px] text-slate-400 uppercase font-semibold">Pesanan Terbayar (PAID)</span>
-              <div className="text-2xl font-bold text-emerald-400 font-mono">
+            <div className="p-4 rounded-3xl liquid-glass-card space-y-1">
+              <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Pesanan Terbayar (PAID)</span>
+              <div className="text-2xl font-extrabold text-[#0d9488] font-mono">
                 {orders.filter((o) => o.status === 'PAID').length}
               </div>
             </div>
 
-            <div className="p-4 rounded-3xl liquid-glass border border-white/15 space-y-1">
-              <span className="text-[11px] text-slate-400 uppercase font-semibold">Total Pendapatan (IDR)</span>
-              <div className="text-xl font-bold text-amber-300 font-mono">
+            <div className="p-4 rounded-3xl liquid-glass-card space-y-1">
+              <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Total Pendapatan (IDR)</span>
+              <div className="text-xl font-extrabold text-[#0284c7] font-mono">
                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(
                   orders.filter((o) => o.status === 'PAID').reduce((acc, curr) => acc + (curr.amount || 0), 0)
                 )}
@@ -1260,22 +1272,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Premium Games Table */}
-          <div className="rounded-3xl liquid-glass border border-white/15 overflow-hidden shadow-xl">
-            <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
-              <h3 className="heading-font text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <div className="rounded-3xl liquid-glass overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-[#0f2c38]/10 flex items-center justify-between">
+              <h3 className="heading-font text-sm font-extrabold text-[#0f2c38] uppercase tracking-wider flex items-center gap-2">
                 <span>Daftar Produk Premium</span>
-                <span className="text-xs font-mono text-amber-400">({premiumGames.length})</span>
+                <span className="text-xs font-mono text-[#0284c7]">({premiumGames.length})</span>
               </h3>
             </div>
 
             {premiumGames.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs">
-                Belum ada produk game premium yang terdaftar. Klik "+ Tambah Game Premium" untuk menambahkan.
+              <div className="text-center py-12 text-[#4a6f7d] text-xs">
+                Belum ada produk game premium yang terdaftar. Klik "Tambah Game Premium" untuk menambahkan.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-white/[0.04] text-slate-400 border-b border-white/10">
+                  <thead className="bg-white/50 text-[#4a6f7d] border-b border-[#0f2c38]/10">
                     <tr>
                       <th className="py-3 px-4">Game</th>
                       <th className="py-3 px-4">Harga (IDR)</th>
@@ -1285,42 +1297,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <th className="py-3 px-4 text-right">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5 text-slate-200">
+                  <tbody className="divide-y divide-[#0f2c38]/10 text-[#355968]">
                     {premiumGames.map((game) => (
-                      <tr key={game.id} className="hover:bg-white/[0.03] transition-colors">
+                      <tr key={game.id} className="hover:bg-white/40 transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             <img
                               src={game.iconUrl || game.coverUrl}
                               alt={game.title}
-                              className="w-9 h-9 rounded-xl object-cover bg-slate-800 border border-white/10"
+                              referrerPolicy="no-referrer"
+                              className="w-9 h-9 rounded-xl object-cover bg-white/80 border border-white"
                             />
                             <div>
-                              <span className="font-bold text-white block">{game.title}</span>
-                              <span className="text-[10px] text-slate-400 font-mono">/{game.slug}</span>
+                              <span className="font-bold text-[#0f2c38] block">{game.title}</span>
+                              <span className="text-[10px] text-[#4a6f7d] font-mono">/{game.slug}</span>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-amber-300">
+                        <td className="py-3 px-4 font-mono font-bold text-[#0f766e]">
                           {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(game.price)}
                         </td>
-                        <td className="py-3 px-4 font-mono text-[11px] text-slate-300">
+                        <td className="py-3 px-4 font-mono text-[11px] text-[#355968]">
                           {game.version} • {game.fileSize}
                         </td>
                         <td className="py-3 px-4">
                           <button
                             onClick={() => handleTogglePremiumActive(game)}
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold cursor-pointer transition-all ${
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold cursor-pointer border transition-colors ${
                               game.isActive
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                                : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
                             }`}
                           >
                             {game.isActive ? 'Aktif' : 'Nonaktif'}
                           </button>
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono ${game.visibility === 'published' ? 'text-teal-300 bg-teal-500/15' : 'text-slate-400 bg-white/10'}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-mono ${
+                              game.visibility === 'published'
+                                ? 'text-[#0f766e] bg-[#d7f5eb]'
+                                : 'text-[#4a6f7d] bg-white/70'
+                            }`}
+                          >
                             {game.visibility || 'published'}
                           </span>
                         </td>
@@ -1331,14 +1350,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 setEditingPremiumGame(game);
                                 setIsPremiumModalOpen(true);
                               }}
-                              className="p-1.5 rounded-lg liquid-glass-subtle hover:bg-white/15 text-slate-300 hover:text-white"
+                              className="p-2 rounded-xl liquid-glass-subtle text-[#0284c7] cursor-pointer"
                               title="Edit Produk"
                             >
                               <Edit className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setDeletingPremiumGame(game)}
-                              className="p-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30"
+                              className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 cursor-pointer"
                               title="Hapus Produk"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1354,23 +1373,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* QiosPay Orders & Transaction Logs Table */}
-          <div className="rounded-3xl liquid-glass border border-white/15 overflow-hidden shadow-xl">
-            <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
-              <h3 className="heading-font text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-[#0A84FF]" />
+          <div className="rounded-3xl liquid-glass overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-[#0f2c38]/10 flex items-center justify-between">
+              <h3 className="heading-font text-sm font-extrabold text-[#0f2c38] uppercase tracking-wider flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-[#0284c7]" />
                 <span>Riwayat Transaksi & Pembayaran QiosPay</span>
-                <span className="text-xs font-mono text-[#0A84FF]">({orders.length})</span>
+                <span className="text-xs font-mono text-[#0284c7]">({orders.length})</span>
               </h3>
             </div>
 
             {orders.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs">
+              <div className="text-center py-12 text-[#4a6f7d] text-xs">
                 Belum ada transaksi pembayaran yang tercatat. Transaksi pembelian akan muncul otomatis di sini.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-white/[0.04] text-slate-400 border-b border-white/10">
+                  <thead className="bg-white/50 text-[#4a6f7d] border-b border-[#0f2c38]/10">
                     <tr>
                       <th className="py-3 px-4">Order ID & QiosPay Invoice</th>
                       <th className="py-3 px-4">Pembeli</th>
@@ -1381,37 +1400,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <th className="py-3 px-4 text-right">Akses Unduhan</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5 text-slate-200">
+                  <tbody className="divide-y divide-[#0f2c38]/10 text-[#355968]">
                     {orders.map((order) => (
-                      <tr key={order.id} className="hover:bg-white/[0.03] transition-colors">
+                      <tr key={order.id} className="hover:bg-white/40 transition-colors">
                         <td className="py-3 px-4">
-                          <span className="font-mono font-bold text-white block">{order.id}</span>
-                          <span className="text-[10px] text-slate-400 font-mono">{order.qiospayInvoiceId || '-'}</span>
+                          <span className="font-mono font-bold text-[#0f2c38] block">{order.id}</span>
+                          <span className="text-[10px] text-[#4a6f7d] font-mono">{order.qiospayInvoiceId || '-'}</span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="font-semibold text-white block">{order.customerName}</span>
-                          <span className="text-[10px] text-slate-400 font-mono">{order.customerEmail}</span>
+                          <span className="font-semibold text-[#0f2c38] block">{order.customerName}</span>
+                          <span className="text-[10px] text-[#4a6f7d] font-mono">{order.customerEmail}</span>
                         </td>
-                        <td className="py-3 px-4 font-medium text-slate-200">
-                          {order.gameTitle}
-                        </td>
-                        <td className="py-3 px-4 font-mono font-bold text-amber-300">
+                        <td className="py-3 px-4 font-medium text-[#0f2c38]">{order.gameTitle}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-[#0f766e]">
                           {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(order.amount)}
                         </td>
                         <td className="py-3 px-4">
                           <span
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${
                               order.status === 'PAID'
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 : order.status === 'EXPIRED' || order.status === 'CANCELLED'
-                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : 'bg-amber-50 text-amber-800 border-amber-200'
                             }`}
                           >
                             {order.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                        <td className="py-3 px-4 text-[#4a6f7d] font-mono text-[11px]">
                           {new Date(order.createdAt).toLocaleDateString('id-ID', {
                             day: 'numeric',
                             month: 'short',
@@ -1422,12 +1439,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </td>
                         <td className="py-3 px-4 text-right font-mono text-[10px]">
                           {order.status === 'PAID' ? (
-                            <span className="text-emerald-400 font-bold flex items-center justify-end gap-1">
+                            <span className="text-[#0d9488] font-bold flex items-center justify-end gap-1">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span>Token Diberikan</span>
                             </span>
                           ) : (
-                            <span className="text-slate-500">Menunggu Pembayaran</span>
+                            <span className="text-[#4a6f7d]">Menunggu Pembayaran</span>
                           )}
                         </td>
                       </tr>
@@ -1454,32 +1471,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Delete Premium Game Confirmation Dialog */}
       {deletingPremiumGame && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#040714]/80 backdrop-blur-xl"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
           onClick={() => setDeletingPremiumGame(null)}
         >
           <div
-            className="w-full max-w-md liquid-glass rounded-3xl border border-rose-500/30 p-6 shadow-2xl text-left space-y-4"
+            className="w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 shadow-2xl text-left space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 text-rose-400">
+            <div className="flex items-center gap-3 text-rose-600">
               <AlertTriangle className="w-6 h-6" />
-              <h3 className="heading-font text-base font-bold text-white uppercase tracking-wider">
+              <h3 className="heading-font text-base font-extrabold text-[#0f2c38] uppercase tracking-wider">
                 Hapus Game Premium
               </h3>
             </div>
-            <p className="text-xs text-slate-300">
-              Apakah Anda yakin ingin menghapus produk game premium <strong className="text-white font-bold">{deletingPremiumGame.title}</strong>? Tindakan ini tidak dapat dibatalkan.
+            <p className="text-xs text-[#355968]">
+              Apakah Anda yakin ingin menghapus produk game premium{' '}
+              <strong className="text-[#0f2c38] font-bold">{deletingPremiumGame.title}</strong>? Tindakan ini tidak dapat dibatalkan.
             </p>
             <div className="flex justify-end gap-2.5 pt-2">
               <button
                 onClick={() => setDeletingPremiumGame(null)}
-                className="px-4 py-2 rounded-2xl liquid-glass-subtle text-xs text-slate-300 hover:text-white"
+                className="min-h-[42px] px-4 py-2 rounded-2xl liquid-glass-button-secondary text-xs font-semibold text-[#355968] cursor-pointer"
               >
                 Batal
               </button>
               <button
                 onClick={handleDeletePremiumGame}
-                className="px-5 py-2 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-md"
+                className="min-h-[42px] px-5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm cursor-pointer tactile-press"
               >
                 Hapus Permanen
               </button>
@@ -1505,32 +1523,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Delete Item Confirmation Dialog */}
       {deletingItem && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#040714]/80 backdrop-blur-xl"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
           onClick={() => setDeletingItem(null)}
         >
           <div
-            className="w-full max-w-md liquid-glass rounded-3xl border border-rose-500/30 p-6 shadow-2xl text-left space-y-4"
+            className="w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 shadow-2xl text-left space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 text-rose-400">
+            <div className="flex items-center gap-3 text-rose-600">
               <AlertTriangle className="w-6 h-6" />
-              <h3 className="heading-font text-base font-bold text-white uppercase tracking-wider">
+              <h3 className="heading-font text-base font-extrabold text-[#0f2c38] uppercase tracking-wider">
                 Confirm Deletion
               </h3>
             </div>
-            <p className="text-xs text-slate-300">
-              Are you sure you want to permanently delete <strong className="text-white font-bold">{deletingItem.title}</strong>? This action cannot be undone and will remove it from the public repository.
+            <p className="text-xs text-[#355968]">
+              Are you sure you want to permanently delete{' '}
+              <strong className="text-[#0f2c38] font-bold">{deletingItem.title}</strong>? This action cannot be undone and will remove it from the public repository.
             </p>
             <div className="flex justify-end gap-2.5 pt-2">
               <button
                 onClick={() => setDeletingItem(null)}
-                className="px-4 py-2 rounded-2xl liquid-glass-subtle text-xs text-slate-300 hover:text-white"
+                className="min-h-[42px] px-4 py-2 rounded-2xl liquid-glass-button-secondary text-xs font-semibold text-[#355968] cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteItem}
-                className="px-5 py-2 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-md"
+                className="min-h-[42px] px-5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm cursor-pointer tactile-press"
               >
                 Delete Permanently
               </button>
@@ -1542,32 +1561,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Delete Category Confirmation Dialog */}
       {deletingCategory && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#040714]/80 backdrop-blur-xl"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
           onClick={() => setDeletingCategory(null)}
         >
           <div
-            className="w-full max-w-md liquid-glass rounded-3xl border border-rose-500/30 p-6 shadow-2xl text-left space-y-4"
+            className="w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 shadow-2xl text-left space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 text-rose-400">
+            <div className="flex items-center gap-3 text-rose-600">
               <AlertTriangle className="w-6 h-6" />
-              <h3 className="heading-font text-base font-bold text-white uppercase tracking-wider">
+              <h3 className="heading-font text-base font-extrabold text-[#0f2c38] uppercase tracking-wider">
                 Delete Category
               </h3>
             </div>
-            <p className="text-xs text-slate-300">
-              Are you sure you want to delete category <strong className="text-white">{deletingCategory.name}</strong>?
+            <p className="text-xs text-[#355968]">
+              Are you sure you want to delete category <strong className="text-[#0f2c38]">{deletingCategory.name}</strong>?
             </p>
             <div className="flex justify-end gap-2.5 pt-2">
               <button
                 onClick={() => setDeletingCategory(null)}
-                className="px-4 py-2 rounded-2xl liquid-glass-subtle text-xs text-slate-300 hover:text-white"
+                className="min-h-[42px] px-4 py-2 rounded-2xl liquid-glass-button-secondary text-xs font-semibold text-[#355968] cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteCategory}
-                className="px-5 py-2 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-md"
+                className="min-h-[42px] px-5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm cursor-pointer tactile-press"
               >
                 Delete Category
               </button>

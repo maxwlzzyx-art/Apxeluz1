@@ -235,37 +235,41 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
   });
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* Hero Banner with Neo Brutalism & Apple Liquid Glass */}
-      <section className="relative overflow-hidden rounded-3xl p-6 sm:p-10 border border-white/20 liquid-glass shadow-2xl">
-        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-gradient-to-br from-amber-500/20 via-[#BF5AF2]/20 to-transparent blur-3xl pointer-events-none" />
-        <div className="absolute -left-16 -bottom-16 w-64 h-64 rounded-full bg-gradient-to-tr from-[#0A84FF]/20 to-transparent blur-3xl pointer-events-none" />
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+      {/* Hero Banner with 3D Frosted Liquid Glass */}
+      <section className="relative overflow-hidden rounded-[28px] sm:rounded-3xl p-5 sm:p-10 liquid-glass">
+        <div className="liquid-orb absolute -right-14 -top-14 w-56 h-56 bg-gradient-to-br from-[#a7f3d0]/60 via-[#bae6fd]/50 to-transparent blur-2xl pointer-events-none" />
+        <div className="liquid-orb absolute -left-14 -bottom-14 w-56 h-56 bg-gradient-to-tr from-[#bae6fd]/55 to-transparent blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-rose-500/20 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-wider shadow-sm">
-              <Crown className="w-4 h-4 text-amber-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/80 border border-amber-300/70 text-amber-900 text-[11px] font-bold uppercase tracking-wider shadow-sm">
+              <Crown className="w-3.5 h-3.5 text-amber-600" />
               <span>APXELUZ PREMIUM REPOSITORY</span>
             </div>
-            <h1 className="heading-font text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-              Eksklusif Game & Mod <span className="bg-gradient-to-r from-amber-400 via-rose-400 to-[#BF5AF2] bg-clip-text text-transparent">Koleksi Premium</span>
+            <h1 className="heading-font text-2xl sm:text-4xl font-extrabold text-[#0f2c38] text-3d tracking-tight leading-tight">
+              Eksklusif Game & Mod{' '}
+              <span className="text-[#0f766e]">
+                Koleksi Premium
+              </span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Dapatkan game Android remaster, visual pack HD 60FPS+, dan port eksklusif berkualitas tinggi. Pembayaran otomatis & instan melalui <strong className="text-white">QiosPay</strong> dengan QRIS, Virtual Account, dan E-Wallet.
+            <p className="text-xs sm:text-sm text-[#355968] leading-relaxed">
+              Dapatkan game Android remaster, visual pack HD 60FPS+, dan port eksklusif berkualitas tinggi. Pembayaran otomatis & instan melalui{' '}
+              <strong className="text-[#0f2c38]">QiosPay</strong> dengan QRIS, Virtual Account, dan E-Wallet.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
             <button
               onClick={() => setIsLookupOpen(true)}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl liquid-glass-subtle text-white font-semibold text-xs border border-white/20 hover:bg-white/15 transition-all cursor-pointer shadow-md"
+              className="flex items-center justify-center gap-2 px-4 py-3 min-h-[46px] rounded-2xl liquid-glass-button-secondary text-[#0f2c38] font-bold text-xs cursor-pointer"
             >
-              <Download className="w-4 h-4 text-[#0A84FF]" />
+              <Download className="w-4 h-4 text-[#0284c7]" />
               <span>Cek Status Pesanan Saya</span>
             </button>
             <button
               onClick={onNavigateHome}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white/10 text-slate-300 hover:text-white font-semibold text-xs border border-white/15 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 py-3 min-h-[46px] rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] font-semibold text-xs cursor-pointer"
             >
               <span>Jelajahi Game Gratis</span>
               <ChevronRight className="w-4 h-4" />
@@ -274,17 +278,17 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
         </div>
 
         {/* Feature Highlights */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 mt-6 border-t border-white/10 text-xs text-slate-300">
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-5 mt-5 border-t border-[#0f2c38]/10 text-xs text-[#355968] font-medium">
           <div className="flex items-center gap-2.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <ShieldCheck className="w-4 h-4 text-[#0d9488] flex-shrink-0" />
             <span>Garansi 100% Bersih & Bebas Virus</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <CreditCard className="w-4 h-4 text-[#0A84FF] flex-shrink-0" />
+            <CreditCard className="w-4 h-4 text-[#0284c7] flex-shrink-0" />
             <span>Integrasi Pembayaran QiosPay Resmi</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
             <span>Akses Unduhan Cepat Langsung Aktif</span>
           </div>
         </div>
@@ -293,75 +297,77 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
       {/* Search and Count Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 border border-white/20 flex items-center justify-center text-amber-400">
+          <div className="w-9 h-9 rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#0d9488]">
             <ShoppingBag className="w-4 h-4" />
           </div>
-          <h2 className="heading-font text-base sm:text-lg font-bold text-white uppercase tracking-tight flex items-center gap-2">
+          <h2 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle uppercase tracking-tight flex items-center gap-2">
             <span>DAFTAR GAME PREMIUM</span>
-            <span className="text-xs font-mono text-amber-400">({filteredGames.length})</span>
+            <span className="text-xs font-mono text-[#0284c7]">({filteredGames.length})</span>
           </h2>
         </div>
 
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 w-4 h-4 text-[#4a6f7d] pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari game premium..."
-            className="w-full bg-white/[0.08] text-white text-xs pl-10 pr-3.5 py-2.5 rounded-2xl border border-white/15 focus:outline-none focus:border-[#0A84FF] backdrop-blur-md"
+            className="w-full min-h-[44px] bg-white/75 text-[#0f2c38] placeholder-[#5a7d8a] text-xs pl-10 pr-3.5 py-2.5 rounded-2xl border border-white/90 shadow-[inset_0_2px_4px_rgba(15,44,56,0.06)] focus:outline-none focus:border-[#0d9488] backdrop-blur-md"
           />
         </div>
       </div>
 
       {/* Grid of Premium Games */}
       {loading ? (
-        <div className="py-20 text-center space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-amber-400" />
-          <p className="text-xs font-semibold text-slate-300">Memuat katalog game premium...</p>
+        <div className="py-16 text-center space-y-3 liquid-glass rounded-3xl">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#0d9488]" />
+          <p className="text-xs font-semibold text-[#355968]">Memuat katalog game premium...</p>
         </div>
       ) : filteredGames.length === 0 ? (
-        <div className="text-center py-16 liquid-glass rounded-3xl border border-white/15 space-y-3">
-          <ShoppingBag className="w-10 h-10 mx-auto text-slate-400" />
-          <h3 className="heading-font text-base font-bold text-white">Tidak ada game premium yang sesuai</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+        <div className="text-center py-14 liquid-glass rounded-3xl space-y-3 px-4">
+          <ShoppingBag className="w-10 h-10 mx-auto text-[#4a6f7d]" />
+          <h3 className="heading-font text-base font-bold text-[#0f2c38]">Tidak ada game premium yang sesuai</h3>
+          <p className="text-xs text-[#4a6f7d] max-w-sm mx-auto">
             Coba ubah kata kunci pencarian Anda atau periksa kembali nanti.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {filteredGames.map((game) => (
             <div
               key={game.id}
-              className="group rounded-3xl liquid-glass border border-white/15 hover:border-amber-400/50 transition-all duration-300 overflow-hidden flex flex-col shadow-xl hover:shadow-2xl hover:shadow-amber-500/10"
+              className="group rounded-[26px] liquid-glass-card overflow-hidden flex flex-col"
             >
               {/* Cover Banner */}
-              <div className="relative h-48 w-full overflow-hidden bg-slate-900">
+              <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff]">
                 <img
                   src={game.coverUrl || game.bannerUrl}
                   alt={game.title}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#080c1f] via-transparent to-black/30" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f2c38]/45 via-transparent to-[#0f2c38]/10 pointer-events-none" />
 
                 {/* Badge Top Left */}
-                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/90 text-black text-[11px] font-extrabold uppercase tracking-wider backdrop-blur-md shadow-md">
-                  <Crown className="w-3.5 h-3.5 fill-black" />
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100/95 border border-amber-300/80 text-amber-900 text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md shadow-sm">
+                  <Crown className="w-3.5 h-3.5 text-amber-600" />
                   <span>PREMIUM</span>
                 </div>
 
                 {/* Version Badge Top Right */}
-                <div className="absolute top-3 right-3 px-2 py-0.5 rounded-lg bg-black/60 border border-white/20 text-white font-mono text-[10px] backdrop-blur-md">
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-xl bg-white/85 border border-white text-[#0f2c38] font-mono font-bold text-[10px] backdrop-blur-md shadow-sm">
                   {game.version}
                 </div>
 
                 {/* Floating Icon */}
-                <div className="absolute -bottom-4 left-5 w-14 h-14 rounded-2xl p-0.5 bg-gradient-to-br from-white/30 to-white/10 border border-white/30 shadow-xl overflow-hidden backdrop-blur-xl">
+                <div className="absolute -bottom-4 left-5 w-14 h-14 rounded-2xl p-1 bg-white/85 border border-white shadow-lg overflow-hidden backdrop-blur-xl">
                   <img
                     src={game.iconUrl || game.coverUrl}
                     alt={game.title}
-                    className="w-full h-full object-cover rounded-[14px]"
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover rounded-xl"
                   />
                 </div>
               </div>
@@ -370,29 +376,29 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
               <div className="pt-6 px-5 pb-5 flex-grow flex flex-col justify-between space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-bold text-[#0d9488] uppercase tracking-wider truncate">
                       {game.developer}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
+                    <span className="text-[10px] text-[#4a6f7d] font-mono flex-shrink-0">
                       {game.fileSize}
                     </span>
                   </div>
 
-                  <h3 className="heading-font text-base sm:text-lg font-bold text-white line-clamp-1 group-hover:text-amber-300 transition-colors">
+                  <h3 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle line-clamp-1 group-hover:text-[#0d9488] transition-colors">
                     {game.title}
                   </h3>
 
-                  <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[#355968] line-clamp-2 leading-relaxed">
                     {game.shortDescription || game.description}
                   </p>
 
-                  {/* Feature Pills */}
+                  {/* Feature Tags */}
                   {game.features && game.features.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {game.features.slice(0, 3).map((feat, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-0.5 rounded-md bg-white/[0.08] text-[10px] text-slate-300 border border-white/10"
+                          className="px-2 py-0.5 rounded-lg bg-white/75 text-[10px] font-medium text-[#355968] border border-white/90 shadow-xs"
                         >
                           {feat}
                         </span>
@@ -402,32 +408,33 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
                 </div>
 
                 {/* Pricing & CTA */}
-                <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
-                  <div>
+                <div className="pt-3 border-t border-[#0f2c38]/10 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
                     {game.originalPrice && game.originalPrice > game.price && (
-                      <span className="text-[11px] line-through text-slate-400 font-mono block">
+                      <span className="text-[11px] line-through text-[#5a7d8a] font-mono block">
                         {formatRupiah(game.originalPrice)}
                       </span>
                     )}
-                    <span className="text-base sm:text-lg font-extrabold text-white font-mono text-amber-300">
+                    <span className="text-base sm:text-lg font-extrabold font-mono text-[#0f766e]">
                       {formatRupiah(game.price)}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => setSelectedGame(game)}
-                      className="p-2.5 rounded-2xl liquid-glass-subtle text-slate-300 hover:text-white border border-white/20 transition-all cursor-pointer"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] cursor-pointer"
                       title="Lihat Detail Produk"
+                      aria-label={`Lihat detail ${game.title}`}
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleStartCheckout(game)}
-                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-black font-extrabold text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+                      className="min-h-[44px] flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
                     >
-                      <ShoppingBag className="w-3.5 h-3.5 fill-black" />
-                      <span>Beli Sekarang</span>
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>Beli</span>
                     </button>
                   </div>
                 </div>
@@ -437,33 +444,46 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
         </div>
       )}
 
-      {/* DETAIL MODAL */}
+      {/* DETAIL MODAL (Mobile Bottom Sheet) */}
       {selectedGame && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl liquid-glass border border-white/20 p-6 sm:p-8 space-y-6 shadow-2xl">
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
+          onClick={() => setSelectedGame(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-8 space-y-5 shadow-2xl custom-scrollbar"
+          >
+            {/* Mobile Drag Handle */}
+            <div className="sm:hidden flex justify-center pb-1">
+              <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
+            </div>
+
             <button
               onClick={() => setSelectedGame(null)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white bg-white/10 transition-colors"
+              aria-label="Tutup detail game premium"
+              className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer z-20"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <div className="relative h-56 rounded-2xl overflow-hidden bg-slate-900 border border-white/10">
+            <div className="relative h-48 sm:h-56 rounded-2xl overflow-hidden bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/80">
               <img
                 src={selectedGame.bannerUrl || selectedGame.coverUrl}
                 alt={selectedGame.title}
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                <div>
-                  <span className="text-xs text-amber-400 font-semibold">{selectedGame.category}</span>
-                  <h2 className="heading-font text-xl sm:text-2xl font-bold text-white">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f2c38]/85 via-[#0f2c38]/25 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="text-xs text-emerald-200 font-semibold">{selectedGame.category}</span>
+                  <h2 className="heading-font text-xl sm:text-2xl font-bold text-white line-clamp-2">
                     {selectedGame.title}
                   </h2>
                 </div>
-                <div className="text-right">
-                  <span className="text-xl font-extrabold text-amber-300 font-mono">
+                <div className="text-right flex-shrink-0">
+                  <span className="text-lg sm:text-xl font-extrabold text-emerald-200 font-mono">
                     {formatRupiah(selectedGame.price)}
                   </span>
                 </div>
@@ -473,16 +493,17 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
             {/* Screenshots */}
             {selectedGame.screenshots && selectedGame.screenshots.length > 0 && (
               <div className="space-y-2">
-                <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <h3 className="text-xs font-bold text-[#0f2c38] uppercase tracking-wider">
                   Tangkapan Layar
                 </h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   {selectedGame.screenshots.map((s, idx) => (
                     <img
                       key={idx}
                       src={s}
                       alt={`Screenshot ${idx + 1}`}
-                      className="rounded-xl border border-white/10 h-28 w-full object-cover"
+                      referrerPolicy="no-referrer"
+                      className="rounded-xl border border-white/80 h-28 w-full object-cover shadow-sm"
                     />
                   ))}
                 </div>
@@ -490,19 +511,19 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
             )}
 
             {/* Description */}
-            <div className="space-y-2 text-xs text-slate-300 leading-relaxed">
-              <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Deskripsi</h3>
+            <div className="space-y-1.5 text-xs text-[#355968] leading-relaxed">
+              <h3 className="text-xs font-bold text-[#0f2c38] uppercase tracking-wider">Deskripsi</h3>
               <p>{selectedGame.description || selectedGame.shortDescription}</p>
             </div>
 
             {/* CTA */}
-            <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-              <div className="text-xs text-slate-400">
+            <div className="pt-4 border-t border-[#0f2c38]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-xs text-[#4a6f7d] font-medium">
                 <span>Versi: {selectedGame.version}</span> • <span>Ukuran: {selectedGame.fileSize}</span>
               </div>
               <button
                 onClick={() => handleStartCheckout(selectedGame)}
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 text-black font-extrabold text-xs shadow-lg active:scale-95 transition-all cursor-pointer"
+                className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
               >
                 Lanjutkan ke Pembayaran QiosPay
               </button>
@@ -513,34 +534,47 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
 
       {/* CHECKOUT MODAL (Buy Now Flow) */}
       {checkoutGame && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-md rounded-3xl liquid-glass border border-white/20 p-6 sm:p-7 space-y-5 shadow-2xl">
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
+          onClick={() => setCheckoutGame(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-7 space-y-5 shadow-2xl"
+          >
+            <div className="sm:hidden flex justify-center">
+              <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
+            </div>
+
             <button
               onClick={() => setCheckoutGame(null)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white bg-white/10 transition-colors"
+              aria-label="Tutup form pembelian"
+              className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 border border-white/20 flex items-center justify-center text-amber-400">
-                <ShoppingBag className="w-6 h-6" />
+            <div className="flex items-center gap-3 pr-8">
+              <div className="w-12 h-12 rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#0d9488] flex-shrink-0">
+                <ShoppingBag className="w-5 h-5" />
               </div>
-              <div>
-                <h3 className="heading-font text-lg font-bold text-white">Pembelian Game Premium</h3>
-                <p className="text-xs text-slate-300">{checkoutGame.title}</p>
+              <div className="min-w-0">
+                <h3 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle">
+                  Pembelian Game Premium
+                </h3>
+                <p className="text-xs text-[#355968] truncate">{checkoutGame.title}</p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-between">
-              <span className="text-xs text-slate-300">Total Tagihan (QiosPay):</span>
-              <span className="text-base font-extrabold text-amber-300 font-mono">
+            <div className="p-3.5 rounded-2xl bg-white/75 border border-white/90 flex items-center justify-between shadow-sm">
+              <span className="text-xs text-[#355968] font-medium">Total Tagihan (QiosPay):</span>
+              <span className="text-base font-extrabold text-[#0f766e] font-mono">
                 {formatRupiah(checkoutGame.price)}
               </span>
             </div>
 
             {checkoutError && (
-              <div className="p-3 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+              <div className="p-3 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <span>{checkoutError}</span>
               </div>
@@ -548,19 +582,19 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
 
             <form onSubmit={handleSubmitCheckout} className="space-y-3.5">
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-slate-300">Nama Lengkap</label>
+                <label className="block text-xs font-semibold text-[#0f2c38]">Nama Lengkap</label>
                 <input
                   type="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Contoh: Budi Pratama"
                   required
-                  className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white text-xs outline-none"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-slate-300">
+                <label className="block text-xs font-semibold text-[#0f2c38]">
                   Alamat Email (Untuk Pengiriman Akses Download)
                 </label>
                 <input
@@ -569,9 +603,9 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="budi@gmail.com"
                   required
-                  className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white text-xs outline-none"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
                 />
-                <span className="text-[10px] text-slate-400 block">
+                <span className="text-[11px] text-[#4a6f7d] block">
                   Link dan token unduhan aman akan dikaitkan langsung ke email ini.
                 </span>
               </div>
@@ -580,11 +614,11 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
                 <button
                   type="submit"
                   disabled={isSubmittingOrder || !customerName.trim() || !customerEmail.trim()}
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-black font-extrabold text-xs shadow-lg active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isSubmittingOrder ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-black" />
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
                       <span>Menyiapkan Invoice QiosPay...</span>
                     </>
                   ) : (
@@ -602,24 +636,35 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
 
       {/* ACTIVE TRANSACTION & PAYMENT STATUS MODAL */}
       {activeOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-md rounded-3xl liquid-glass border border-white/20 p-6 sm:p-7 space-y-5 shadow-2xl">
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
+          onClick={() => setActiveOrder(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-7 space-y-5 shadow-2xl"
+          >
+            <div className="sm:hidden flex justify-center">
+              <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
+            </div>
+
             <button
               onClick={() => setActiveOrder(null)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white bg-white/10 transition-colors"
+              aria-label="Tutup status transaksi"
+              className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
             {/* Status Header */}
             <div className="text-center space-y-2">
               <div
-                className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center border shadow-lg ${
+                className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center border shadow-sm ${
                   activeOrder.status === 'PAID'
-                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                     : activeOrder.status === 'EXPIRED' || activeOrder.status === 'CANCELLED'
-                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
-                    : 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                    ? 'bg-rose-50 border-rose-200 text-rose-700'
+                    : 'bg-amber-50 border-amber-200 text-amber-700'
                 }`}
               >
                 {activeOrder.status === 'PAID' ? (
@@ -627,23 +672,23 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
                 ) : activeOrder.status === 'EXPIRED' || activeOrder.status === 'CANCELLED' ? (
                   <AlertCircle className="w-7 h-7" />
                 ) : (
-                  <Clock className="w-7 h-7 animate-pulse" />
+                  <Clock className="w-7 h-7" />
                 )}
               </div>
 
               <span
-                className={`px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-block ${
+                className={`px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-block border ${
                   activeOrder.status === 'PAID'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                     : activeOrder.status === 'EXPIRED' || activeOrder.status === 'CANCELLED'
-                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    ? 'bg-rose-50 text-rose-800 border-rose-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
                 }`}
               >
                 STATUS: {activeOrder.status}
               </span>
 
-              <h3 className="heading-font text-lg font-bold text-white">
+              <h3 className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle">
                 {activeOrder.status === 'PAID'
                   ? 'Pembayaran Berhasil Terverifikasi!'
                   : activeOrder.status === 'EXPIRED'
@@ -653,32 +698,32 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
             </div>
 
             {/* Order Details */}
-            <div className="p-4 rounded-2xl bg-white/[0.05] border border-white/10 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-300">
+            <div className="p-4 rounded-2xl bg-white/75 border border-white/90 space-y-2 text-xs shadow-sm">
+              <div className="flex justify-between gap-2 text-[#355968]">
                 <span>ID Pesanan:</span>
-                <span className="font-mono text-white font-bold">{activeOrder.id}</span>
+                <span className="font-mono text-[#0f2c38] font-bold">{activeOrder.id}</span>
               </div>
-              <div className="flex justify-between text-slate-300">
+              <div className="flex justify-between gap-2 text-[#355968]">
                 <span>Produk:</span>
-                <span className="text-white font-medium line-clamp-1">{activeOrder.gameTitle}</span>
+                <span className="text-[#0f2c38] font-semibold line-clamp-1">{activeOrder.gameTitle}</span>
               </div>
-              <div className="flex justify-between text-slate-300">
+              <div className="flex justify-between gap-2 text-[#355968]">
                 <span>Total:</span>
-                <span className="font-mono text-amber-300 font-extrabold">{formatRupiah(activeOrder.amount)}</span>
+                <span className="font-mono text-[#0f766e] font-extrabold">{formatRupiah(activeOrder.amount)}</span>
               </div>
               {activeOrder.qiospayInvoiceId && (
-                <div className="flex justify-between text-slate-300">
+                <div className="flex justify-between gap-2 text-[#355968]">
                   <span>QiosPay Invoice:</span>
-                  <span className="font-mono text-slate-400">{activeOrder.qiospayInvoiceId}</span>
+                  <span className="font-mono text-[#4a6f7d]">{activeOrder.qiospayInvoiceId}</span>
                 </div>
               )}
             </div>
 
             {/* Action based on status */}
             {activeOrder.status === 'PAID' ? (
-              <div className="space-y-3 pt-2">
-                <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+              <div className="space-y-3 pt-1">
+                <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600" />
                   <span>Akses unduhan aktif selama 48 jam ke depan.</span>
                 </div>
 
@@ -687,34 +732,34 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
                     href={downloadInfo.downloadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-extrabold text-xs shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Download className="w-4 h-4 fill-black" />
+                    <Download className="w-4 h-4" />
                     <span>Unduh Game Sekarang ({downloadInfo.fileSize})</span>
                   </a>
                 ) : (
                   <button
                     onClick={() => fetchDownloadAccess(activeOrder.downloadToken, activeOrder.id, activeOrder.customerEmail)}
                     disabled={verifyingDownload}
-                    className="w-full py-3.5 rounded-2xl liquid-glass-button text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {verifyingDownload ? (
                       <Loader2 className="w-4 h-4 animate-spin text-white" />
                     ) : (
-                      <Download className="w-4 h-4 text-[#0A84FF]" />
+                      <Download className="w-4 h-4" />
                     )}
                     <span>Ambil Tautan Unduhan Aman</span>
                   </button>
                 )}
               </div>
             ) : (
-              <div className="space-y-3 pt-2">
+              <div className="space-y-3 pt-1">
                 {activeOrder.qiospayPaymentUrl && (
                   <a
                     href={activeOrder.qiospayPaymentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-black font-extrabold text-xs shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <ExternalLink className="w-4 h-4" />
                     <span>Buka Halaman Pembayaran QiosPay</span>
@@ -724,9 +769,9 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
                 <button
                   onClick={() => checkOrderStatus(activeOrder.id)}
                   disabled={isPollingStatus}
-                  className="w-full py-3 rounded-2xl liquid-glass text-white font-semibold text-xs border border-white/20 hover:bg-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="w-full min-h-[46px] py-3 rounded-2xl liquid-glass-button-secondary text-[#0f2c38] font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isPollingStatus ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 text-[#0284c7] ${isPollingStatus ? 'animate-spin' : ''}`} />
                   <span>Periksa Status Pembayaran</span>
                 </button>
               </div>
@@ -737,27 +782,40 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
 
       {/* LOOKUP EXISTING ORDER MODAL */}
       {isLookupOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-md rounded-3xl liquid-glass border border-white/20 p-6 sm:p-7 space-y-5 shadow-2xl">
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
+          onClick={() => setIsLookupOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-7 space-y-5 shadow-2xl"
+          >
+            <div className="sm:hidden flex justify-center">
+              <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
+            </div>
+
             <button
               onClick={() => setIsLookupOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white bg-white/10 transition-colors"
+              aria-label="Tutup pencarian pesanan"
+              className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-[#0A84FF]">
-                <Download className="w-6 h-6" />
+            <div className="flex items-center gap-3 pr-8">
+              <div className="w-12 h-12 rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#0284c7] flex-shrink-0">
+                <Download className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="heading-font text-lg font-bold text-white">Cek Status Pesanan</h3>
-                <p className="text-xs text-slate-300">Masukkan Order ID dan email pembelian Anda</p>
+                <h3 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle">
+                  Cek Status Pesanan
+                </h3>
+                <p className="text-xs text-[#355968]">Masukkan Order ID dan email pembelian Anda</p>
               </div>
             </div>
 
             {lookupError && (
-              <div className="p-3 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+              <div className="p-3 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <span>{lookupError}</span>
               </div>
@@ -765,26 +823,26 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
 
             <form onSubmit={handleLookupOrder} className="space-y-3.5">
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-slate-300">Order ID</label>
+                <label className="block text-xs font-semibold text-[#0f2c38]">Order ID</label>
                 <input
                   type="text"
                   value={lookupOrderId}
                   onChange={(e) => setLookupOrderId(e.target.value)}
                   placeholder="ORD-1730000000-ABCD"
                   required
-                  className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white text-xs outline-none font-mono"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none font-mono shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-slate-300">Alamat Email Pembelian</label>
+                <label className="block text-xs font-semibold text-[#0f2c38]">Alamat Email Pembelian</label>
                 <input
                   type="email"
                   value={lookupEmail}
                   onChange={(e) => setLookupEmail(e.target.value)}
                   placeholder="budi@gmail.com"
                   required
-                  className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white text-xs outline-none"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
                 />
               </div>
 
@@ -792,7 +850,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
                 <button
                   type="submit"
                   disabled={lookupLoading || !lookupOrderId.trim() || !lookupEmail.trim()}
-                  className="w-full py-3.5 rounded-2xl liquid-glass-button text-white font-bold text-xs shadow-lg active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {lookupLoading ? (
                     <>

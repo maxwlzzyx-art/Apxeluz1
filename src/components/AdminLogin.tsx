@@ -158,47 +158,47 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
   };
 
   return (
-    <div className="w-full max-w-md mx-auto py-12 px-4 sm:px-6">
-      <div className="p-7 sm:p-8 rounded-3xl liquid-glass border border-white/20 shadow-2xl space-y-6">
+    <div className="w-full max-w-md mx-auto py-8 sm:py-12 px-2 sm:px-6">
+      <div className="p-6 sm:p-8 rounded-[28px] liquid-glass space-y-6">
         {/* Return to Public Repository Link */}
         <button
           onClick={onNavigateHome}
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-xl liquid-glass-subtle text-xs font-semibold text-[#355968] hover:text-[#0f2c38] cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4 text-[#0A84FF]" />
+          <ArrowLeft className="w-4 h-4 text-[#0284c7]" />
           <span>Kembali ke Repositori Publik</span>
         </button>
 
         {/* Header */}
         <div className="text-center space-y-2">
           <div
-            className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center border shadow-[0_4px_20px_rgba(10,132,255,0.3)] transition-all ${
+            className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center border shadow-sm transition-all ${
               isBlocked
-                ? 'bg-rose-500/25 border-rose-500/40 text-rose-400'
-                : 'bg-gradient-to-br from-[#0A84FF]/25 to-[#BF5AF2]/25 border-white/25 text-[#0A84FF]'
+                ? 'bg-rose-50 border-rose-200 text-rose-600'
+                : 'liquid-glass-subtle text-[#0d9488]'
             }`}
           >
             {isBlocked ? <ShieldAlert className="w-7 h-7" /> : <Shield className="w-7 h-7" />}
           </div>
-          <h1 className="heading-font text-2xl font-bold text-white tracking-tight">
+          <h1 className="heading-font text-2xl font-extrabold text-[#0f2c38] text-3d tracking-tight">
             Autentikasi Administrator
           </h1>
-          <p className="text-xs text-slate-300">
+          <p className="text-xs text-[#355968] leading-relaxed">
             Masuk dengan kredensial administrator terverifikasi untuk mengelola konten, unduhan, dan game premium.
           </p>
         </div>
 
         {/* 30-Minute Lockout Alert (Requirement 3) */}
         {isBlocked && (
-          <div className="p-4 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs space-y-2 shadow-lg animate-pulse">
-            <div className="flex items-center gap-2 font-bold text-rose-300">
+          <div className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-800 text-xs space-y-2 shadow-sm">
+            <div className="flex items-center gap-2 font-bold text-rose-700">
               <ShieldAlert className="w-4 h-4 flex-shrink-0" />
               <span>Akses Login Diblokir Sementara</span>
             </div>
             <p className="leading-relaxed">
               Percobaan login telah gagal 3 kali berturut-turut. Untuk menjaga keamanan repositori APXELUZ, percobaan login dibekukan selama 30 menit.
             </p>
-            <div className="flex items-center gap-2 pt-1 font-mono text-sm font-semibold text-rose-300">
+            <div className="flex items-center gap-2 pt-1 font-mono text-sm font-semibold text-rose-700">
               <Clock className="w-4 h-4" />
               <span>Sisa Waktu Pembekuan: {formatCountdown(rateLimit.remainingSeconds)}</span>
             </div>
@@ -207,24 +207,24 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
 
         {/* Local Rate Warning or Error */}
         {!isBlocked && localFeedback && (
-          <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
             <span className="leading-relaxed">{localFeedback}</span>
           </div>
         )}
 
         {/* Supabase Error Alert if not handled by local feedback */}
         {!isBlocked && !localFeedback && authError && (
-          <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" />
             <span className="leading-relaxed">{authError}</span>
           </div>
         )}
 
         {/* Success Alert if already authenticated */}
         {status === 'authenticated' && (
-          <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+          <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
             <span>Autentikasi berhasil. Membuka Panel Admin...</span>
           </div>
         )}
@@ -233,20 +233,20 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           {/* Email input */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-300">Alamat Email</label>
+            <label className="block text-xs font-semibold text-[#0f2c38]">Alamat Email</label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#4a6f7d]">
                 <Mail className="w-4 h-4" />
               </div>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="pindahserverezeer@gmail.com"
+                placeholder="admin@apxeluz.com"
                 required
                 autoComplete="email"
                 disabled={isLoading || isBlocked || status === 'authenticated'}
-                className="w-full pl-10 pr-4 py-3 rounded-2xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white placeholder-slate-500 text-sm outline-none transition-all disabled:opacity-50"
+                className="w-full min-h-[46px] pl-10 pr-4 py-3 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-sm outline-none transition-all disabled:opacity-50 shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
           </div>
@@ -254,15 +254,15 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
           {/* Password input with show/hide button */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-medium text-slate-300">Password</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">Password</label>
               {!isBlocked && rateLimit.failedAttempts > 0 && (
-                <span className="text-[10px] text-amber-400 font-medium">
+                <span className="text-[11px] text-amber-700 font-semibold">
                   {rateLimit.remainingAttempts} kesempatan tersisa
                 </span>
               )}
             </div>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#4a6f7d]">
                 <Lock className="w-4 h-4" />
               </div>
               <input
@@ -273,14 +273,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
                 required
                 autoComplete="current-password"
                 disabled={isLoading || isBlocked || status === 'authenticated'}
-                className="w-full pl-10 pr-11 py-3 rounded-2xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white placeholder-slate-500 text-sm outline-none transition-all disabled:opacity-50"
+                className="w-full min-h-[46px] pl-10 pr-11 py-3 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-sm outline-none transition-all disabled:opacity-50 shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
                 disabled={isBlocked}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer disabled:opacity-30"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#4a6f7d] hover:text-[#0f2c38] transition-colors cursor-pointer disabled:opacity-30"
                 aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -293,10 +293,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
             <button
               type="submit"
               disabled={isLoading || isBlocked || status === 'authenticated' || !email.trim() || !password}
-              className={`w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-lg ${
+              className={`w-full min-h-[48px] flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-sm disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer ${
                 isBlocked
-                  ? 'bg-rose-500/30 text-rose-300 border border-rose-500/40 cursor-not-allowed'
-                  : 'liquid-glass-button text-white hover:shadow-[#0A84FF]/30'
+                  ? 'bg-rose-100 text-rose-700 border border-rose-200 cursor-not-allowed'
+                  : 'liquid-glass-button text-white'
               }`}
             >
               {isLoading ? (
@@ -306,7 +306,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onNaviga
                 </>
               ) : isBlocked ? (
                 <>
-                  <ShieldAlert className="w-4 h-4 text-rose-300" />
+                  <ShieldAlert className="w-4 h-4 text-rose-600" />
                   <span>Dibekukan ({formatCountdown(rateLimit.remainingSeconds)})</span>
                 </>
               ) : (

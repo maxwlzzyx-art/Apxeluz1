@@ -38,13 +38,6 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
     { label: 'armeabi-v7a (32-bit)', value: 'armeabi-v7a' },
   ];
 
-  const androidVersions = [
-    { label: 'All Android Versions', value: 'All' },
-    { label: 'Android 8.0+', value: '8.0+' },
-    { label: 'Android 9.0+', value: '9.0+' },
-    { label: 'Android 10.0+', value: '10.0+' },
-  ];
-
   const statusOptions = [
     { label: 'All Releases', value: 'All' },
     { label: 'Community Mods', value: 'Unofficial' },
@@ -67,44 +60,46 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
     filters.sortBy !== 'latest';
 
   return (
-    <div className="w-full my-3">
-      {/* Centered Liquid Glass Trigger Button */}
+    <div className="w-full">
+      {/* Centered 3D Frosted Glass Filter Trigger */}
       <div className="flex justify-center">
         <button
           onClick={onToggle}
-          className="group flex items-center gap-2.5 px-6 py-2.5 rounded-full liquid-glass hover:bg-white/[0.12] text-white hover:border-[#0A84FF]/50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.25)] active:scale-95"
+          className={`group min-h-[44px] flex items-center gap-2.5 px-6 py-2.5 rounded-2xl text-xs sm:text-sm font-bold tracking-wide cursor-pointer ${
+            isOpen
+              ? 'liquid-glass-button text-white'
+              : 'liquid-glass-button-secondary text-[#0f2c38]'
+          }`}
           aria-expanded={isOpen}
           aria-label="Browse all items and filters"
         >
-          <SlidersHorizontal className="w-4 h-4 text-[#0A84FF]" />
-          <span className="text-xs sm:text-sm font-semibold tracking-wide">
-            Browse all items & filters
-          </span>
+          <SlidersHorizontal className={`w-4 h-4 ${isOpen ? 'text-white' : 'text-[#0d9488]'}`} />
+          <span className="whitespace-nowrap">Browse all items &amp; filters</span>
           <ChevronDown
-            className={`w-4 h-4 text-slate-300 group-hover:text-white transition-transform duration-300 ${
-              isOpen ? 'rotate-180 text-[#0A84FF]' : ''
+            className={`w-4 h-4 transition-transform duration-200 ${
+              isOpen ? 'rotate-180 text-white' : 'text-[#4a6f7d]'
             }`}
           />
         </button>
       </div>
 
-      {/* Collapsible Liquid Glass Filter Panel */}
+      {/* Collapsible Frosted Glass Filter Panel */}
       {isOpen && (
-        <div className="mt-4 p-5 sm:p-6 rounded-3xl liquid-glass border border-white/20 shadow-2xl transition-all duration-300">
-          <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-white/10">
+        <div className="mt-4 p-5 sm:p-6 rounded-3xl liquid-glass transition-all duration-200">
+          <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-[#0f2c38]/10">
             <div className="flex items-center gap-2.5">
-              <span className="heading-font text-sm font-bold tracking-tight text-white uppercase">
-                Filter & Sort Repository
+              <span className="heading-font text-sm font-bold tracking-tight text-[#0f2c38] text-3d-subtle">
+                Filter &amp; Sort Repository
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] bg-[#0A84FF]/20 text-[#0A84FF] font-semibold border border-[#0A84FF]/30 shadow-sm">
-                {totalMatches} Found
+              <span className="text-xs font-semibold text-[#0d9488] tabular-nums">
+                · {totalMatches} Found
               </span>
             </div>
 
             {hasActiveFilters && (
               <button
                 onClick={onReset}
-                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-[#BF5AF2] transition-colors"
+                className="min-h-[36px] px-2.5 flex items-center gap-1.5 text-xs font-semibold text-[#0284c7] hover:text-[#0f2c38] transition-colors cursor-pointer tactile-press"
                 aria-label="Reset all filters"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -113,19 +108,19 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
             {/* Category Filter */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#355968] block">
                 Category
               </label>
               <select
                 value={filters.category}
                 onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 focus:bg-white/[0.12] backdrop-blur-xl"
+                className="w-full min-h-[44px] bg-white/80 text-sm font-medium text-[#0f2c38] rounded-2xl px-3.5 py-2 border border-white/95 focus:outline-none focus:border-[#0d9488]/60 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06)] cursor-pointer"
               >
                 {categories.map((c) => (
-                  <option key={c} value={c} className="bg-[#0f172a] text-white">
+                  <option key={c} value={c} className="bg-[#f2faf7] text-[#0f2c38]">
                     {c}
                   </option>
                 ))}
@@ -134,16 +129,16 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
 
             {/* Status Filter */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#355968] block">
                 Release Type
               </label>
               <select
                 value={filters.status}
                 onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 focus:bg-white/[0.12] backdrop-blur-xl"
+                className="w-full min-h-[44px] bg-white/80 text-sm font-medium text-[#0f2c38] rounded-2xl px-3.5 py-2 border border-white/95 focus:outline-none focus:border-[#0d9488]/60 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06)] cursor-pointer"
               >
                 {statusOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="bg-[#0f172a] text-white">
+                  <option key={opt.value} value={opt.value} className="bg-[#f2faf7] text-[#0f2c38]">
                     {opt.label}
                   </option>
                 ))}
@@ -152,7 +147,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
 
             {/* Architecture Filter */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#355968] block">
                 CPU Architecture
               </label>
               <select
@@ -160,10 +155,10 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, architecture: e.target.value }))
                 }
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 focus:bg-white/[0.12] backdrop-blur-xl"
+                className="w-full min-h-[44px] bg-white/80 text-sm font-medium text-[#0f2c38] rounded-2xl px-3.5 py-2 border border-white/95 focus:outline-none focus:border-[#0d9488]/60 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06)] cursor-pointer"
               >
                 {architectures.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="bg-[#0f172a] text-white">
+                  <option key={opt.value} value={opt.value} className="bg-[#f2faf7] text-[#0f2c38]">
                     {opt.label}
                   </option>
                 ))}
@@ -172,7 +167,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
 
             {/* Sort By Filter */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#355968] block">
                 Sort Order
               </label>
               <select
@@ -183,10 +178,10 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
                     sortBy: e.target.value as FilterOptions['sortBy'],
                   }))
                 }
-                className="w-full bg-white/[0.08] text-sm text-white rounded-2xl px-3.5 py-2.5 border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 focus:bg-white/[0.12] backdrop-blur-xl"
+                className="w-full min-h-[44px] bg-white/80 text-sm font-medium text-[#0f2c38] rounded-2xl px-3.5 py-2 border border-white/95 focus:outline-none focus:border-[#0d9488]/60 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06)] cursor-pointer"
               >
                 {sortOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="bg-[#0f172a] text-white">
+                  <option key={opt.value} value={opt.value} className="bg-[#f2faf7] text-[#0f2c38]">
                     {opt.label}
                   </option>
                 ))}

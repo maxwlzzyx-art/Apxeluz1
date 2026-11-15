@@ -148,31 +148,42 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl liquid-glass border border-white/20 p-6 sm:p-8 space-y-6 shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-8 space-y-5 shadow-2xl custom-scrollbar"
+      >
+        <div className="sm:hidden flex justify-center">
+          <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
+        </div>
+
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white bg-white/10 transition-colors"
+          aria-label="Tutup modal game premium"
+          className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+        <div className="flex items-center gap-3 pr-10">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100/80 border border-amber-300/70 flex items-center justify-center text-amber-700 flex-shrink-0">
             <Crown className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="heading-font text-xl font-bold text-white">
+            <h2 className="heading-font text-lg sm:text-xl font-extrabold text-[#0f2c38] text-3d-subtle">
               {initialGame ? 'Edit Game Premium' : 'Tambah Game Premium Baru'}
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#355968]">
               Kelola metadata produk, harga Rupiah, status publikasi, dan file unduhan.
             </p>
           </div>
         </div>
 
         {error && (
-          <div className="p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+          <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -181,33 +192,33 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-300">Judul Game *</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">Judul Game *</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Grand Theft Auto: San Andreas HD"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white text-xs outline-none"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-300">URL Slug</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">URL Slug</label>
               <input
                 type="text"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 placeholder="gta-san-andreas-hd"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white text-xs outline-none font-mono"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none font-mono shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-300">Harga Jual (IDR / Rupiah) *</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">Harga Jual (IDR / Rupiah) *</label>
               <input
                 type="number"
                 value={price}
@@ -215,121 +226,121 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
                 placeholder="35000"
                 min="0"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white text-xs outline-none font-mono text-amber-300 font-bold"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f766e] text-xs outline-none font-mono font-bold shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-300">Harga Asli / Coret (Opsional)</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">Harga Asli / Coret (Opsional)</label>
               <input
                 type="number"
                 value={originalPrice}
                 onChange={(e) => setOriginalPrice(e.target.value)}
                 placeholder="60000"
                 min="0"
-                className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white text-xs outline-none font-mono text-slate-400"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#4a6f7d] text-xs outline-none font-mono shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-300">Kategori</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">Kategori</label>
               <input
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Games"
-                className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 text-white text-xs outline-none"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-300">Versi</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">Versi</label>
               <input
                 type="text"
                 value={version}
                 onChange={(e) => setVersion(e.target.value)}
                 placeholder="v1.0.0"
-                className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 text-white text-xs outline-none font-mono"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none font-mono shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-300">Ukuran File</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">Ukuran File</label>
               <input
                 type="text"
                 value={fileSize}
                 onChange={(e) => setFileSize(e.target.value)}
                 placeholder="1.5 GB"
-                className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 text-white text-xs outline-none"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-slate-300">URL File Unduhan Rahasia *</label>
+            <label className="block text-xs font-semibold text-[#0f2c38]">URL File Unduhan Rahasia *</label>
             <input
               type="url"
               value={downloadUrl}
               onChange={(e) => setDownloadUrl(e.target.value)}
               placeholder="https://storage.supabase.co/apks/game.apk"
               required
-              className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 focus:border-[#0A84FF] text-white text-xs outline-none font-mono"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none font-mono shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
             />
-            <span className="text-[10px] text-slate-400 block">
+            <span className="text-[11px] text-[#4a6f7d] block">
               Tautan ini hanya diberikan kepada pembeli setelah pembayaran terverifikasi oleh webhook QiosPay.
             </span>
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-slate-300">Deskripsi Singkat</label>
+            <label className="block text-xs font-semibold text-[#0f2c38]">Deskripsi Singkat</label>
             <input
               type="text"
               value={shortDescription}
               onChange={(e) => setShortDescription(e.target.value)}
               placeholder="Remaster grafis 60FPS dengan controller support..."
-              className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 text-white text-xs outline-none"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-slate-300">Deskripsi Lengkap</label>
+            <label className="block text-xs font-semibold text-[#0f2c38]">Deskripsi Lengkap</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Jelaskan fitur-fitur eksklusif dari game premium ini..."
-              className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 text-white text-xs outline-none"
+              className="w-full px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-300">URL Cover / Thumbnail</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">URL Cover / Thumbnail</label>
               <input
                 type="url"
                 value={coverUrl}
                 onChange={(e) => setCoverUrl(e.target.value)}
                 placeholder="https://..."
-                className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 text-white text-xs outline-none"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-300">URL Icon</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">URL Icon</label>
               <input
                 type="url"
                 value={iconUrl}
                 onChange={(e) => setIconUrl(e.target.value)}
                 placeholder="https://..."
-                className="w-full px-3.5 py-2.5 rounded-xl liquid-glass border border-white/15 text-white text-xs outline-none"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-slate-300">
+            <label className="block text-xs font-semibold text-[#0f2c38]">
               Tangkapan Layar / Screenshots (Satu URL per baris)
             </label>
             <textarea
@@ -337,47 +348,51 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
               onChange={(e) => setScreenshotsText(e.target.value)}
               rows={2}
               placeholder="https://...&#10;https://..."
-              className="w-full px-3.5 py-2 rounded-xl liquid-glass border border-white/15 text-white text-xs outline-none font-mono"
+              className="w-full px-3.5 py-2 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none font-mono shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
             />
           </div>
 
           {/* Status & Publication Toggles */}
-          <div className="p-4 rounded-2xl bg-white/[0.05] border border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-white/75 border border-white/90 grid grid-cols-1 sm:grid-cols-2 gap-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-bold text-white block">Status Produk Aktif</span>
-                <span className="text-[10px] text-slate-400">Bisa dibeli oleh publik</span>
+                <span className="text-xs font-bold text-[#0f2c38] block">Status Produk Aktif</span>
+                <span className="text-[11px] text-[#4a6f7d]">Bisa dibeli oleh publik</span>
               </div>
               <input
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+                className="w-5 h-5 accent-[#0d9488] rounded cursor-pointer"
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-bold text-white block">Status Publikasi</span>
-                <span className="text-[10px] text-slate-400">Tampilkan di katalog</span>
+                <span className="text-xs font-bold text-[#0f2c38] block">Status Publikasi</span>
+                <span className="text-[11px] text-[#4a6f7d]">Tampilkan di katalog</span>
               </div>
               <select
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value as any)}
-                className="px-3 py-1.5 rounded-xl bg-slate-900 border border-white/20 text-white text-xs outline-none"
+                className="min-h-[40px] px-3 py-1.5 rounded-xl bg-white/90 border border-white text-[#0f2c38] text-xs font-semibold outline-none"
               >
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
+                <option value="published" className="bg-[#f2faf7] text-[#0f2c38]">
+                  Published
+                </option>
+                <option value="draft" className="bg-[#f2faf7] text-[#0f2c38]">
+                  Draft
+                </option>
               </select>
             </div>
           </div>
 
-          <div className="pt-3 flex items-center justify-end gap-3 border-t border-white/10">
+          <div className="pt-3 flex items-center justify-end gap-3 border-t border-[#0f2c38]/10">
             <button
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-4 py-2.5 rounded-xl text-xs text-slate-300 hover:text-white transition-colors"
+              className="min-h-[44px] px-5 py-2.5 rounded-2xl liquid-glass-button-secondary text-xs font-semibold text-[#355968] hover:text-[#0f2c38] cursor-pointer"
             >
               Batal
             </button>
@@ -385,11 +400,11 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-black font-extrabold text-xs shadow-lg active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+              className="min-h-[44px] flex items-center gap-2 px-6 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
                   <span>Menyimpan...</span>
                 </>
               ) : (

@@ -7,7 +7,6 @@ import {
   FileCheck,
   CheckCircle2,
   AlertCircle,
-  HardDrive,
   Copy,
   Check,
 } from 'lucide-react';
@@ -29,7 +28,6 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
 
   if (!game) return null;
 
-  // Normalized download mirrors from game data or admin saved links
   const mirrors = (game.downloadLinks && game.downloadLinks.length > 0)
     ? game.downloadLinks
     : [
@@ -52,14 +50,11 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
       return;
     }
 
-    // Safely open the actual destination URL in a new browser tab
-    // No blobs, no fetch, no download attribute
     const success = safeOpenExternalUrl(url, '_blank');
     if (success) {
       setRedirectedUrl(url);
       setRedirectedName(name);
 
-      // Increment Supabase download metric atomically
       incrementDownloadCounter(game.id).catch(() => {});
       try {
         fetch(`/api/items/${game.id}/download`, { method: 'POST' }).catch(() => {});
@@ -85,74 +80,70 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#040714]/80 backdrop-blur-[24px] saturate-[180%] overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/25 backdrop-blur-md overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg liquid-glass rounded-3xl border border-white/20 shadow-2xl p-6 sm:p-7 overflow-hidden text-left"
+        className="relative w-full max-w-lg liquid-glass rounded-t-[28px] sm:rounded-3xl p-5 sm:p-7 overflow-hidden text-left"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="download-title"
       >
+        <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mb-3 sm:hidden" />
+
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-2xl liquid-glass-subtle hover:bg-white/20 text-slate-300 hover:text-white border border-white/15 transition-colors"
+          className="absolute top-4 right-4 min-w-[40px] min-h-[40px] p-2 rounded-2xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] flex items-center justify-center cursor-pointer"
           aria-label="Close download modal"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center gap-4 mb-5 pb-4 border-b border-white/10">
-          <div className="w-14 h-18 rounded-2xl overflow-hidden bg-white/10 border border-white/20 flex-shrink-0 shadow-lg">
-            <img src={game.coverUrl} alt="" className="w-full h-full object-cover" />
+        <div className="flex items-center gap-3.5 mb-5 pb-4 border-b border-[#0f2c38]/10 pr-10">
+          <div className="w-14 h-16 rounded-2xl overflow-hidden bg-white/70 border border-white flex-shrink-0 shadow-md">
+            <img src={game.coverUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold text-[#0A84FF] bg-[#0A84FF]/20 px-2.5 py-0.5 rounded-full border border-[#0A84FF]/30">
-                {game.status}
-              </span>
-              <span className="font-mono text-xs text-slate-300">{game.version}</span>
-            </div>
-            <h2 id="download-title" className="heading-font text-lg font-bold text-white mt-1">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-[#0d9488] tabular-nums">
+              {game.status} · {game.version}
+            </p>
+            <h2 id="download-title" className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle truncate mt-0.5">
               {game.title}
             </h2>
-            <p className="text-xs text-slate-400">
-              File Size: <span className="text-white font-medium">{game.fileSize}</span> • Arch:{' '}
-              <span className="text-white font-medium">{game.architecture}</span>
+            <p className="text-xs text-[#4a6f7d] tabular-nums">
+              Size: <span className="text-[#0f2c38] font-semibold">{game.fileSize}</span> · Arch:{' '}
+              <span className="text-[#0f2c38] font-semibold">{game.architecture}</span>
             </p>
           </div>
         </div>
 
         {/* Status notice if visitor just opened a link */}
         {redirectedUrl && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-[#0A84FF]/15 border border-[#0A84FF]/30 text-xs space-y-2 animate-fadeIn">
+          <div className="mb-4 p-3.5 rounded-2xl bg-[#d7f5eb]/85 border border-white text-xs space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-white font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-[#0A84FF]" />
+              <span className="flex items-center gap-2 text-[#0b5e58] font-bold">
+                <CheckCircle2 className="w-4 h-4 text-[#0d9488]" />
                 Opened: {redirectedName}
               </span>
               <button
                 onClick={() => handleCopyUrl(redirectedUrl)}
-                className="flex items-center gap-1 text-[11px] text-[#0A84FF] hover:underline"
+                className="flex items-center gap-1 text-[11px] font-bold text-[#0284c7] hover:underline cursor-pointer"
               >
-                {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                {copied ? <Check className="w-3 h-3 text-[#0d9488]" /> : <Copy className="w-3 h-3" />}
                 <span>{copied ? 'Copied' : 'Copy Link'}</span>
               </button>
             </div>
-            <p className="text-slate-300 text-[11px] font-mono break-all line-clamp-1">
+            <p className="text-[#355968] text-[11px] font-mono break-all line-clamp-1">
               {redirectedUrl}
-            </p>
-            <p className="text-slate-400 text-[11px]">
-              Destination opened in a new tab. External hosting service handles the file download directly.
             </p>
           </div>
         )}
 
         {errorMessage && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+          <div className="mb-4 p-3.5 rounded-2xl bg-[#fee2e2] border border-white text-[#be123c] text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{errorMessage}</span>
           </div>
@@ -162,15 +153,15 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+              <span className="text-xs font-bold text-[#355968]">
                 Select Download Destination
-              </label>
-              <span className="text-[11px] text-slate-400">
-                {mirrors.length} {mirrors.length === 1 ? 'Mirror' : 'Mirrors'} Available
+              </span>
+              <span className="text-[11px] text-[#4a6f7d] tabular-nums">
+                {mirrors.length} {mirrors.length === 1 ? 'Mirror' : 'Mirrors'}
               </span>
             </div>
 
-            <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
               {mirrors.map((mirror, idx) => {
                 const isSelected = selectedMirrorIndex === idx;
                 const hosting = getHostingProvider(mirror.url, mirror.name);
@@ -179,54 +170,48 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
                   <div
                     key={mirror.id || idx}
                     onClick={() => setSelectedMirrorIndex(idx)}
-                    className={`w-full p-3.5 rounded-2xl border flex items-center justify-between text-xs transition-all duration-300 cursor-pointer ${
+                    className={`w-full p-3.5 rounded-2xl flex items-center justify-between text-xs cursor-pointer tactile-press ${
                       isSelected
-                        ? 'bg-gradient-to-r from-[#0A84FF]/20 to-[#BF5AF2]/20 border-[#0A84FF]/60 text-white shadow-[0_4px_18px_rgba(10,132,255,0.25)]'
-                        : 'liquid-glass-subtle hover:bg-white/10 text-slate-300 hover:text-white border-white/15'
+                        ? 'bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-[#0d9488]/40 text-[#0f2c38] shadow-[0_6px_16px_-6px_rgba(13,148,136,0.22)]'
+                        : 'liquid-glass-subtle text-[#2c4f5e]'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div className={`p-2 rounded-xl ${isSelected ? 'bg-[#0A84FF]/30 text-white' : 'bg-white/5 text-slate-400'}`}>
+                      <div
+                        className={`p-2 rounded-xl shrink-0 ${
+                          isSelected
+                            ? 'bg-[#0d9488] text-white'
+                            : 'bg-white/80 text-[#4a6f7d] border border-white'
+                        }`}
+                      >
                         <Server className="w-4 h-4" />
                       </div>
                       <div className="text-left min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white truncate">{mirror.name}</span>
-                          <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-mono">
-                            {hosting.label}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-[#0f2c38] truncate">{mirror.name}</span>
+                          <span className="text-[10px] text-[#4a6f7d] font-medium">
+                            · {hosting.label}
                           </span>
                         </div>
-                        <div className="text-[11px] text-slate-400 font-mono truncate max-w-[240px] sm:max-w-[280px]">
+                        <div className="text-[11px] text-[#4a6f7d] font-mono truncate max-w-[210px] sm:max-w-[260px]">
                           {mirror.url}
                         </div>
-                        {mirror.notes && (
-                          <div className="text-[10px] text-slate-400 italic">
-                            {mirror.notes}
-                          </div>
-                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {mirror.isPrimary && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0A84FF]/30 text-[#0A84FF] border border-[#0A84FF]/40">
-                          Primary
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedMirrorIndex(idx);
-                          handleOpenMirror(mirror.url, mirror.name);
-                        }}
-                        className="p-2 rounded-xl bg-white/10 hover:bg-[#0A84FF] text-slate-300 hover:text-white transition-colors"
-                        title="Open external download destination in new tab"
-                        aria-label={`Open ${mirror.name}`}
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedMirrorIndex(idx);
+                        handleOpenMirror(mirror.url, mirror.name);
+                      }}
+                      className="min-w-[40px] min-h-[40px] p-2 rounded-xl liquid-glass-button-secondary text-[#0d9488] flex items-center justify-center flex-shrink-0 cursor-pointer"
+                      title="Open external download destination in new tab"
+                      aria-label={`Open ${mirror.name}`}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
                   </div>
                 );
               })}
@@ -235,38 +220,38 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
 
           {/* Security & Integrity Note */}
           <div className="p-3.5 rounded-2xl liquid-glass-subtle space-y-2 text-xs">
-            <div className="flex items-center justify-between text-slate-300">
+            <div className="flex items-center justify-between text-[#355968]">
               <span className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#0A84FF]" />
-                <span>Redirect Security:</span>
+                <ShieldCheck className="w-4 h-4 text-[#0d9488]" />
+                <span>Redirect Security</span>
               </span>
-              <span className="text-emerald-400 font-semibold flex items-center gap-1">
+              <span className="text-[#0d9488] font-bold flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Verified HTTP/HTTPS</span>
               </span>
             </div>
-            <div className="flex items-center justify-between text-slate-300">
+            <div className="flex items-center justify-between text-[#355968]">
               <span className="flex items-center gap-2">
-                <FileCheck className="w-4 h-4 text-slate-400" />
-                <span>Package Target:</span>
+                <FileCheck className="w-4 h-4 text-[#4a6f7d]" />
+                <span>Package Target</span>
               </span>
-              <span className="font-mono text-slate-300 truncate max-w-[220px]">
+              <span className="font-mono text-[#0f2c38] truncate max-w-[200px]">
                 {game.downloadFilename || `${game.slug}.apk`}
               </span>
             </div>
           </div>
 
-          {/* Primary Action Button: Opens actual destination URL */}
+          {/* Primary Action Button */}
           <div className="pt-1">
             <button
               onClick={() => handleOpenMirror(currentMirror.url, currentMirror.name)}
-              className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl liquid-glass-button text-white font-bold text-sm tracking-wide transition-all shadow-[0_4px_24px_rgba(10,132,255,0.4)] active:scale-95"
+              className="w-full min-h-[48px] flex items-center justify-center gap-2.5 py-3.5 rounded-2xl liquid-glass-button text-white font-bold text-sm tracking-wide cursor-pointer"
             >
               <ExternalLink className="w-4 h-4 stroke-[2.5]" />
               <span>Open {currentMirror.name} ({game.fileSize})</span>
             </button>
-            <p className="text-[11px] text-center text-slate-400 mt-2">
-              Opens the destination page in a new browser tab. No automated file forcing.
+            <p className="text-[11px] text-center text-[#4a6f7d] mt-2">
+              Opens the destination page in a new browser tab.
             </p>
           </div>
         </div>

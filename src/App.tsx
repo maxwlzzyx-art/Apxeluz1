@@ -365,7 +365,7 @@ function AppContent() {
         name: c.name,
         icon: c.icon || 'Sparkles',
         count: realCount,
-        color: 'from-[#0A84FF]/20 to-[#BF5AF2]/20',
+        color: 'from-[#d7f5eb] to-[#dff1ff]',
       };
     });
   }, [categories, dynamicCategoryCounts]);
@@ -386,8 +386,8 @@ function AppContent() {
   const isAdminAuthenticated = status === 'authenticated';
 
   return (
-    <div className="min-h-screen flex flex-col font-sans selection:bg-[#0A84FF]/30 selection:text-white">
-      {/* Liquid Glass Header with APXELUZ Branding */}
+    <div className="min-h-screen flex flex-col font-sans selection:bg-[#0d9488]/20 selection:text-[#0f2c38] overflow-x-hidden">
+      {/* Liquid Glass Header & Mobile Bottom Navigation */}
       <Header
         activeTab={
           currentRoute.view === 'admin-dashboard'
@@ -416,17 +416,18 @@ function AppContent() {
         onNavigatePremium={() => navigateTo('/premium')}
         onOpenAdminLogin={() => navigateTo('/admin/login')}
         isAdminAuthenticated={isAdminAuthenticated}
+        showRepositorySearch={currentRoute.view === 'home'}
       />
 
       {/* Website Announcement Banner if configured */}
       {websiteSettings?.announcement && (
-        <div className="bg-[#0A84FF]/15 border-b border-[#0A84FF]/30 py-2 px-4 text-center text-xs text-white backdrop-blur-md">
+        <div className="bg-gradient-to-r from-[#d7f5eb]/80 via-[#e4f5fc]/80 to-[#d7f5eb]/80 border-b border-white/80 py-2 px-4 text-center text-xs font-medium text-[#0b5e58] backdrop-blur-md">
           <span>{websiteSettings.announcement}</span>
         </div>
       )}
 
       {/* Main Container */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-16">
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-8 sm:pb-14">
         {/* VIEW 1: Dedicated Shareable Item Page (/mod/:slug, /game/:slug, /app/:slug) */}
         {currentRoute.view === 'item-detail' ? (
           <ModPage
@@ -447,36 +448,36 @@ function AppContent() {
           /* VIEW 3: Admin CMS Dashboard with Robust Async Auth Guarding */
           status === 'loading' ? (
             <div className="py-24 text-center space-y-4">
-              <div className="w-14 h-14 mx-auto rounded-3xl liquid-glass border border-white/20 flex items-center justify-center text-[#0A84FF] shadow-lg">
-                <Loader2 className="w-7 h-7 animate-spin text-[#0A84FF]" />
+              <div className="w-14 h-14 mx-auto rounded-3xl liquid-glass flex items-center justify-center text-[#0d9488]">
+                <Loader2 className="w-7 h-7 animate-spin text-[#0d9488]" />
               </div>
-              <p className="text-sm font-semibold text-slate-200">
+              <p className="text-sm font-semibold text-[#0f2c38]">
                 Verifying Administrator Session...
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#4a6f7d]">
                 Synchronizing with Supabase Authentication
               </p>
             </div>
           ) : status === 'unauthorized' ? (
             <div className="max-w-md mx-auto py-16 px-4">
-              <div className="p-8 rounded-3xl liquid-glass border border-rose-500/30 text-center space-y-4 shadow-2xl">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+              <div className="p-8 rounded-3xl liquid-glass text-center space-y-4">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-[#fee2e2] border border-white flex items-center justify-center text-[#be123c] shadow-sm">
                   <ShieldAlert className="w-7 h-7" />
                 </div>
-                <h1 className="heading-font text-xl font-bold text-white">Access Denied</h1>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h1 className="heading-font text-xl font-bold text-[#0f2c38] text-3d-subtle">Access Denied</h1>
+                <p className="text-xs text-[#355968] leading-relaxed">
                   The account {user?.email ? `"${user.email}"` : ''} is not authorized for administrator access. Only authorized administrators are permitted.
                 </p>
                 <div className="pt-2 flex flex-col gap-2">
                   <button
                     onClick={() => authSignOut()}
-                    className="w-full py-2.5 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all cursor-pointer"
+                    className="w-full min-h-[44px] py-2.5 px-4 rounded-2xl liquid-glass-button-secondary text-[#0f2c38] font-semibold text-xs cursor-pointer"
                   >
-                    Sign Out & Switch Account
+                    Sign Out &amp; Switch Account
                   </button>
                   <button
                     onClick={() => navigateTo('/')}
-                    className="text-xs text-slate-400 hover:text-white py-1 transition-colors cursor-pointer"
+                    className="min-h-[40px] text-xs text-[#4a6f7d] hover:text-[#0f2c38] py-1 transition-colors cursor-pointer"
                   >
                     Return to Public Repository
                   </button>
@@ -499,43 +500,47 @@ function AppContent() {
             />
           )
         ) : currentRoute.view === 'premium' ? (
-          /* VIEW: Dedicated Premium Games Page (Requirement 4) */
+          /* VIEW: Dedicated Premium Games Page */
           <PremiumGamesView onNavigateHome={() => navigateTo('/')} />
         ) : currentRoute.view === 'saved' ? (
           /* VIEW 4: Saved Items Collection */
-          <section className="py-4 space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <section className="py-2 sm:py-4 space-y-6">
+            <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#0f2c38]/10">
               <div className="flex items-center gap-3">
-                <Bookmark className="w-5 h-5 text-[#0A84FF]" />
-                <h1 className="heading-font text-xl sm:text-2xl font-bold text-white uppercase tracking-tight">
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/95 flex items-center justify-center text-[#0284c7] shadow-sm">
+                  <Bookmark className="w-4 h-4" />
+                </div>
+                <h1 className="heading-font text-xl sm:text-2xl font-extrabold text-[#0f2c38] text-3d tracking-tight">
                   Saved Items ({savedGames.length})
                 </h1>
               </div>
               <button
                 onClick={() => navigateTo('/')}
-                className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 cursor-pointer"
+                className="min-h-[40px] px-3 text-xs font-semibold text-[#0d9488] hover:text-[#0284c7] flex items-center gap-1 cursor-pointer tactile-press"
               >
-                <ChevronLeft className="w-4 h-4 text-[#0A84FF]" />
-                <span>Back to Discover</span>
+                <ChevronLeft className="w-4 h-4" />
+                <span>Discover</span>
               </button>
             </div>
 
             {savedGames.length === 0 ? (
-              <div className="text-center py-16 liquid-glass rounded-3xl border border-white/15 space-y-3.5">
-                <Bookmark className="w-10 h-10 mx-auto text-slate-400" />
-                <h2 className="heading-font text-lg font-bold text-white">No Saved Items</h2>
-                <p className="text-xs text-slate-300 max-w-sm mx-auto">
+              <div className="text-center py-14 px-6 liquid-glass rounded-3xl space-y-4">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white flex items-center justify-center text-[#0284c7] shadow-sm">
+                  <Bookmark className="w-6 h-6" />
+                </div>
+                <h2 className="heading-font text-lg font-bold text-[#0f2c38] text-3d-subtle">No Saved Items</h2>
+                <p className="text-xs sm:text-sm text-[#4a6f7d] max-w-sm mx-auto">
                   Bookmark any mod, game, or application card to store it in your personal collection.
                 </p>
                 <button
                   onClick={() => navigateTo('/')}
-                  className="px-5 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
+                  className="min-h-[44px] px-6 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
                 >
                   Explore Repository
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
                 {savedGames.map((game) => (
                   <GameCard
                     key={game.id}
@@ -551,21 +556,21 @@ function AppContent() {
           </section>
         ) : isBrowsingOrSearching ? (
           /* VIEW 5: Search & Active Filter Results */
-          <section className="py-4 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <section className="py-2 sm:py-4 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#0f2c38]/10">
               <div>
-                <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
-                  <button onClick={handleResetFilters} className="hover:text-white cursor-pointer">
+                <div className="flex items-center gap-2 text-xs text-[#4a6f7d] mb-1">
+                  <button onClick={handleResetFilters} className="hover:text-[#0f2c38] cursor-pointer font-medium">
                     Discover
                   </button>
                   <span>/</span>
-                  <span className="text-[#0A84FF]">
+                  <span className="text-[#0d9488] font-semibold">
                     {searchQuery ? `Search: "${searchQuery}"` : 'Browse All'}
                   </span>
                 </div>
-                <h1 className="heading-font text-xl sm:text-2xl font-bold text-white uppercase tracking-tight flex items-center gap-2.5">
-                  <span>Search & Filter Results</span>
-                  <span className="text-sm font-mono text-[#0A84FF]">
+                <h1 className="heading-font text-xl sm:text-2xl font-extrabold text-[#0f2c38] text-3d tracking-tight flex items-center gap-2">
+                  <span>Search &amp; Filter Results</span>
+                  <span className="text-sm font-semibold text-[#0d9488] tabular-nums">
                     ({filteredAndSortedGames.length})
                   </span>
                 </h1>
@@ -574,10 +579,10 @@ function AppContent() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all cursor-pointer ${
+                  className={`min-h-[40px] flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold cursor-pointer ${
                     isFiltersOpen
-                      ? 'bg-[#0A84FF]/25 text-[#0A84FF] border-[#0A84FF]/50 shadow-sm'
-                      : 'liquid-glass-subtle text-slate-300 hover:text-white border-white/15'
+                      ? 'liquid-glass-button text-white'
+                      : 'liquid-glass-button-secondary text-[#0f2c38]'
                   }`}
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -587,10 +592,10 @@ function AppContent() {
                 {searchQuery && (
                   <button
                     onClick={handleResetFilters}
-                    className="text-xs text-slate-400 hover:text-white flex items-center gap-1 px-3 py-2 rounded-2xl liquid-glass-subtle border border-white/15 transition-colors cursor-pointer"
+                    className="min-h-[40px] text-xs font-semibold text-[#355968] hover:text-[#0f2c38] flex items-center gap-1 px-3.5 py-2 rounded-2xl liquid-glass-button-secondary cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
-                    <span>Clear Search</span>
+                    <span>Clear</span>
                   </button>
                 )}
               </div>
@@ -606,27 +611,27 @@ function AppContent() {
             />
 
             {filteredAndSortedGames.length === 0 ? (
-              <div className="text-center py-20 liquid-glass rounded-3xl border border-white/15 space-y-3.5">
-                <Search className="w-12 h-12 mx-auto text-slate-400" />
-                <h2 className="heading-font text-lg font-bold text-white uppercase tracking-tight">
+              <div className="text-center py-16 px-6 liquid-glass rounded-3xl space-y-3.5">
+                <Search className="w-11 h-11 mx-auto text-[#4a6f7d]" />
+                <h2 className="heading-font text-lg font-bold text-[#0f2c38] text-3d-subtle">
                   No Matching Items Found
                 </h2>
-                <p className="text-xs text-slate-300 max-w-sm mx-auto">
+                <p className="text-xs sm:text-sm text-[#4a6f7d] max-w-sm mx-auto">
                   {searchQuery
                     ? `No releases matched query "${searchQuery}".`
                     : 'The repository is currently waiting for new uploads.'}
                 </p>
-                <div className="pt-2 flex justify-center gap-2.5">
+                <div className="pt-2 flex justify-center">
                   <button
                     onClick={handleResetFilters}
-                    className="px-5 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
+                    className="min-h-[44px] px-6 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
                   >
-                    Reset Search & Filters
+                    Reset Search &amp; Filters
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
                 {filteredAndSortedGames.map((game) => (
                   <GameCard
                     key={game.id}
@@ -641,21 +646,42 @@ function AppContent() {
             )}
           </section>
         ) : (
-          /* VIEW 6: Main Homepage in Liquid Glass */
-          <div className="space-y-8">
-            {/* Primary Unique Homepage H1 */}
-            <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
-              <div>
-                <h1 className="heading-font text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-                  {websiteSettings?.siteName || 'APXELUZ'}{' '}
-                  <span className="bg-gradient-to-r from-[#0A84FF] to-[#BF5AF2] bg-clip-text text-transparent">
-                    App &amp; Mod Repository
-                  </span>
-                </h1>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {websiteSettings?.siteDescription ||
-                    'Verified Android games, applications, and community mods with checksum integrity.'}
-                </p>
+          /* VIEW 6: Main Homepage in Pastel Liquid Glass 3D */
+          <div className="space-y-6 sm:space-y-8">
+            {/* Primary Unique Homepage H1 inside Frosted Liquid Panel */}
+            <section className="relative overflow-hidden rounded-3xl liquid-glass p-5 sm:p-7">
+              {/* Soft Pastel Liquid Morph Shapes */}
+              <div
+                aria-hidden="true"
+                className="liquid-orb pointer-events-none absolute -top-12 -right-10 w-44 h-44 bg-gradient-to-br from-[#a7f3d0]/45 to-[#bae6fd]/45 blur-xl"
+              />
+              <div
+                aria-hidden="true"
+                className="liquid-orb pointer-events-none absolute -bottom-14 left-12 w-36 h-36 bg-gradient-to-tr from-[#bae6fd]/40 to-[#bbf7d0]/35 blur-xl"
+              />
+
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1.5 max-w-2xl">
+                  <h1 className="heading-font text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0f2c38] text-3d text-balance leading-tight">
+                    {websiteSettings?.siteName || 'APXELUZ'}{' '}
+                    <span className="text-[#0f766e]">
+                      App &amp; Mod Repository
+                    </span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-[#355968] leading-relaxed">
+                    {websiteSettings?.siteDescription ||
+                      'Curated Android games, applications, and verified community mods in a serene Liquid Glass library.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <button
+                    onClick={() => navigateTo('/premium')}
+                    className="min-h-[44px] px-5 py-2.5 rounded-2xl liquid-glass-button text-white text-xs font-bold whitespace-nowrap cursor-pointer"
+                  >
+                    Explore Premium
+                  </button>
+                </div>
               </div>
             </section>
 
@@ -677,20 +703,20 @@ function AppContent() {
               onReset={handleResetFilters}
             />
 
-            {/* 3. Newly Added Section (Requirement 1: Sorted dynamically by newest addition) */}
+            {/* 3. Newly Added Section */}
             <GameRow
-              title="NEWLY ADDED"
+              title="Newly Added"
               iconType="package"
               games={newlyAddedGames}
               onSelectGame={setSelectedGame}
               savedGameIds={savedGameIds}
               onToggleSave={handleToggleSave}
-              emptyMessage="No newly added releases currently listed. The repository is cleared and ready for new uploads."
+              emptyMessage="No newly added releases currently listed. The repository is ready for new uploads."
             />
 
-            {/* 4. Popular Games Section (Requirement 2: Sorted by highest download count from valid DB data; Featured Games removed) */}
+            {/* 4. Popular Games Section */}
             <GameRow
-              title="POPULAR GAMES"
+              title="Popular Games"
               iconType="trophy"
               games={popularGames}
               onSelectGame={setSelectedGame}
@@ -702,7 +728,7 @@ function AppContent() {
 
             {/* 5. Latest Mods Section */}
             <GameRow
-              title="LATEST MODS"
+              title="Latest Mods"
               iconType="sparkles"
               games={latestMods}
               onSelectGame={setSelectedGame}
@@ -714,7 +740,7 @@ function AppContent() {
         )}
       </main>
 
-      {/* Footer in Liquid Glass */}
+      {/* Footer in Frosted Glass */}
       <Footer />
 
       {/* Game Detail Modal */}

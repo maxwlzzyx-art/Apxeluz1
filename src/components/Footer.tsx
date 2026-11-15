@@ -22,65 +22,66 @@ export const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="w-full bg-[#080c1f]/40 backdrop-blur-[24px] saturate-[180%] border-t border-white/10 mt-16 py-8">
+    <footer className="w-full bg-white/55 backdrop-blur-2xl saturate-150 border-t border-white/80 mt-10 pt-7 pb-24 md:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* APXELUZ Branding */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-white/20 via-white/10 to-transparent border border-white/25 flex items-center justify-center text-[#0A84FF] shadow-[0_4px_16px_rgba(10,132,255,0.25)]">
-              <Layers className="w-4 h-4 text-[#0A84FF]" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/95 flex items-center justify-center text-[#0d9488] shadow-sm">
+              <Layers className="w-4 h-4" />
             </div>
-            <span className="heading-font font-bold text-base tracking-tight text-white">
-              APXE<span className="bg-gradient-to-r from-[#0A84FF] to-[#BF5AF2] bg-clip-text text-transparent">LUZ</span>
+            <span className="heading-font font-extrabold text-base tracking-tight text-[#0f2c38]">
+              APXE<span className="text-[#0d9488]">LUZ</span>
             </span>
-            <span className="text-xs text-slate-500 hidden sm:inline">•</span>
-            <span className="text-xs text-slate-400 hidden sm:inline">App & Mod Repository</span>
+            <span className="text-xs text-[#648b99] hidden sm:inline">·</span>
+            <span className="text-xs text-[#4a6f7d] hidden sm:inline">App &amp; Mod Repository</span>
           </div>
 
           {/* Legal Policies */}
-          <div className="flex items-center gap-4 text-xs text-slate-400">
+          <div className="flex items-center gap-3 text-xs font-medium text-[#4a6f7d]">
             <button
               onClick={() => openLegalModal('privacy')}
-              className="hover:text-[#0A84FF] transition-colors"
+              className="min-h-[36px] px-2 hover:text-[#0d9488] transition-colors cursor-pointer tactile-press"
             >
               Privacy Policy
             </button>
-            <span>•</span>
+            <span aria-hidden="true">·</span>
             <button
               onClick={() => openLegalModal('terms')}
-              className="hover:text-[#0A84FF] transition-colors"
+              className="min-h-[36px] px-2 hover:text-[#0d9488] transition-colors cursor-pointer tactile-press"
             >
-              Terms of Service & DMCA
+              Terms of Service &amp; DMCA
             </button>
           </div>
 
           {/* Copyright */}
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-[#5c7f8c]">
             © {new Date().getFullYear()} APXELUZ.
           </div>
         </div>
       </div>
 
-      {/* Info Dialog */}
+      {/* Mobile-Friendly Frosted Bottom Sheet / Info Dialog */}
       {modalContent && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#040714]/80 backdrop-blur-xl"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/25 backdrop-blur-md"
           onClick={() => setModalContent(null)}
         >
           <div
-            className="w-full max-w-md liquid-glass rounded-3xl border border-white/20 p-6 sm:p-7 shadow-2xl text-left"
+            className="w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 sm:p-7 text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="heading-font text-lg font-bold text-white uppercase tracking-wider mb-3">
+            <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mb-4 sm:hidden" />
+            <h2 className="heading-font text-lg font-bold text-[#0f2c38] text-3d-subtle mb-3">
               {modalContent.title}
             </h2>
-            <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">
+            <p className="text-xs sm:text-sm text-[#355968] leading-relaxed whitespace-pre-line">
               {modalContent.body}
             </p>
-            <div className="mt-5 flex justify-end">
+            <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setModalContent(null)}
-                className="px-5 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs"
+                className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
               >
                 Close
               </button>

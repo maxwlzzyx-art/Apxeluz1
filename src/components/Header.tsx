@@ -13,6 +13,7 @@ interface HeaderProps {
   onNavigatePremium?: () => void;
   onOpenAdminLogin: () => void;
   isAdminAuthenticated: boolean;
+  showRepositorySearch?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,10 +28,12 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigatePremium,
   onOpenAdminLogin,
   isAdminAuthenticated,
+  showRepositorySearch = true,
 }) => {
   // 5-click hidden admin entry tracker
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogoClick = () => {
     clickCountRef.current += 1;
@@ -45,86 +48,76 @@ export const Header: React.FC<HeaderProps> = ({
       return;
     }
 
-    // Reset counter if user stops clicking for > 1200ms
     clickTimerRef.current = setTimeout(() => {
       clickCountRef.current = 0;
     }, 1200);
 
-    // If single click, perform normal navigation
     if (clickCountRef.current === 1) {
       onNavigateHome();
     }
   };
 
+  const handleMobileSearchJump = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      mobileSearchInputRef.current?.focus();
+    }, 180);
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#080c1f]/60 backdrop-blur-[24px] saturate-[180%] border-b border-white/10 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
-        {/* Top row: Logo and Navigation */}
-        <div className="flex items-center justify-between gap-4">
-          {/* APXELUZ Logo with Hidden 5-Click Admin Trigger */}
+    <>
+      {/* Compact Sticky Top Bar (< 15% mobile height combined with bottom nav) */}
+      <header className="sticky top-0 z-40 w-full bg-white/65 backdrop-blur-2xl saturate-150 border-b border-white/80 shadow-[0_6px_20px_-8px_rgba(22,82,94,0.10)] transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 md:h-auto md:py-3 flex items-center justify-between gap-4 md:gap-8">
+          {/* Zone 1: Single-line Brand Wordmark with 3D Liquid Crystal Icon */}
           <button
             onClick={handleLogoClick}
-            className="flex items-center gap-3 group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0A84FF] rounded-2xl p-1 -m-1 select-none cursor-pointer"
+            className="flex items-center gap-2.5 group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0d9488] rounded-2xl p-1 -m-1 select-none cursor-pointer tactile-press shrink-0"
             aria-label="APXELUZ Home"
             title="APXELUZ"
           >
-            {/* Liquid Glass Crystal Icon */}
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-white/20 via-white/10 to-transparent border border-white/25 shadow-[0_4px_16px_rgba(10,132,255,0.25),inset_0_1px_1px_rgba(255,255,255,0.4)] backdrop-blur-xl flex items-center justify-center text-[#0A84FF] group-hover:scale-105 transition-all duration-300">
-              <Layers className="w-5 h-5 text-[#0A84FF] drop-shadow-[0_0_8px_rgba(10,132,255,0.6)]" />
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-gradient-to-br from-[#d7f5eb] via-[#e4f5fc] to-white border border-white/95 shadow-[0_6px_14px_-4px_rgba(13,148,136,0.22),inset_0_1.5px_1px_rgba(255,255,255,0.98),inset_0_-2px_0_rgba(13,148,136,0.20)] flex items-center justify-center text-[#0d9488] shrink-0">
+              <Layers className="w-4 h-4 md:w-5 md:h-5 text-[#0d9488]" />
             </div>
-            <div className="flex flex-col">
-              <span className="heading-font font-bold text-xl tracking-tight text-white flex items-center gap-1.5 leading-none">
-                APXE<span className="bg-gradient-to-r from-[#0A84FF] to-[#BF5AF2] bg-clip-text text-transparent">LUZ</span>
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium tracking-wider uppercase mt-0.5">
-                App & Mod Repository
-              </span>
-            </div>
+            <span className="heading-font font-extrabold text-lg md:text-xl tracking-tight text-[#0f2c38] text-3d-subtle whitespace-nowrap">
+              APXE<span className="text-[#0d9488]">LUZ</span>
+            </span>
           </button>
 
-          {/* Navigation Items */}
-          <nav className="flex items-center gap-2">
-            {/* Discover / Home */}
+          {/* Zone 2 (Desktop): Clean Navigation Links */}
+          <nav className="hidden md:flex items-center gap-2" aria-label="Primary Navigation">
             <button
               onClick={() => {
                 setActiveTab('home');
                 onNavigateHome();
               }}
-              className={`relative flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-semibold whitespace-nowrap shrink-0 cursor-pointer tactile-press ${
                 activeTab === 'home'
-                  ? 'text-white bg-white/15 border border-white/25 shadow-[0_4px_20px_rgba(10,132,255,0.25),inset_0_1px_1px_rgba(255,255,255,0.4)] backdrop-blur-xl'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'
+                  ? 'text-[#0b5e58] bg-gradient-to-b from-[#d8f5eb] to-[#c7eedf] border border-white/90 shadow-[0_4px_12px_-4px_rgba(13,148,136,0.22),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(13,148,136,0.20)]'
+                  : 'text-[#355968] hover:text-[#0f2c38] hover:bg-white/60 border border-transparent'
               }`}
               aria-label="Discover"
             >
-              <Compass className={`w-4 h-4 ${activeTab === 'home' ? 'text-[#0A84FF]' : ''}`} />
+              <Compass className="w-4 h-4 text-[#0d9488]" />
               <span>Discover</span>
-              {activeTab === 'home' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0A84FF] shadow-[0_0_8px_#0A84FF]"></span>
-              )}
             </button>
 
-            {/* Premium Game Tab (Requirement 4) */}
             <button
               onClick={() => {
                 setActiveTab('premium');
                 if (onNavigatePremium) onNavigatePremium();
               }}
-              className={`relative flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-semibold whitespace-nowrap shrink-0 cursor-pointer tactile-press ${
                 activeTab === 'premium'
-                  ? 'text-amber-300 bg-amber-500/20 border border-amber-400/40 shadow-[0_4px_20px_rgba(245,158,11,0.25)] backdrop-blur-xl'
-                  : 'text-amber-400/90 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-400/20'
+                  ? 'text-[#7c4a03] bg-gradient-to-b from-[#fef3c7] to-[#fde68a]/80 border border-white/90 shadow-[0_4px_12px_-4px_rgba(180,83,9,0.18),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(180,83,9,0.18)]'
+                  : 'text-[#7c4a03]/90 hover:text-[#7c4a03] hover:bg-[#fef3c7]/50 border border-transparent'
               }`}
               aria-label="Premium Game"
             >
-              <Crown className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+              <Crown className="w-4 h-4 text-[#b45309]" />
               <span>Premium Game</span>
-              <span className="hidden sm:inline-block px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase bg-gradient-to-r from-amber-500 to-rose-500 text-black">
-                VIP
-              </span>
             </button>
 
-            {/* Saved Items */}
             <button
               onClick={() => {
                 setActiveTab('saved');
@@ -132,24 +125,23 @@ export const Header: React.FC<HeaderProps> = ({
                   window.history.pushState(null, '', '/saved');
                 }
               }}
-              className={`relative flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-semibold whitespace-nowrap shrink-0 cursor-pointer tactile-press ${
                 activeTab === 'saved'
-                  ? 'text-white bg-white/15 border border-white/25 shadow-[0_4px_20px_rgba(10,132,255,0.25),inset_0_1px_1px_rgba(255,255,255,0.4)] backdrop-blur-xl'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'
+                  ? 'text-[#0c4a6e] bg-gradient-to-b from-[#e0f2fe] to-[#bae6fd]/80 border border-white/90 shadow-[0_4px_12px_-4px_rgba(2,132,199,0.20),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(2,132,199,0.20)]'
+                  : 'text-[#355968] hover:text-[#0f2c38] hover:bg-white/60 border border-transparent'
               }`}
               aria-label="Saved Items"
               title="Saved Items"
             >
-              <Bookmark className={`w-4 h-4 ${activeTab === 'saved' ? 'text-[#0A84FF]' : ''}`} />
-              <span className="hidden sm:inline">Saved</span>
+              <Bookmark className="w-4 h-4 text-[#0284c7]" />
+              <span>Saved</span>
               {savedCount > 0 && (
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-gradient-to-r from-[#0A84FF] to-[#BF5AF2] text-white font-bold shadow-sm">
-                  {savedCount}
+                <span className="ml-0.5 text-xs font-bold tabular-nums text-[#0284c7]">
+                  ({savedCount})
                 </span>
               )}
             </button>
 
-            {/* Admin Dashboard shortcut visible ONLY when authenticated as Admin */}
             {isAdminAuthenticated && (
               <button
                 onClick={() => {
@@ -158,60 +150,204 @@ export const Header: React.FC<HeaderProps> = ({
                     window.history.pushState(null, '', '/admin');
                   }
                 }}
-                className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-semibold whitespace-nowrap shrink-0 cursor-pointer tactile-press ${
                   activeTab === 'admin'
-                    ? 'text-white bg-[#0A84FF]/25 border border-[#0A84FF]/50 shadow-[0_4px_20px_rgba(10,132,255,0.3)] backdrop-blur-xl'
-                    : 'text-[#0A84FF] hover:bg-white/10 border border-[#0A84FF]/30'
+                    ? 'text-white liquid-glass-button'
+                    : 'text-[#0d9488] hover:bg-white/60 border border-transparent'
                 }`}
                 aria-label="Admin Dashboard"
                 title="Admin Dashboard"
               >
-                <Shield className="w-4 h-4 text-[#0A84FF]" />
-                <span className="hidden sm:inline font-bold">Admin Panel</span>
+                <Shield className="w-4 h-4" />
+                <span>Admin</span>
               </button>
             )}
           </nav>
-        </div>
 
-        {/* Liquid Glass Search Bar */}
-        <div className="mt-3 relative">
-          <div className="relative flex items-center">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search games, apps & mods (2+ characters)..."
-              className="w-full bg-white/[0.07] text-white text-sm placeholder:text-slate-400 pl-11 pr-24 py-3 rounded-2xl border border-white/15 focus:outline-none focus:border-[#0A84FF]/60 focus:bg-white/[0.10] focus:ring-2 focus:ring-[#0A84FF]/30 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_4px_20px_rgba(0,0,0,0.15)] transition-all duration-300"
-            />
-            <div className="absolute right-3 flex items-center gap-1.5">
+          {/* Zone 3 (Desktop): Search Input + Filter Action */}
+          <div className="hidden md:flex items-center gap-2 flex-1 max-w-sm justify-end">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 w-4 h-4 text-[#4a6f7d] pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (!showRepositorySearch && e.target.value.trim()) {
+                    setActiveTab('home');
+                    onNavigateHome();
+                  }
+                }}
+                placeholder="Search games, apps & mods..."
+                className="w-full bg-white/75 text-[#0f2c38] text-sm placeholder:text-[#5c7f8c] pl-10 pr-9 py-2 rounded-2xl border border-white/90 focus:outline-none focus:border-[#0d9488]/60 focus:bg-white/90 focus:ring-2 focus:ring-[#0d9488]/15 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06),0_2px_8px_rgba(255,255,255,0.6)] transition-all"
+              />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-1 rounded-xl text-[#4a6f7d] hover:text-[#0f2c38] hover:bg-white/70 cursor-pointer"
                   aria-label="Clear search"
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-              {onOpenFilters && (
-                <button
-                  onClick={onOpenFilters}
-                  className={`p-2 rounded-xl text-xs flex items-center gap-1.5 transition-all duration-300 ${
-                    isFiltersOpen
-                      ? 'bg-[#0A84FF]/25 text-[#0A84FF] border border-[#0A84FF]/50 shadow-[0_0_12px_rgba(10,132,255,0.3)]'
-                      : 'bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 border border-white/15'
-                  }`}
-                  aria-label="Toggle filters"
-                  title="Filter options"
-                >
-                  <Filter className="w-3.5 h-3.5" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
+            {onOpenFilters && (
+              <button
+                onClick={onOpenFilters}
+                className={`min-w-[40px] min-h-[40px] p-2.5 rounded-2xl flex items-center justify-center cursor-pointer tactile-press shrink-0 ${
+                  isFiltersOpen
+                    ? 'text-white liquid-glass-button'
+                    : 'liquid-glass-button-secondary text-[#2c4f5e] hover:text-[#0f2c38]'
+                }`}
+                aria-label="Toggle filters"
+                title="Filter options"
+              >
+                <Filter className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Mobile Top Bar Right Action (Search Quick Focus + Filter Trigger on Discovery route only) */}
+          {showRepositorySearch && (
+            <div className="flex md:hidden items-center gap-1.5 shrink-0">
+              <button
+                onClick={handleMobileSearchJump}
+                className="min-w-[44px] min-h-[44px] rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#2c4f5e] cursor-pointer"
+                aria-label="Focus search"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+              {onOpenFilters && (
+                <button
+                  onClick={onOpenFilters}
+                  className={`min-w-[44px] min-h-[44px] rounded-2xl flex items-center justify-center cursor-pointer tactile-press ${
+                    isFiltersOpen
+                      ? 'liquid-glass-button text-white'
+                      : 'liquid-glass-subtle text-[#2c4f5e]'
+                  }`}
+                  aria-label="Toggle filters"
+                >
+                  <Filter className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Mobile Scrollable Search Capsule (Only shown on Discovery/Home route to keep Premium, Saved, and Admin clean) */}
+      {showRepositorySearch && (
+        <div className="md:hidden max-w-7xl w-full mx-auto px-4 pt-3">
+          <div className="relative flex items-center">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-4 h-4 text-[#4a6f7d] pointer-events-none" />
+            <input
+              ref={mobileSearchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search games, apps & mods..."
+              aria-label="Search games, apps & mods"
+              className="w-full min-h-[46px] bg-white/75 text-[#0f2c38] text-sm placeholder:text-[#5c7f8c] pl-11 pr-11 py-2.5 rounded-2xl border border-white/90 focus:outline-none focus:border-[#0d9488]/60 focus:bg-white/95 focus:ring-2 focus:ring-[#0d9488]/15 backdrop-blur-xl shadow-[0_8px_20px_-8px_rgba(22,82,94,0.12),inset_0_2px_4px_rgba(22,82,94,0.05)] transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 z-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-[#4a6f7d] hover:text-[#0f2c38] cursor-pointer"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
-      </div>
-    </header>
+      )}
+
+      {/* Fixed Mobile Bottom Navigation Bar (Thumb Zone Ergonomics, <= 62px height) */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/75 backdrop-blur-2xl saturate-150 border-t border-white/85 shadow-[0_-8px_24px_-8px_rgba(22,82,94,0.12)]"
+        aria-label="Mobile Navigation"
+      >
+        <div
+          className={`grid ${isAdminAuthenticated ? 'grid-cols-4' : 'grid-cols-3'} items-center h-[62px] max-w-md mx-auto px-2`}
+        >
+          <button
+            onClick={() => {
+              setActiveTab('home');
+              onNavigateHome();
+            }}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
+              activeTab === 'home'
+                ? 'bg-gradient-to-b from-[#d8f5eb] to-[#c8efe1] text-[#0b5e58] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(13,148,136,0.2)]'
+                : 'text-[#4a6f7d]'
+            }`}
+            aria-label="Discover"
+          >
+            <Compass className={`w-5 h-5 ${activeTab === 'home' ? 'text-[#0d9488]' : ''}`} />
+            <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Discover</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('premium');
+              if (onNavigatePremium) onNavigatePremium();
+            }}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
+              activeTab === 'premium'
+                ? 'bg-gradient-to-b from-[#fef3c7] to-[#fde68a]/85 text-[#7c4a03] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(180,83,9,0.2)]'
+                : 'text-[#4a6f7d]'
+            }`}
+            aria-label="Premium Game"
+          >
+            <Crown className={`w-5 h-5 ${activeTab === 'premium' ? 'text-[#b45309]' : ''}`} />
+            <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Premium</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('saved');
+              if (window.location.pathname !== '/saved') {
+                window.history.pushState(null, '', '/saved');
+              }
+            }}
+            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
+              activeTab === 'saved'
+                ? 'bg-gradient-to-b from-[#e0f2fe] to-[#bae6fd]/85 text-[#0c4a6e] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(2,132,199,0.2)]'
+                : 'text-[#4a6f7d]'
+            }`}
+            aria-label="Saved Items"
+          >
+            <div className="relative">
+              <Bookmark className={`w-5 h-5 ${activeTab === 'saved' ? 'text-[#0284c7]' : ''}`} />
+              {savedCount > 0 && (
+                <span className="absolute -top-1 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#0284c7] text-white text-[9px] font-bold flex items-center justify-center tabular-nums">
+                  {savedCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Saved</span>
+          </button>
+
+          {isAdminAuthenticated && (
+            <button
+              onClick={() => {
+                setActiveTab('admin');
+                if (window.location.pathname !== '/admin') {
+                  window.history.pushState(null, '', '/admin');
+                }
+              }}
+              className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
+                activeTab === 'admin'
+                  ? 'liquid-glass-button text-white'
+                  : 'text-[#4a6f7d]'
+              }`}
+              aria-label="Admin Dashboard"
+            >
+              <Shield className="w-5 h-5" />
+              <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Admin</span>
+            </button>
+          )}
+        </div>
+      </nav>
+    </>
   );
 };
