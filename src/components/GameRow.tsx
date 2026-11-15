@@ -34,27 +34,27 @@ export const GameRow: React.FC<GameRowProps> = ({
     switch (iconType) {
       case 'package':
         return (
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/90 flex items-center justify-center shadow-[0_4px_10px_-3px_rgba(13,148,136,0.18),inset_0_1px_0_rgba(255,255,255,0.95)]">
-            <Package className="w-4 h-4 text-[#0d9488]" />
+          <div className="w-8 h-8 rounded-xl bg-[#D6F2EE] border border-[#D3DDE3] flex items-center justify-center shadow-[0_3px_8px_-2px_rgba(16,36,46,0.12)]">
+            <Package className="w-4 h-4 text-[#0D9488]" />
           </div>
         );
       case 'lightning':
         return (
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#dff1ff] to-[#d7f5eb] border border-white/90 flex items-center justify-center shadow-[0_4px_10px_-3px_rgba(2,132,199,0.18),inset_0_1px_0_rgba(255,255,255,0.95)]">
-            <Zap className="w-4 h-4 text-[#0284c7]" />
+          <div className="w-8 h-8 rounded-xl bg-[#DBEAF6] border border-[#D3DDE3] flex items-center justify-center shadow-[0_3px_8px_-2px_rgba(16,36,46,0.12)]">
+            <Zap className="w-4 h-4 text-[#1D6FA5]" />
           </div>
         );
       case 'trophy':
         return (
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#fef3c7] to-[#e0f2fe] border border-white/90 flex items-center justify-center shadow-[0_4px_10px_-3px_rgba(180,83,9,0.16),inset_0_1px_0_rgba(255,255,255,0.95)]">
-            <Trophy className="w-4 h-4 text-[#b45309]" />
+          <div className="w-8 h-8 rounded-xl bg-[#FEF3C7] border border-[#F59E0B]/40 flex items-center justify-center shadow-[0_3px_8px_-2px_rgba(16,36,46,0.12)]">
+            <Trophy className="w-4 h-4 text-[#7C4A03]" />
           </div>
         );
       case 'sparkles':
       default:
         return (
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/90 flex items-center justify-center shadow-[0_4px_10px_-3px_rgba(2,132,199,0.18),inset_0_1px_0_rgba(255,255,255,0.95)]">
-            <Sparkles className="w-4 h-4 text-[#0284c7]" />
+          <div className="w-8 h-8 rounded-xl bg-[#E4EFF8] border border-[#D3DDE3] flex items-center justify-center shadow-[0_3px_8px_-2px_rgba(16,36,46,0.12)]">
+            <Sparkles className="w-4 h-4 text-[#1D6FA5]" />
           </div>
         );
     }
@@ -73,10 +73,10 @@ export const GameRow: React.FC<GameRowProps> = ({
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2.5">
           {getSectionIcon()}
-          <h2 className="heading-font text-base sm:text-lg font-bold tracking-tight text-[#0f2c38] text-3d-subtle">
+          <h2 className="heading-font text-base sm:text-lg font-bold tracking-tight text-[#10242E] text-3d-subtle">
             {title}
           </h2>
-          <span className="text-xs text-[#4a6f7d] font-medium tabular-nums">
+          <span className="text-xs text-[#4A6270] font-medium tabular-nums">
             ({games.length})
           </span>
         </div>
@@ -86,14 +86,14 @@ export const GameRow: React.FC<GameRowProps> = ({
             <div className="hidden sm:flex items-center gap-1.5">
               <button
                 onClick={() => scroll('left')}
-                className="p-2 rounded-xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] cursor-pointer"
+                className="p-2 rounded-xl liquid-glass-button-secondary text-[#4A6270] hover:text-[#10242E] cursor-pointer"
                 aria-label={`Scroll ${title} left`}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => scroll('right')}
-                className="p-2 rounded-xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] cursor-pointer"
+                className="p-2 rounded-xl liquid-glass-button-secondary text-[#4A6270] hover:text-[#10242E] cursor-pointer"
                 aria-label={`Scroll ${title} right`}
               >
                 <ChevronRight className="w-4 h-4" />
@@ -103,7 +103,7 @@ export const GameRow: React.FC<GameRowProps> = ({
             {onSeeMore && (
               <button
                 onClick={onSeeMore}
-                className="min-h-[40px] px-2 flex items-center gap-1 text-xs font-semibold text-[#0d9488] hover:text-[#0284c7] transition-colors group cursor-pointer tactile-press"
+                className="min-h-[40px] px-2 flex items-center gap-1 text-xs font-semibold text-[#0D9488] hover:text-[#1D6FA5] transition-colors group cursor-pointer tactile-press"
                 aria-label={`See more ${title}`}
               >
                 <span>See all</span>
@@ -118,12 +118,12 @@ export const GameRow: React.FC<GameRowProps> = ({
       {games.length === 0 ? (
         <div className="p-5 sm:p-7 rounded-3xl liquid-glass flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/90 flex items-center justify-center text-[#0d9488] shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-[#E3F2F0] border border-[#D3DDE3] flex items-center justify-center text-[#0D9488] shadow-sm">
               <Inbox className="w-6 h-6 stroke-[1.5]" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#0f2c38]">No {title.toLowerCase()} currently available</h3>
-              <p className="text-xs text-[#4a6f7d] mt-0.5 max-w-md">
+              <h3 className="text-sm font-bold text-[#10242E]">No {title.toLowerCase()} currently available</h3>
+              <p className="text-xs text-[#4A6270] mt-0.5 max-w-md">
                 {emptyMessage}
               </p>
             </div>

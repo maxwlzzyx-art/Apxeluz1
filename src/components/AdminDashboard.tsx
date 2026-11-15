@@ -35,7 +35,13 @@ import { ItemFormModal } from './ItemFormModal';
 import { AdminPremiumModal } from './AdminPremiumModal';
 import { PRIMARY_ADMIN_EMAIL } from '../lib/auth';
 import { safeFetchJson } from '../utils/apiClient';
-import { formatRupiah, getStartingPrice } from '../utils/premiumPlans';
+import { formatRupiah, getStartingPrice, normalizePremiumGameRecord } from '../utils/premiumPlans';
+import {
+  PREMIUM_CACHE_KEY,
+  mergePremiumGameLists,
+  removePremiumGameFromList,
+  upsertPremiumGameInList,
+} from '../utils/premiumPersistence';
 import { useScrollLock } from '../utils/useScrollLock';
 import {
   subscribeToAllAdminItems,
@@ -49,7 +55,7 @@ import {
   saveSettingsToSupabase,
   savePremiumGameToSupabase,
   deletePremiumGameFromSupabase,
-  ensureUUID,
+  PREMIUM_GAMES_SQL_MIGRATION,
 } from '../lib/supabaseService';
 import { uploadToSupabaseStorage } from '../lib/storageService';
 
@@ -103,6 +109,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [editingPremiumGame, setEditingPremiumGame] = useState<PremiumGame | null>(null);
   const [deletingPremiumGame, setDeletingPremiumGame] = useState<PremiumGame | null>(null);
+  const [premiumSyncNotice, setPremiumSyncNotice] = useState<{
+    type: 'success' | 'warning' | 'error';
+    message: string;
+    showSql?: boolean;
+  } | null>(null);
+  const [copiedSql, setCopiedSql] = useState(false);
 
   useScrollLock(Boolean(deletingPremiumGame || deletingItem || deletingCategory));
 
@@ -140,26 +152,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (catsRes.ok && Array.isArray(catsRes.data) && catsRes.data.length > 0) setCategories(catsRes.data);
       if (settingsRes.ok && settingsRes.data) setSettings(settingsRes.data);
 
-      if (premRes.ok && Array.isArray(premRes.data) && premRes.data.length > 0) {
-        setPremiumGames(premRes.data);
+      let loadedPrem: PremiumGame[] = [];
+      if (premRes.ok && Array.isArray(premRes.data)) {
+        loadedPrem = premRes.data;
       } else {
-        // Fallback: public endpoint /api/v1/premium-games
         const pubPremRes = await safeFetchJson<PremiumGame[]>('/api/v1/premium-games');
-        if (pubPremRes.ok && Array.isArray(pubPremRes.data) && pubPremRes.data.length > 0) {
-          setPremiumGames(pubPremRes.data);
-        } else {
-          // Fallback: localStorage cached premium games
-          try {
-            const cached = localStorage.getItem('apxeluz_cached_premium_games');
-            if (cached) {
-              const parsed = JSON.parse(cached);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setPremiumGames(parsed);
-              }
-            }
-          } catch {
-            // Ignore
+        if (pubPremRes.ok && Array.isArray(pubPremRes.data)) {
+          loadedPrem = pubPremRes.data;
+        }
+      }
+
+      let cachedPrem: PremiumGame[] = [];
+      try {
+        const cached = localStorage.getItem(PREMIUM_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            cachedPrem = parsed;
           }
+        }
+      } catch {
+        // Ignore localStorage parse error
+      }
+
+      const mergedPrem = mergePremiumGameLists(loadedPrem, cachedPrem);
+      if (mergedPrem.length > 0) {
+        setPremiumGames(mergedPrem);
+        try {
+          localStorage.setItem(PREMIUM_CACHE_KEY, JSON.stringify(mergedPrem));
+        } catch {
+          // Ignore quota error
         }
       }
     } catch (err) {
@@ -202,7 +224,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const unsubPrem = subscribeToPremiumGames((livePrem) => {
       if (Array.isArray(livePrem) && livePrem.length > 0) {
-        setPremiumGames(livePrem);
+        setPremiumGames((prev) => mergePremiumGameLists(livePrem, prev));
       }
     });
 
@@ -394,57 +416,129 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Premium Games Handlers (Requirement 4 & 5)
-  const handleSavePremiumGame = async (gameData: Partial<PremiumGame>) => {
+  const persistPremiumCache = (list: PremiumGame[]) => {
     try {
-      const authHeaders: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
-      };
+      localStorage.setItem(PREMIUM_CACHE_KEY, JSON.stringify(list));
+    } catch {
+      // Ignore storage quota issues
+    }
+  };
 
-      if (gameData.id) {
-        await safeFetchJson(`/api/admin/premium-games/${gameData.id}`, {
-          method: 'PUT',
-          headers: authHeaders,
-          body: JSON.stringify(gameData),
-        });
-      } else {
-        await safeFetchJson('/api/admin/premium-games', {
-          method: 'POST',
-          headers: authHeaders,
-          body: JSON.stringify(gameData),
-        });
+  const handleCopySqlMigration = async () => {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(PREMIUM_GAMES_SQL_MIGRATION);
+        setCopiedSql(true);
+        setTimeout(() => setCopiedSql(false), 2500);
       }
-      try {
-        await savePremiumGameToSupabase(gameData);
-      } catch (e) {
-        // Non-fatal
-      }
-      fetchData();
-    } catch (err) {
-      console.error('Save premium game error:', err);
+    } catch {
+      // Fallback ignored
+    }
+  };
+
+  // Premium Games Handlers (Verified Server + Supabase + Cache Persistence)
+  const handleSavePremiumGame = async (gameData: Partial<PremiumGame>) => {
+    const authHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+    };
+
+    const endpoint = gameData.id
+      ? `/api/admin/premium-games/${gameData.id}`
+      : '/api/admin/premium-games';
+    const method = gameData.id ? 'PUT' : 'POST';
+
+    const apiRes = await safeFetchJson<PremiumGame>(endpoint, {
+      method,
+      headers: authHeaders,
+      body: JSON.stringify(gameData),
+    });
+
+    // Surface backend validation / auth errors directly inside modal
+    if (!apiRes.ok && apiRes.status >= 400 && apiRes.status < 500 && apiRes.error) {
+      throw new Error(apiRes.error);
+    }
+
+    const payloadForSupabase: Partial<PremiumGame> = apiRes.ok && apiRes.data
+      ? apiRes.data
+      : gameData;
+
+    const supaRes = await savePremiumGameToSupabase(payloadForSupabase);
+
+    if (!apiRes.ok && !supaRes.syncedToSupabase) {
+      const errorMsg =
+        apiRes.error ||
+        supaRes.errorMessage ||
+        'Gagal menyimpan ke server lokal maupun Supabase. Pastikan server berjalan dan tabel Supabase tersedia.';
+      throw new Error(errorMsg);
+    }
+
+    const finalSavedGame = normalizePremiumGameRecord(
+      apiRes.ok && apiRes.data ? apiRes.data : supaRes.game
+    );
+
+    setPremiumGames((prev) => {
+      const updatedList = upsertPremiumGameInList(prev, finalSavedGame);
+      persistPremiumCache(updatedList);
+      return updatedList;
+    });
+
+    if (supaRes.tableMissing) {
+      setPremiumSyncNotice({
+        type: 'warning',
+        showSql: true,
+        message:
+          `Game "${finalSavedGame.title}" tersimpan ke server lokal, tetapi tabel 'public.premium_games' belum ada di Supabase Anda (Error PGRST205). Jalankan skrip SQL Migrasi di Supabase SQL Editor agar tersinkron ke cloud.`,
+      });
+    } else if (!supaRes.syncedToSupabase) {
+      setPremiumSyncNotice({
+        type: 'warning',
+        message: `Game "${finalSavedGame.title}" tersimpan di server lokal. Sinkronisasi Supabase tertunda: ${supaRes.errorMessage || 'periksa hak akses admin Supabase'}.`,
+      });
+    } else {
+      setPremiumSyncNotice({
+        type: 'success',
+        message: `Game "${finalSavedGame.title}" berhasil disimpan ke server & database Supabase.`,
+      });
     }
   };
 
   const handleDeletePremiumGame = async () => {
     if (!deletingPremiumGame) return;
+    const target = deletingPremiumGame;
     try {
       const authHeaders: Record<string, string> = adminToken
         ? { Authorization: `Bearer ${adminToken}` }
         : {};
-      await safeFetchJson(`/api/admin/premium-games/${deletingPremiumGame.id}`, {
+      const apiRes = await safeFetchJson(`/api/admin/premium-games/${target.id}`, {
         method: 'DELETE',
         headers: authHeaders,
       });
-      try {
-        await deletePremiumGameFromSupabase(deletingPremiumGame.id);
-      } catch (e) {
-        // Non-fatal
+
+      const supaDel = await deletePremiumGameFromSupabase(target.id);
+      if (!apiRes.ok && !supaDel.deletedFromSupabase && !supaDel.tableMissing) {
+        setPremiumSyncNotice({
+          type: 'error',
+          message: apiRes.error || supaDel.errorMessage || 'Gagal menghapus game premium.',
+        });
+        return;
       }
-      setPremiumGames((prev) => prev.filter((p) => p.id !== deletingPremiumGame.id));
+
+      setPremiumGames((prev) => {
+        const next = removePremiumGameFromList(prev, target.id);
+        persistPremiumCache(next);
+        return next;
+      });
       setDeletingPremiumGame(null);
-    } catch (err) {
-      console.error('Delete premium game error:', err);
+      setPremiumSyncNotice({
+        type: 'success',
+        message: `Game premium "${target.title}" berhasil dihapus.`,
+      });
+    } catch (err: any) {
+      setPremiumSyncNotice({
+        type: 'error',
+        message: err?.message || 'Gagal menghapus game premium.',
+      });
     }
   };
 
@@ -455,20 +549,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
       };
 
-      const updated = { ...game, isActive: !game.isActive };
-      await safeFetchJson(`/api/admin/premium-games/${game.id}`, {
+      const updated = normalizePremiumGameRecord({ ...game, isActive: !game.isActive });
+      const apiRes = await safeFetchJson<PremiumGame>(`/api/admin/premium-games/${game.id}`, {
         method: 'PUT',
         headers: authHeaders,
         body: JSON.stringify({ isActive: !game.isActive }),
       });
-      try {
-        await savePremiumGameToSupabase(updated);
-      } catch (e) {
-        // Non-fatal
+      const supaRes = await savePremiumGameToSupabase(updated);
+
+      if (!apiRes.ok && !supaRes.syncedToSupabase) {
+        setPremiumSyncNotice({
+          type: 'error',
+          message: apiRes.error || supaRes.errorMessage || 'Gagal mengubah status aktif.',
+        });
+        return;
       }
-      setPremiumGames((prev) => prev.map((p) => (p.id === game.id ? updated : p)));
-    } catch (err) {
-      console.error('Toggle premium active error:', err);
+
+      const finalRecord = apiRes.ok && apiRes.data ? normalizePremiumGameRecord(apiRes.data) : updated;
+      setPremiumGames((prev) => {
+        const next = upsertPremiumGameInList(prev, finalRecord);
+        persistPremiumCache(next);
+        return next;
+      });
+    } catch (err: any) {
+      setPremiumSyncNotice({
+        type: 'error',
+        message: err?.message || 'Gagal memperbarui status aktif.',
+      });
     }
   };
 
@@ -1237,6 +1344,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <span>Tambah Game Premium</span>
             </button>
           </div>
+
+          {premiumSyncNotice && (
+            <div
+              className={`p-4 sm:p-5 rounded-3xl border text-xs space-y-3 ${
+                premiumSyncNotice.type === 'success'
+                  ? 'bg-[#DCFCE7] border-[#86EFAC] text-[#0F5132]'
+                  : premiumSyncNotice.type === 'error'
+                  ? 'bg-[#FFE4E6] border-[#FDA4AF] text-[#9F1239]'
+                  : 'bg-[#FEF3C7] border-[#FCD34D] text-[#7C4A03]'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="font-semibold leading-relaxed">{premiumSyncNotice.message}</p>
+                <button
+                  type="button"
+                  onClick={() => setPremiumSyncNotice(null)}
+                  className="px-2.5 py-1 rounded-xl bg-white border border-[#D3DDE3] text-[#10242E] font-bold text-[11px] cursor-pointer flex-shrink-0"
+                >
+                  Tutup
+                </button>
+              </div>
+              {premiumSyncNotice.showSql && (
+                <div className="space-y-2 pt-2 border-t border-[#D97706]/25">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-bold text-[11px] uppercase tracking-wider">
+                      SQL Migrasi Tabel Supabase (public.premium_games)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopySqlMigration}
+                      className="min-h-[34px] px-3 py-1.5 rounded-xl bg-[#0D9488] text-white font-bold text-[11px] flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedSql ? 'SQL Tersalin!' : 'Salin SQL Migrasi Supabase'}</span>
+                    </button>
+                  </div>
+                  <pre className="p-3 rounded-2xl bg-[#FFFFFF] border border-[#D3DDE3] text-[#10242E] font-mono text-[10px] overflow-x-auto max-h-40">
+                    {PREMIUM_GAMES_SQL_MIGRATION}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">

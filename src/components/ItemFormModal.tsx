@@ -509,7 +509,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               value={activeUpload.progress.percentage}
               max={100}
               aria-label={`Upload progress for ${activeUpload.filename}`}
-              className="w-full h-2 rounded-full overflow-hidden appearance-none bg-white/80 [&::-webkit-progress-bar]:bg-white/80 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-[#0d9488] [&::-webkit-progress-value]:to-[#0284c7] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:transition-all [&::-moz-progress-bar]:bg-[#0d9488]"
+              className="w-full h-2 rounded-full overflow-hidden appearance-none bg-white/80 [&::-webkit-progress-bar]:bg-white/80 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-value]:bg-[#0D9488] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:transition-all [&::-moz-progress-bar]:bg-[#0D9488]"
             />
             <div className="flex items-center justify-between text-[11px] text-[#355968]">
               <span>

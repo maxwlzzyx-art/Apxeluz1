@@ -365,7 +365,7 @@ function AppContent() {
         name: c.name,
         icon: c.icon || 'Sparkles',
         count: realCount,
-        color: 'from-[#d7f5eb] to-[#dff1ff]',
+        color: 'bg-[#E3F2F0]',
       };
     });
   }, [categories, dynamicCategoryCounts]);
@@ -421,7 +421,7 @@ function AppContent() {
 
       {/* Website Announcement Banner if configured */}
       {websiteSettings?.announcement && (
-        <div className="bg-gradient-to-r from-[#d7f5eb]/80 via-[#e4f5fc]/80 to-[#d7f5eb]/80 border-b border-white/80 py-2 px-4 text-center text-xs font-medium text-[#0b5e58] backdrop-blur-md">
+        <div className="bg-[#D6F2EE] border-b border-[#D3DDE3] py-2 px-4 text-center text-xs font-semibold text-[#0F766E]">
           <span>{websiteSettings.announcement}</span>
         </div>
       )}
@@ -507,16 +507,16 @@ function AppContent() {
           <section className="py-2 sm:py-4 space-y-6">
             <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#0f2c38]/10">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/95 flex items-center justify-center text-[#0284c7] shadow-sm">
+                <div className="w-9 h-9 rounded-2xl bg-[#DBEAF6] border border-[#D3DDE3] flex items-center justify-center text-[#1D6FA5] shadow-sm">
                   <Bookmark className="w-4 h-4" />
                 </div>
-                <h1 className="heading-font text-xl sm:text-2xl font-extrabold text-[#0f2c38] text-3d tracking-tight">
+                <h1 className="heading-font text-xl sm:text-2xl font-extrabold text-[#10242E] text-3d tracking-tight">
                   Saved Items ({savedGames.length})
                 </h1>
               </div>
               <button
                 onClick={() => navigateTo('/')}
-                className="min-h-[40px] px-3 text-xs font-semibold text-[#0d9488] hover:text-[#0284c7] flex items-center gap-1 cursor-pointer tactile-press"
+                className="min-h-[40px] px-3 text-xs font-semibold text-[#0D9488] hover:text-[#1D6FA5] flex items-center gap-1 cursor-pointer tactile-press"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Discover</span>
@@ -525,7 +525,7 @@ function AppContent() {
 
             {savedGames.length === 0 ? (
               <div className="text-center py-14 px-6 liquid-glass rounded-3xl space-y-4">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white flex items-center justify-center text-[#0284c7] shadow-sm">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-[#DBEAF6] border border-[#D3DDE3] flex items-center justify-center text-[#1D6FA5] shadow-sm">
                   <Bookmark className="w-6 h-6" />
                 </div>
                 <h2 className="heading-font text-lg font-bold text-[#0f2c38] text-3d-subtle">No Saved Items</h2>
@@ -648,29 +648,19 @@ function AppContent() {
         ) : (
           /* VIEW 6: Main Homepage in Pastel Liquid Glass 3D */
           <div className="space-y-6 sm:space-y-8">
-            {/* Primary Unique Homepage H1 inside Frosted Liquid Panel */}
+            {/* Primary Unique Homepage H1 inside Frosted Solid Panel */}
             <section className="relative overflow-hidden rounded-3xl liquid-glass p-5 sm:p-7">
-              {/* Soft Pastel Liquid Morph Shapes */}
-              <div
-                aria-hidden="true"
-                className="liquid-orb pointer-events-none absolute -top-12 -right-10 w-44 h-44 bg-gradient-to-br from-[#a7f3d0]/45 to-[#bae6fd]/45 blur-xl"
-              />
-              <div
-                aria-hidden="true"
-                className="liquid-orb pointer-events-none absolute -bottom-14 left-12 w-36 h-36 bg-gradient-to-tr from-[#bae6fd]/40 to-[#bbf7d0]/35 blur-xl"
-              />
-
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1.5 max-w-2xl">
-                  <h1 className="heading-font text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0f2c38] text-3d text-balance leading-tight">
+                  <h1 className="heading-font text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10242E] text-3d text-balance leading-tight">
                     {websiteSettings?.siteName || 'APXELUZ'}{' '}
-                    <span className="text-[#0f766e]">
+                    <span className="text-[#0D9488]">
                       App &amp; Mod Repository
                     </span>
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#355968] leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#4A6270] leading-relaxed">
                     {websiteSettings?.siteDescription ||
-                      'Curated Android games, applications, and verified community mods in a serene Liquid Glass library.'}
+                      'Curated Android games, applications, and verified community mods in a clean 3D library.'}
                   </p>
                 </div>
 

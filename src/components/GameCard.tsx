@@ -37,7 +37,7 @@ export const GameCard: React.FC<GameCardProps> = ({
       aria-label={`View details for ${game.title} version ${game.version}`}
     >
       {/* Cover Image Container (1:1 Icon Aspect) */}
-      <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-[#d9f4eb] to-[#dff1fe]">
+      <div className="relative aspect-square w-full overflow-hidden bg-[#E6ECEF]">
         {!imgFailed && game.coverUrl ? (
           <img
             src={game.coverUrl}
@@ -48,14 +48,14 @@ export const GameCard: React.FC<GameCardProps> = ({
             className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300 ease-out"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-[#d2f2e8] via-[#e4f5fc] to-[#cce8f8]">
-            <Layers className="w-8 h-8 text-[#0d9488] mb-2" />
-            <span className="text-xs font-bold text-[#0f2c38] line-clamp-2">{game.title}</span>
+          <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-[#E3F2F0]">
+            <Layers className="w-8 h-8 text-[#0D9488] mb-2" />
+            <span className="text-xs font-bold text-[#10242E] line-clamp-2">{game.title}</span>
           </div>
         )}
 
-        {/* Soft Top & Bottom Scrim for Clean Contrast */}
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0f2c38]/40 via-[#0f2c38]/10 to-transparent pointer-events-none" />
+        {/* Solid Subtle Bottom Accent Bar (Zero Gradient) */}
+        <div className="absolute inset-x-0 bottom-0 h-1 bg-[#10242E]/10 pointer-events-none" />
 
         {/* Subtle Single Corner Status Indicator (No Pill Sandwiches) */}
         <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1 z-10 pointer-events-none">

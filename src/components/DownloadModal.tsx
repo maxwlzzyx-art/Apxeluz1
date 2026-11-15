@@ -176,8 +176,8 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
                     onClick={() => setSelectedMirrorIndex(idx)}
                     className={`w-full p-3.5 rounded-2xl flex items-center justify-between text-xs cursor-pointer tactile-press ${
                       isSelected
-                        ? 'bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-[#0d9488]/40 text-[#0f2c38] shadow-[0_6px_16px_-6px_rgba(13,148,136,0.22)]'
-                        : 'liquid-glass-subtle text-[#2c4f5e]'
+                        ? 'bg-[#D6F2EE] border border-[#0D9488]/45 text-[#10242E] shadow-[0_6px_14px_-6px_rgba(13,148,136,0.22)]'
+                        : 'liquid-glass-subtle text-[#10242E]'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-2">

@@ -164,15 +164,14 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
           className="overflow-y-auto custom-scrollbar flex-grow overscroll-y-contain touch-pan-y"
         >
           {/* Hero Banner Section */}
-          <div className="relative h-36 sm:h-52 w-full bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] overflow-hidden">
+          <div className="relative h-36 sm:h-52 w-full bg-[#E3F2F0] border-b border-[#D3DDE3] overflow-hidden">
             <img
               src={game.bannerUrl || game.coverUrl}
               alt=""
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover opacity-85 scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-transparent to-transparent pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#f2faf8] via-[#f2faf8]/40 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-[#F2F5F7]/20 pointer-events-none" />
           </div>
 
           {/* Main Info Header */}

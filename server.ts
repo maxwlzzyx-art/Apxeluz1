@@ -16,6 +16,7 @@ import {
 import { PRIMARY_ADMIN_EMAIL, isAuthorizedAdminEmail } from './src/lib/auth';
 import { checkLoginLock, recordLoginFailure, recordLoginSuccess } from './src/lib/rateLimiter';
 import { buildSecurityHeaders } from './src/lib/securityHeaders';
+import { decodeJwtPayload, resolveServerPort } from './src/utils/serverConfig';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -269,17 +270,13 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
   }
 
   // Check Supabase JWT token
-  if (token && token.split('.').length === 3) {
-    try {
-      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));
-      const email = payload.email || payload.user_metadata?.email || payload.app_metadata?.email || payload.claims?.email;
-      const role = payload.role;
+  const payload = decodeJwtPayload(token);
+  if (payload) {
+    const email = payload.email || payload.user_metadata?.email || payload.app_metadata?.email || payload.claims?.email;
+    const role = payload.role;
 
-      if (isAuthorizedAdminEmail(email) || role === 'service_role' || role === 'admin' || role === 'superadmin') {
-        return next();
-      }
-    } catch {
-      // Continue to unauthorized response
+    if (isAuthorizedAdminEmail(email) || role === 'service_role' || role === 'admin' || role === 'superadmin') {
+      return next();
     }
   }
 
@@ -313,9 +310,7 @@ async function startServer() {
   });
 
   const cliArgs = process.argv.slice(2);
-  const portArgIdx = cliArgs.indexOf('--port');
-  const portFromArg = portArgIdx !== -1 && cliArgs[portArgIdx + 1] ? parseInt(cliArgs[portArgIdx + 1], 10) : NaN;
-  const PORT = !isNaN(portFromArg) ? portFromArg : (process.env.PORT ? parseInt(process.env.PORT, 10) : 3000);
+  const PORT = resolveServerPort(cliArgs, process.env);
 
   const hostArgIdx = cliArgs.indexOf('--host');
   const hostFromArg = hostArgIdx !== -1 && cliArgs[hostArgIdx + 1] ? cliArgs[hostArgIdx + 1] : undefined;

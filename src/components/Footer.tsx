@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* APXELUZ Branding */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl overflow-hidden bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/95 flex items-center justify-center text-[#0d9488] shadow-sm">
+            <div className="w-8 h-8 rounded-xl overflow-hidden bg-[#D6F2EE] border border-[#D3DDE3] flex items-center justify-center text-[#0D9488] shadow-sm">
               {!profileIconFailed ? (
                 <img
                   src={WEB_PROFILE_ICON_URL}

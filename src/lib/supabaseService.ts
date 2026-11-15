@@ -545,6 +545,59 @@ export async function saveSettingsToSupabase(settings: WebsiteSettings): Promise
 
 import type { PremiumGame } from '../types/premium';
 import { getStartingPrice, normalizePaymentPlans } from '../utils/premiumPlans';
+import {
+  PREMIUM_CACHE_KEY,
+  isSupabaseMissingTableError,
+  mergePremiumGameLists,
+} from '../utils/premiumPersistence';
+
+export const PREMIUM_GAMES_SQL_MIGRATION = `-- Jalankan di Supabase Dashboard > SQL Editor > New Query > Run
+CREATE TABLE IF NOT EXISTS public.premium_games (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  price NUMERIC NOT NULL CHECK (price >= 0),
+  original_price NUMERIC,
+  short_description TEXT DEFAULT '',
+  description TEXT DEFAULT '',
+  icon_url TEXT DEFAULT '',
+  cover_url TEXT DEFAULT '',
+  banner_url TEXT DEFAULT '',
+  screenshots TEXT[] DEFAULT '{}',
+  download_url TEXT DEFAULT '',
+  payment_plans JSONB DEFAULT '[]'::jsonb,
+  version TEXT DEFAULT 'v1.0.0',
+  file_size TEXT DEFAULT '500 MB',
+  features TEXT[] DEFAULT '{}',
+  category TEXT DEFAULT 'Action',
+  developer TEXT DEFAULT 'Independent Developer',
+  is_active BOOLEAN DEFAULT TRUE,
+  visibility TEXT DEFAULT 'published' CHECK (visibility IN ('published', 'draft')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.premium_games
+  ADD COLUMN IF NOT EXISTS payment_plans JSONB DEFAULT '[]'::jsonb;
+
+ALTER TABLE public.premium_games ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can view active premium games" ON public.premium_games;
+CREATE POLICY "Public can view active premium games"
+ON public.premium_games FOR SELECT TO public
+USING (is_active = TRUE AND (visibility = 'published' OR public.is_admin()));
+
+DROP POLICY IF EXISTS "Admins can manage premium games" ON public.premium_games;
+CREATE POLICY "Admins can manage premium games"
+ON public.premium_games FOR ALL TO authenticated
+USING (public.is_admin()) WITH CHECK (public.is_admin());`;
+
+export interface SavePremiumGameResult {
+  game: PremiumGame;
+  syncedToSupabase: boolean;
+  tableMissing: boolean;
+  errorMessage?: string;
+}
 
 export function premiumRowToGame(row: any): PremiumGame {
   const paymentPlans = normalizePaymentPlans(
@@ -553,31 +606,44 @@ export function premiumRowToGame(row: any): PremiumGame {
     row.download_url || row.downloadUrl
   );
   const price = getStartingPrice({ price: Number(row.price || 0), paymentPlans });
+  const rawOriginal = row.original_price ?? row.originalPrice;
 
   return {
     id: row.id,
     title: row.title || 'Untitled Premium Game',
     slug: row.slug,
     price,
-    originalPrice: row.original_price ? Number(row.original_price) : undefined,
-    shortDescription: row.short_description || '',
-    description: row.description || '',
-    iconUrl: row.icon_url || '',
-    coverUrl: row.cover_url || '',
-    bannerUrl: row.banner_url || '',
+    originalPrice: rawOriginal ? Number(rawOriginal) : undefined,
+    shortDescription: row.short_description ?? row.shortDescription ?? '',
+    description: row.description ?? '',
+    iconUrl: row.icon_url ?? row.iconUrl ?? '',
+    coverUrl: row.cover_url ?? row.coverUrl ?? '',
+    bannerUrl: row.banner_url ?? row.bannerUrl ?? '',
     screenshots: Array.isArray(row.screenshots) ? row.screenshots : [],
-    downloadUrl: row.download_url || paymentPlans[0]?.paymentUrl || '',
+    downloadUrl: row.download_url ?? row.downloadUrl ?? paymentPlans[0]?.paymentUrl ?? '',
     paymentPlans,
     version: row.version || 'v1.0.0',
-    fileSize: row.file_size || '500 MB',
+    fileSize: row.file_size ?? row.fileSize ?? '500 MB',
     features: Array.isArray(row.features) ? row.features : [],
     category: row.category || 'Action',
     developer: row.developer || 'Independent Developer',
-    isActive: row.is_active !== false,
+    isActive: row.is_active !== undefined ? row.is_active !== false : row.isActive !== false,
     visibility: (row.visibility as 'published' | 'draft') || 'published',
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: row.created_at ?? row.createdAt,
+    updatedAt: row.updated_at ?? row.updatedAt,
   };
+}
+
+function readCachedPremiumGames(): PremiumGame[] {
+  try {
+    if (typeof localStorage === 'undefined') return [];
+    const raw = localStorage.getItem(PREMIUM_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(premiumRowToGame) : [];
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -587,6 +653,7 @@ export function subscribeToPremiumGames(
   onUpdate: (games: PremiumGame[]) => void,
   onError?: (err: any) => void
 ): Unsubscribe {
+  let isSubscribed = true;
   const channelId = `realtime_premium_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
   const fetchGames = async () => {
@@ -596,25 +663,38 @@ export function subscribeToPremiumGames(
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        try {
-          const apiRes = await fetch('/api/v1/premium-games');
-          if (apiRes.ok) {
-            const apiData = await apiRes.json();
-            if (Array.isArray(apiData)) {
-              onUpdate(apiData.map((g) => premiumRowToGame(g)));
-              return;
-            }
-          }
-        } catch {
-          // Ignore
+      if (!error && Array.isArray(data) && data.length > 0) {
+        if (isSubscribed) {
+          const mapped = data.map(premiumRowToGame);
+          onUpdate(mergePremiumGameLists(mapped, readCachedPremiumGames()));
         }
-        if (error && onError) onError(error);
         return;
       }
-      onUpdate((data || []).map(premiumRowToGame));
+
+      try {
+        const apiRes = await fetch('/api/v1/premium-games');
+        if (apiRes.ok) {
+          const apiData = await apiRes.json();
+          if (Array.isArray(apiData) && isSubscribed) {
+            onUpdate(mergePremiumGameLists(apiData.map(premiumRowToGame), readCachedPremiumGames()));
+            return;
+          }
+        }
+      } catch {
+        // Ignore network fallback failure
+      }
+
+      const cached = readCachedPremiumGames();
+      if (cached.length > 0 && isSubscribed) {
+        onUpdate(cached);
+        return;
+      }
+
+      if (error && onError && isSubscribed) {
+        onError(error);
+      }
     } catch (err) {
-      if (onError) onError(err);
+      if (onError && isSubscribed) onError(err);
     }
   };
 
@@ -628,7 +708,7 @@ export function subscribeToPremiumGames(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'premium_games' },
         () => {
-          fetchGames();
+          if (isSubscribed) fetchGames();
         }
       )
       .subscribe();
@@ -637,6 +717,7 @@ export function subscribeToPremiumGames(
   }
 
   return () => {
+    isSubscribed = false;
     if (channel) {
       try {
         supabase.removeChannel(channel);
@@ -648,9 +729,11 @@ export function subscribeToPremiumGames(
 }
 
 /**
- * Saves or updates a premium game.
+ * Saves or updates a premium game in Supabase while reporting exact sync/schema status.
  */
-export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Promise<PremiumGame> {
+export async function savePremiumGameToSupabase(
+  game: Partial<PremiumGame>
+): Promise<SavePremiumGameResult> {
   let targetId = game.id;
   if (!targetId && game.slug) {
     try {
@@ -663,13 +746,14 @@ export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Pro
         targetId = existing.id;
       }
     } catch {
-      // Ignore
+      // Ignore lookup failure
     }
   }
 
   const safeId = ensureUUID(targetId);
   const normalizedPlans = normalizePaymentPlans(game.paymentPlans, game.price, game.downloadUrl);
   const startingPrice = getStartingPrice({ price: Number(game.price || 0), paymentPlans: normalizedPlans });
+  const nowIso = new Date().toISOString();
 
   const baseRow = {
     id: safeId,
@@ -680,8 +764,12 @@ export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Pro
     short_description: game.shortDescription || '',
     description: game.description || '',
     icon_url: game.iconUrl || '',
-    cover_url: game.coverUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
-    banner_url: game.bannerUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
+    cover_url:
+      game.coverUrl ||
+      'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
+    banner_url:
+      game.bannerUrl ||
+      'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
     screenshots: game.screenshots || [],
     download_url: game.downloadUrl || normalizedPlans[0]?.paymentUrl || '',
     version: game.version || 'v1.0.0',
@@ -691,7 +779,7 @@ export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Pro
     developer: game.developer || 'Independent Developer',
     is_active: game.isActive !== false,
     visibility: game.visibility || 'published',
-    updated_at: new Date().toISOString(),
+    updated_at: nowIso,
   };
 
   const rowWithPlans = {
@@ -706,42 +794,84 @@ export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Pro
       .select()
       .single();
 
-    if (error) {
-      // Retry without payment_plans if remote Supabase table lacks column yet
+    if (!error && data) {
+      return {
+        game: premiumRowToGame(data),
+        syncedToSupabase: true,
+        tableMissing: false,
+      };
+    }
+
+    if (error && !isSupabaseMissingTableError(error)) {
+      // Retry without payment_plans column only if the table exists without that column
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('premium_games')
         .upsert(baseRow, { onConflict: 'id' })
         .select()
         .single();
 
-      if (fallbackError) {
-        console.warn('Supabase savePremiumGame notice:', fallbackError.message);
-        return premiumRowToGame(rowWithPlans);
+      if (!fallbackError && fallbackData) {
+        return {
+          game: premiumRowToGame({ ...fallbackData, payment_plans: normalizedPlans }),
+          syncedToSupabase: true,
+          tableMissing: false,
+        };
       }
-      return premiumRowToGame({ ...fallbackData, payment_plans: normalizedPlans });
+
+      const finalErr = fallbackError || error;
+      return {
+        game: premiumRowToGame(rowWithPlans),
+        syncedToSupabase: false,
+        tableMissing: isSupabaseMissingTableError(finalErr),
+        errorMessage: finalErr?.message || 'Gagal sinkron ke Supabase.',
+      };
     }
 
-    return premiumRowToGame(data);
+    return {
+      game: premiumRowToGame(rowWithPlans),
+      syncedToSupabase: false,
+      tableMissing: isSupabaseMissingTableError(error),
+      errorMessage: error?.message || "Tabel 'public.premium_games' belum tersedia di Supabase.",
+    };
   } catch (err: any) {
-    console.warn('Supabase savePremiumGame fallback:', err?.message);
-    return premiumRowToGame(rowWithPlans);
+    return {
+      game: premiumRowToGame(rowWithPlans),
+      syncedToSupabase: false,
+      tableMissing: isSupabaseMissingTableError(err),
+      errorMessage: err?.message || 'Koneksi ke Supabase gagal.',
+    };
   }
 }
 
 /**
- * Deletes a premium game.
+ * Deletes a premium game from Supabase when table is present.
  */
-export async function deletePremiumGameFromSupabase(id: string): Promise<void> {
+export async function deletePremiumGameFromSupabase(
+  id: string
+): Promise<{ deletedFromSupabase: boolean; tableMissing: boolean; errorMessage?: string }> {
   const { error } = await supabase
     .from('premium_games')
     .delete()
     .eq('id', id);
 
   if (error) {
-    console.error('Supabase deletePremiumGame error:', error);
-    throw new Error(error.message);
+    if (isSupabaseMissingTableError(error)) {
+      return {
+        deletedFromSupabase: false,
+        tableMissing: true,
+        errorMessage: error.message,
+      };
+    }
+    return {
+      deletedFromSupabase: false,
+      tableMissing: false,
+      errorMessage: error.message,
+    };
   }
+
+  return { deletedFromSupabase: true, tableMissing: false };
 }
+
 
 
 

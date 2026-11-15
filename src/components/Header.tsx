@@ -80,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="APXELUZ Home"
             title="APXELUZ"
           >
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl overflow-hidden bg-gradient-to-br from-[#d7f5eb] via-[#e4f5fc] to-white border border-white/95 shadow-[0_6px_14px_-4px_rgba(13,148,136,0.22),inset_0_1.5px_1px_rgba(255,255,255,0.98),inset_0_-2px_0_rgba(13,148,136,0.20)] flex items-center justify-center text-[#0d9488] shrink-0">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl overflow-hidden bg-[#D6F2EE] border border-[#D3DDE3] shadow-[0_6px_14px_-4px_rgba(13,148,136,0.22),inset_0_1.5px_1px_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(13,148,136,0.20)] flex items-center justify-center text-[#0D9488] shrink-0">
               {!profileIconFailed ? (
                 <img
                   src={WEB_PROFILE_ICON_URL}
@@ -90,11 +90,11 @@ export const Header: React.FC<HeaderProps> = ({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Layers className="w-4 h-4 md:w-5 md:h-5 text-[#0d9488]" />
+                <Layers className="w-4 h-4 md:w-5 md:h-5 text-[#0D9488]" />
               )}
             </div>
-            <span className="heading-font font-extrabold text-lg md:text-xl tracking-tight text-[#0f2c38] text-3d-subtle whitespace-nowrap">
-              APXE<span className="text-[#0d9488]">LUZ</span>
+            <span className="heading-font font-extrabold text-lg md:text-xl tracking-tight text-[#10242E] text-3d-subtle whitespace-nowrap">
+              APXE<span className="text-[#0D9488]">LUZ</span>
             </span>
           </button>
 
@@ -107,12 +107,12 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-semibold whitespace-nowrap shrink-0 cursor-pointer tactile-press ${
                 activeTab === 'home'
-                  ? 'text-[#0b5e58] bg-gradient-to-b from-[#d8f5eb] to-[#c7eedf] border border-white/90 shadow-[0_4px_12px_-4px_rgba(13,148,136,0.22),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(13,148,136,0.20)]'
-                  : 'text-[#355968] hover:text-[#0f2c38] hover:bg-white/60 border border-transparent'
+                  ? 'text-[#0F766E] bg-[#D6F2EE] border border-[#0D9488]/30 shadow-[0_4px_12px_-4px_rgba(13,148,136,0.20),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(13,148,136,0.22)]'
+                  : 'text-[#4A6270] hover:text-[#10242E] hover:bg-[#E6ECEF] border border-transparent'
               }`}
               aria-label="Discover"
             >
-              <Compass className="w-4 h-4 text-[#0d9488]" />
+              <Compass className="w-4 h-4 text-[#0D9488]" />
               <span>Discover</span>
             </button>
 
@@ -123,12 +123,12 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-semibold whitespace-nowrap shrink-0 cursor-pointer tactile-press ${
                 activeTab === 'premium'
-                  ? 'text-[#7c4a03] bg-gradient-to-b from-[#fef3c7] to-[#fde68a]/80 border border-white/90 shadow-[0_4px_12px_-4px_rgba(180,83,9,0.18),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(180,83,9,0.18)]'
-                  : 'text-[#7c4a03]/90 hover:text-[#7c4a03] hover:bg-[#fef3c7]/50 border border-transparent'
+                  ? 'text-[#7C4A03] bg-[#FEF3C7] border border-[#D97706]/35 shadow-[0_4px_12px_-4px_rgba(217,119,6,0.18),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(217,119,6,0.22)]'
+                  : 'text-[#7C4A03] hover:bg-[#FEF3C7]/70 border border-transparent'
               }`}
               aria-label="Premium Game"
             >
-              <Crown className="w-4 h-4 text-[#b45309]" />
+              <Crown className="w-4 h-4 text-[#D97706]" />
               <span>Premium Game</span>
             </button>
 
@@ -141,16 +141,16 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-semibold whitespace-nowrap shrink-0 cursor-pointer tactile-press ${
                 activeTab === 'saved'
-                  ? 'text-[#0c4a6e] bg-gradient-to-b from-[#e0f2fe] to-[#bae6fd]/80 border border-white/90 shadow-[0_4px_12px_-4px_rgba(2,132,199,0.20),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(2,132,199,0.20)]'
-                  : 'text-[#355968] hover:text-[#0f2c38] hover:bg-white/60 border border-transparent'
+                  ? 'text-[#165985] bg-[#DBEAF6] border border-[#1D6FA5]/30 shadow-[0_4px_12px_-4px_rgba(29,111,165,0.20),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(29,111,165,0.22)]'
+                  : 'text-[#4A6270] hover:text-[#10242E] hover:bg-[#E6ECEF] border border-transparent'
               }`}
               aria-label="Saved Items"
               title="Saved Items"
             >
-              <Bookmark className="w-4 h-4 text-[#0284c7]" />
+              <Bookmark className="w-4 h-4 text-[#1D6FA5]" />
               <span>Saved</span>
               {savedCount > 0 && (
-                <span className="ml-0.5 text-xs font-bold tabular-nums text-[#0284c7]">
+                <span className="ml-0.5 text-xs font-bold tabular-nums text-[#1D6FA5]">
                   ({savedCount})
                 </span>
               )}
@@ -291,12 +291,12 @@ export const Header: React.FC<HeaderProps> = ({
             }}
             className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
               activeTab === 'home'
-                ? 'bg-gradient-to-b from-[#d8f5eb] to-[#c8efe1] text-[#0b5e58] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(13,148,136,0.2)]'
-                : 'text-[#4a6f7d]'
+                ? 'bg-[#D6F2EE] text-[#0F766E] border border-[#0D9488]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(13,148,136,0.2)]'
+                : 'text-[#4A6270]'
             }`}
             aria-label="Discover"
           >
-            <Compass className={`w-5 h-5 ${activeTab === 'home' ? 'text-[#0d9488]' : ''}`} />
+            <Compass className={`w-5 h-5 ${activeTab === 'home' ? 'text-[#0D9488]' : ''}`} />
             <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Discover</span>
           </button>
 
@@ -307,12 +307,12 @@ export const Header: React.FC<HeaderProps> = ({
             }}
             className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
               activeTab === 'premium'
-                ? 'bg-gradient-to-b from-[#fef3c7] to-[#fde68a]/85 text-[#7c4a03] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(180,83,9,0.2)]'
-                : 'text-[#4a6f7d]'
+                ? 'bg-[#FEF3C7] text-[#7C4A03] border border-[#D97706]/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(217,119,6,0.2)]'
+                : 'text-[#4A6270]'
             }`}
             aria-label="Premium Game"
           >
-            <Crown className={`w-5 h-5 ${activeTab === 'premium' ? 'text-[#b45309]' : ''}`} />
+            <Crown className={`w-5 h-5 ${activeTab === 'premium' ? 'text-[#D97706]' : ''}`} />
             <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Premium</span>
           </button>
 
@@ -325,15 +325,15 @@ export const Header: React.FC<HeaderProps> = ({
             }}
             className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
               activeTab === 'saved'
-                ? 'bg-gradient-to-b from-[#e0f2fe] to-[#bae6fd]/85 text-[#0c4a6e] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(2,132,199,0.2)]'
-                : 'text-[#4a6f7d]'
+                ? 'bg-[#DBEAF6] text-[#165985] border border-[#1D6FA5]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(29,111,165,0.2)]'
+                : 'text-[#4A6270]'
             }`}
             aria-label="Saved Items"
           >
             <div className="relative">
-              <Bookmark className={`w-5 h-5 ${activeTab === 'saved' ? 'text-[#0284c7]' : ''}`} />
+              <Bookmark className={`w-5 h-5 ${activeTab === 'saved' ? 'text-[#1D6FA5]' : ''}`} />
               {savedCount > 0 && (
-                <span className="absolute -top-1 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#0284c7] text-white text-[9px] font-bold flex items-center justify-center tabular-nums">
+                <span className="absolute -top-1 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#1D6FA5] text-white text-[9px] font-bold flex items-center justify-center tabular-nums">
                   {savedCount}
                 </span>
               )}

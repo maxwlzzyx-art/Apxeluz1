@@ -113,7 +113,7 @@ VALUES ('default', 'APXELUZ', 'Next-generation app and mod repository with Apple
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed default categories if table is empty
-INSERT INTO public.categories (name, slug, icon, display_order, itemCount)
+INSERT INTO public.categories (name, slug, icon, display_order, item_count)
 VALUES 
   ('Action', 'action', 'Flame', 1, 0),
   ('Adventure', 'adventure', 'Compass', 2, 0),
@@ -403,6 +403,9 @@ CREATE TABLE IF NOT EXISTS public.premium_games (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.premium_games
+  ADD COLUMN IF NOT EXISTS payment_plans JSONB DEFAULT '[]'::jsonb;
 
 -- ==============================================================================
 -- 13. SECURE DOWNLOAD LOGS & ATTEMPTS

@@ -116,7 +116,8 @@
       "isActive": true,
       "visibility": "published",
       "createdAt": "2026-11-05T16:03:38.710Z",
-      "updatedAt": "2026-11-15T00:00:00.000Z"
+      "updatedAt": "2026-11-15T00:00:00.000Z",
+      "downloadUrl": "https://apxeluz.my.id/pay/gta-sa-30-hari"
     },
     {
       "id": "prem-hollow-knight",
@@ -161,7 +162,8 @@
       "isActive": true,
       "visibility": "published",
       "createdAt": "2026-11-05T16:03:38.710Z",
-      "updatedAt": "2026-11-15T00:00:00.000Z"
+      "updatedAt": "2026-11-15T00:00:00.000Z",
+      "downloadUrl": "https://apxeluz.my.id/pay/hollow-knight-30-hari"
     },
     {
       "id": "prem-re4-hd",
@@ -205,7 +207,8 @@
       "isActive": true,
       "visibility": "published",
       "createdAt": "2026-11-05T16:03:38.710Z",
-      "updatedAt": "2026-11-15T00:00:00.000Z"
+      "updatedAt": "2026-11-15T00:00:00.000Z",
+      "downloadUrl": "https://apxeluz.my.id/pay/re4-hd-30-hari"
     }
   ]
 }

@@ -58,7 +58,7 @@ export const ModPage: React.FC<ModPageProps> = ({
     return (
       <div className="w-full max-w-4xl mx-auto py-12 px-4">
         <div className="p-8 sm:p-12 rounded-3xl liquid-glass text-center space-y-5">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#fee2e2] to-[#ffedd5] border border-white flex items-center justify-center text-[#be123c] shadow-sm">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-[#FFE4E6] border border-[#F43F5E]/30 flex items-center justify-center text-[#BE123C] shadow-sm">
             <AlertTriangle className="w-8 h-8" />
           </div>
 
@@ -186,14 +186,14 @@ export const ModPage: React.FC<ModPageProps> = ({
       {/* Main Frosted Glass Panel */}
       <div className="relative rounded-3xl liquid-glass overflow-hidden">
         {/* Hero Banner */}
-        <div className="relative h-48 sm:h-68 w-full overflow-hidden bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff]">
+        <div className="relative h-48 sm:h-68 w-full overflow-hidden bg-[#E3F2F0] border-b border-[#D3DDE3]">
           <img
             src={mod.bannerUrl || mod.coverUrl}
             alt=""
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover opacity-85 scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#f2faf8] via-[#f2faf8]/45 to-transparent" />
+          <div className="absolute inset-0 bg-[#F2F5F7]/20 pointer-events-none" />
 
           {/* Subtle Slug Tag */}
           <div className="absolute top-3.5 left-4 z-10">

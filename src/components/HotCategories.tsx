@@ -66,10 +66,10 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
       {/* Section Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/90 flex items-center justify-center shadow-[0_4px_10px_-3px_rgba(13,148,136,0.18),inset_0_1px_0_rgba(255,255,255,0.95)]">
-            <Sparkles className="w-4 h-4 text-[#0d9488]" />
+          <div className="w-8 h-8 rounded-xl bg-[#D6F2EE] border border-[#D3DDE3] flex items-center justify-center shadow-[0_3px_8px_-2px_rgba(16,36,46,0.12)]">
+            <Sparkles className="w-4 h-4 text-[#0D9488]" />
           </div>
-          <h2 className="heading-font text-base sm:text-lg font-bold tracking-tight text-[#0f2c38] text-3d-subtle">
+          <h2 className="heading-font text-base sm:text-lg font-bold tracking-tight text-[#10242E] text-3d-subtle">
             Hot Categories
           </h2>
         </div>
@@ -79,14 +79,14 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
             <div className="hidden sm:flex items-center gap-1.5">
               <button
                 onClick={() => handleScroll('left')}
-                className="p-2 rounded-xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] cursor-pointer"
+                className="p-2 rounded-xl liquid-glass-button-secondary text-[#4A6270] hover:text-[#10242E] cursor-pointer"
                 aria-label="Scroll categories left"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleScroll('right')}
-                className="p-2 rounded-xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] cursor-pointer"
+                className="p-2 rounded-xl liquid-glass-button-secondary text-[#4A6270] hover:text-[#10242E] cursor-pointer"
                 aria-label="Scroll categories right"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -96,7 +96,7 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
             {onSeeMore && (
               <button
                 onClick={onSeeMore}
-                className="min-h-[40px] px-2 flex items-center gap-1 text-xs font-semibold text-[#0d9488] hover:text-[#0284c7] transition-colors group cursor-pointer tactile-press"
+                className="min-h-[40px] px-2 flex items-center gap-1 text-xs font-semibold text-[#0D9488] hover:text-[#1D6FA5] transition-colors group cursor-pointer tactile-press"
                 aria-label="See more categories"
               >
                 <span>See all</span>
@@ -111,12 +111,12 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
       {!categories || categories.length === 0 ? (
         <div className="p-5 sm:p-6 rounded-3xl liquid-glass flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/90 flex items-center justify-center text-[#0d9488] shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-[#E3F2F0] border border-[#D3DDE3] flex items-center justify-center text-[#0D9488] shadow-sm">
               <FolderOpen className="w-6 h-6 stroke-[1.6]" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#0f2c38]">No Categories Configured</h3>
-              <p className="text-xs text-[#4a6f7d] mt-0.5">
+              <h3 className="text-sm font-bold text-[#10242E]">No Categories Configured</h3>
+              <p className="text-xs text-[#4A6270] mt-0.5">
                 Categories will appear automatically as collections are added.
               </p>
             </div>
@@ -157,7 +157,7 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
                   className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
                     isSelected
                       ? 'bg-white/25 text-white'
-                      : 'bg-gradient-to-br from-[#e2f7f0] to-[#e1f1fe] border border-white/80'
+                      : 'bg-[#E3F2F0] border border-[#D3DDE3]'
                   }`}
                 >
                   {getCategoryIcon(cat.icon)}
@@ -166,7 +166,7 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
                   <span className="text-xs font-bold whitespace-nowrap">{cat.name}</span>
                   <span
                     className={`text-[11px] tabular-nums font-medium ${
-                      isSelected ? 'text-white/85' : 'text-[#4a6f7d]'
+                      isSelected ? 'text-white/85' : 'text-[#4A6270]'
                     }`}
                   >
                     {cat.count} items
