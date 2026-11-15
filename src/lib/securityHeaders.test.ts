@@ -29,7 +29,7 @@ test('CSP Production: includes all 10 required directives with strict least-priv
   assert.ok(csp.includes("default-src 'self'"));
   assert.ok(csp.includes("script-src 'self'"));
   assert.ok(csp.includes("style-src 'self' https://fonts.googleapis.com"));
-  assert.ok(csp.includes("img-src 'self' data: blob: https://tgkldegrzhtmcpojkygh.supabase.co https://images.unsplash.com https://ik.imagekit.io"));
+  assert.ok(csp.includes("img-src 'self' data: blob: https://tgkldegrzhtmcpojkygh.supabase.co https://images.unsplash.com https://ik.imagekit.io https://cdn.phototourl.com"));
   assert.ok(csp.includes("font-src 'self' https://fonts.gstatic.com"));
   assert.ok(csp.includes("frame-ancestors 'self'"));
   assert.ok(csp.includes("object-src 'none'"));

@@ -36,8 +36,8 @@ export const GameCard: React.FC<GameCardProps> = ({
       }}
       aria-label={`View details for ${game.title} version ${game.version}`}
     >
-      {/* Cover Image Container */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-[#d9f4eb] to-[#dff1fe]">
+      {/* Cover Image Container (1:1 Icon Aspect) */}
+      <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-[#d9f4eb] to-[#dff1fe]">
         {!imgFailed && game.coverUrl ? (
           <img
             src={game.coverUrl}

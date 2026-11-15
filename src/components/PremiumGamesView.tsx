@@ -4,23 +4,25 @@ import {
   Sparkles,
   ShoppingBag,
   CheckCircle2,
-  AlertCircle,
   ExternalLink,
-  Download,
   Loader2,
   Clock,
   ShieldCheck,
   ChevronRight,
   Search,
   X,
-  CreditCard,
-  QrCode,
-  ArrowRight,
-  RefreshCw,
   Eye,
+  Link2,
 } from 'lucide-react';
-import { PremiumGame, Order } from '../types/premium';
+import { PremiumGame, PremiumPaymentPlan } from '../types/premium';
 import { safeFetchJson } from '../utils/apiClient';
+import {
+  formatRupiah,
+  getStartingPrice,
+  normalizePaymentPlans,
+} from '../utils/premiumPlans';
+import { safeOpenExternalUrl } from '../utils/urlValidation';
+import { useScrollLock } from '../utils/useScrollLock';
 
 interface PremiumGamesViewProps {
   onNavigateHome: () => void;
@@ -34,34 +36,16 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
   // Selected game for detail modal
   const [selectedGame, setSelectedGame] = useState<PremiumGame | null>(null);
 
-  // Checkout modal state
-  const [checkoutGame, setCheckoutGame] = useState<PremiumGame | null>(null);
-  const [customerName, setCustomerName] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-
-  // Active transaction / Payment state
-  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
-  const [isPollingStatus, setIsPollingStatus] = useState(false);
-
-  // Download access state
-  const [downloadInfo, setDownloadInfo] = useState<{
-    downloadUrl: string;
-    gameTitle: string;
-    version: string;
-    fileSize: string;
+  // Selected plan pending user confirmation
+  const [confirmingPurchase, setConfirmingPurchase] = useState<{
+    game: PremiumGame;
+    plan: PremiumPaymentPlan;
   } | null>(null);
-  const [verifyingDownload, setVerifyingDownload] = useState(false);
+  const [redirectTriggered, setRedirectTriggered] = useState(false);
 
-  // Existing order lookup modal
-  const [isLookupOpen, setIsLookupOpen] = useState(false);
-  const [lookupOrderId, setLookupOrderId] = useState('');
-  const [lookupEmail, setLookupEmail] = useState('');
-  const [lookupLoading, setLookupLoading] = useState(false);
-  const [lookupError, setLookupError] = useState<string | null>(null);
+  // Prevent background page scroll bleed while any modal is open
+  useScrollLock(Boolean(selectedGame || confirmingPurchase));
 
-  // Fetch games from backend API
   const fetchGames = async () => {
     try {
       setLoading(true);
@@ -78,150 +62,24 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
 
   useEffect(() => {
     fetchGames();
-
-    // Check if URL has order_id query parameter from payment redirect
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderIdParam = urlParams.get('order_id');
-    if (orderIdParam) {
-      checkOrderStatus(orderIdParam);
-    }
   }, []);
 
-  // Poll order status
-  const checkOrderStatus = async (orderId: string) => {
-    try {
-      setIsPollingStatus(true);
-      const res = await safeFetchJson<Order>(`/api/v1/transactions/${orderId}`);
-      if (res.ok && res.data) {
-        setActiveOrder(res.data);
-
-        // If PAID and has download token, verify download access right away
-        if (res.data.status === 'PAID') {
-          fetchDownloadAccess(res.data.downloadToken, res.data.id, res.data.customerEmail);
-        }
-      }
-    } catch (err) {
-      console.error('Failed checking order status:', err);
-    } finally {
-      setIsPollingStatus(false);
-    }
+  const getPlansForGame = (game: PremiumGame): PremiumPaymentPlan[] => {
+    return normalizePaymentPlans(game.paymentPlans, game.price, game.downloadUrl);
   };
 
-  // Fetch verified download URL
-  const fetchDownloadAccess = async (token?: string, orderId?: string, email?: string) => {
-    try {
-      setVerifyingDownload(true);
-      const res = await safeFetchJson<{
-        downloadUrl: string;
-        gameTitle: string;
-        version: string;
-        fileSize: string;
-      }>('/api/v1/download/access', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, orderId, email }),
-      });
-
-      if (res.ok && res.data) {
-        setDownloadInfo(res.data);
-      }
-    } catch (err) {
-      console.error('Failed fetching download access:', err);
-    } finally {
-      setVerifyingDownload(false);
-    }
-  };
-
-  // Create checkout
-  const handleStartCheckout = (game: PremiumGame) => {
+  const handleChoosePlan = (game: PremiumGame, plan: PremiumPaymentPlan) => {
     setSelectedGame(null);
-    setCheckoutGame(game);
-    setCheckoutError(null);
+    setRedirectTriggered(false);
+    setConfirmingPurchase({ game, plan });
   };
 
-  const handleSubmitCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!checkoutGame || !customerName.trim() || !customerEmail.trim()) return;
-
-    try {
-      setIsSubmittingOrder(true);
-      setCheckoutError(null);
-
-      const res = await safeFetchJson<any>('/api/v1/checkout/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          gameId: checkoutGame.id,
-          customerName: customerName.trim(),
-          customerEmail: customerEmail.trim().toLowerCase(),
-        }),
-      });
-
-      if (res.ok && res.data && res.data.success) {
-        const orderData: Order = {
-          id: res.data.orderId,
-          gameId: checkoutGame.id,
-          gameTitle: checkoutGame.title,
-          customerName: customerName.trim(),
-          customerEmail: customerEmail.trim().toLowerCase(),
-          amount: res.data.amount,
-          status: 'PENDING',
-          qiospayInvoiceId: res.data.invoiceId,
-          qiospayPaymentUrl: res.data.paymentUrl,
-          qiospayQrString: res.data.qrString,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        setActiveOrder(orderData);
-        setCheckoutGame(null);
-      } else {
-        setCheckoutError(res.error || res.data?.error || 'Gagal membuat tagihan pembayaran QiosPay.');
-      }
-    } catch (err: any) {
-      setCheckoutError(err?.message || 'Terjadi kesalahan sistem saat menghubungi server pembayaran.');
-    } finally {
-      setIsSubmittingOrder(false);
+  const handleConfirmRedirect = () => {
+    if (!confirmingPurchase) return;
+    const opened = safeOpenExternalUrl(confirmingPurchase.plan.paymentUrl, '_blank');
+    if (opened) {
+      setRedirectTriggered(true);
     }
-  };
-
-  // Lookup existing order
-  const handleLookupOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!lookupOrderId.trim() || !lookupEmail.trim()) return;
-
-    try {
-      setLookupLoading(true);
-      setLookupError(null);
-
-      const res = await safeFetchJson<any>('/api/v1/download/access', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: lookupOrderId.trim(),
-          email: lookupEmail.trim().toLowerCase(),
-        }),
-      });
-
-      if (res.ok && res.data && res.data.success) {
-        setDownloadInfo(res.data);
-        setIsLookupOpen(false);
-      } else {
-        setLookupError(res.error || res.data?.error || 'Pesanan tidak ditemukan atau belum lunas.');
-      }
-    } catch (err: any) {
-      setLookupError(err?.message || 'Gagal mencari transaksi.');
-    } finally {
-      setLookupLoading(false);
-    }
-  };
-
-  const formatRupiah = (num: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(num);
   };
 
   const filteredGames = games.filter((g) => {
@@ -248,31 +106,22 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
               <span>APXELUZ PREMIUM REPOSITORY</span>
             </div>
             <h1 className="heading-font text-2xl sm:text-4xl font-extrabold text-[#0f2c38] text-3d tracking-tight leading-tight">
-              Eksklusif Game & Mod{' '}
-              <span className="text-[#0f766e]">
-                Koleksi Premium
-              </span>
+              Eksklusif Game &amp; Mod{' '}
+              <span className="text-[#0f766e]">Koleksi Premium</span>
             </h1>
             <p className="text-xs sm:text-sm text-[#355968] leading-relaxed">
-              Dapatkan game Android remaster, visual pack HD 60FPS+, dan port eksklusif berkualitas tinggi. Pembayaran otomatis & instan melalui{' '}
-              <strong className="text-[#0f2c38]">QiosPay</strong> dengan QRIS, Virtual Account, dan E-Wallet.
+              Pilih durasi akses fleksibel (<strong className="text-[#0f2c38]">30 Hari</strong> atau{' '}
+              <strong className="text-[#0f2c38]">Lifetime</strong>). Link pembayaran resmi dari admin sudah mencakup tautan unduhan file lengkap secara langsung.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
             <button
-              onClick={() => setIsLookupOpen(true)}
-              className="flex items-center justify-center gap-2 px-4 py-3 min-h-[46px] rounded-2xl liquid-glass-button-secondary text-[#0f2c38] font-bold text-xs cursor-pointer"
-            >
-              <Download className="w-4 h-4 text-[#0284c7]" />
-              <span>Cek Status Pesanan Saya</span>
-            </button>
-            <button
               onClick={onNavigateHome}
-              className="flex items-center justify-center gap-2 px-4 py-3 min-h-[46px] rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] font-semibold text-xs cursor-pointer"
+              className="flex items-center justify-center gap-2 px-5 py-3 min-h-[46px] rounded-2xl liquid-glass-button-secondary text-[#0f2c38] font-bold text-xs cursor-pointer"
             >
               <span>Jelajahi Game Gratis</span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 text-[#0284c7]" />
             </button>
           </div>
         </div>
@@ -281,15 +130,15 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-5 mt-5 border-t border-[#0f2c38]/10 text-xs text-[#355968] font-medium">
           <div className="flex items-center gap-2.5">
             <ShieldCheck className="w-4 h-4 text-[#0d9488] flex-shrink-0" />
-            <span>Garansi 100% Bersih & Bebas Virus</span>
+            <span>Garansi 100% Bersih &amp; Terkurasi</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <CreditCard className="w-4 h-4 text-[#0284c7] flex-shrink-0" />
-            <span>Integrasi Pembayaran QiosPay Resmi</span>
+            <Clock className="w-4 h-4 text-[#0284c7] flex-shrink-0" />
+            <span>Pilihan Durasi 30 Hari &amp; Lifetime</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <span>Akses Unduhan Cepat Langsung Aktif</span>
+            <Link2 className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span>Link Bayar Sudah Include Download</span>
           </div>
         </div>
       </section>
@@ -327,139 +176,148 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
       ) : filteredGames.length === 0 ? (
         <div className="text-center py-14 liquid-glass rounded-3xl space-y-3 px-4">
           <ShoppingBag className="w-10 h-10 mx-auto text-[#4a6f7d]" />
-          <h3 className="heading-font text-base font-bold text-[#0f2c38]">Tidak ada game premium yang sesuai</h3>
+          <h3 className="heading-font text-base font-bold text-[#0f2c38]">
+            Tidak ada game premium yang sesuai
+          </h3>
           <p className="text-xs text-[#4a6f7d] max-w-sm mx-auto">
             Coba ubah kata kunci pencarian Anda atau periksa kembali nanti.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {filteredGames.map((game) => (
-            <div
-              key={game.id}
-              className="group rounded-[26px] liquid-glass-card overflow-hidden flex flex-col"
-            >
-              {/* Cover Banner */}
-              <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff]">
-                <img
-                  src={game.coverUrl || game.bannerUrl}
-                  alt={game.title}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0f2c38]/45 via-transparent to-[#0f2c38]/10 pointer-events-none" />
+          {filteredGames.map((game) => {
+            const plans = getPlansForGame(game);
+            const startingPrice = getStartingPrice(game);
 
-                {/* Badge Top Left */}
-                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100/95 border border-amber-300/80 text-amber-900 text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md shadow-sm">
-                  <Crown className="w-3.5 h-3.5 text-amber-600" />
-                  <span>PREMIUM</span>
-                </div>
-
-                {/* Version Badge Top Right */}
-                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-xl bg-white/85 border border-white text-[#0f2c38] font-mono font-bold text-[10px] backdrop-blur-md shadow-sm">
-                  {game.version}
-                </div>
-
-                {/* Floating Icon */}
-                <div className="absolute -bottom-4 left-5 w-14 h-14 rounded-2xl p-1 bg-white/85 border border-white shadow-lg overflow-hidden backdrop-blur-xl">
+            return (
+              <div
+                key={game.id}
+                className="group rounded-[26px] liquid-glass-card overflow-hidden flex flex-col"
+              >
+                {/* 1:1 Square Cover / Icon Art */}
+                <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff]">
                   <img
-                    src={game.iconUrl || game.coverUrl}
+                    src={game.iconUrl || game.coverUrl || game.bannerUrl}
                     alt={game.title}
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover rounded-xl"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
                   />
-                </div>
-              </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0f2c38]/45 via-transparent to-[#0f2c38]/10 pointer-events-none" />
 
-              {/* Card Body */}
-              <div className="pt-6 px-5 pb-5 flex-grow flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold text-[#0d9488] uppercase tracking-wider truncate">
-                      {game.developer}
-                    </span>
-                    <span className="text-[10px] text-[#4a6f7d] font-mono flex-shrink-0">
-                      {game.fileSize}
-                    </span>
+                  {/* Badge Top Left */}
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100/95 border border-amber-300/80 text-amber-900 text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md shadow-sm">
+                    <Crown className="w-3.5 h-3.5 text-amber-600" />
+                    <span>PREMIUM</span>
                   </div>
 
-                  <h3 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle line-clamp-1 group-hover:text-[#0d9488] transition-colors">
-                    {game.title}
-                  </h3>
+                  {/* Version Badge Top Right */}
+                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-xl bg-white/85 border border-white text-[#0f2c38] font-mono font-bold text-[10px] backdrop-blur-md shadow-sm">
+                    {game.version}
+                  </div>
+                </div>
 
-                  <p className="text-xs text-[#355968] line-clamp-2 leading-relaxed">
-                    {game.shortDescription || game.description}
-                  </p>
+                {/* Card Body */}
+                <div className="p-5 flex-grow flex flex-col justify-between space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold text-[#0d9488] uppercase tracking-wider truncate">
+                        {game.developer}
+                      </span>
+                      <span className="text-[10px] text-[#4a6f7d] font-mono flex-shrink-0">
+                        {game.fileSize}
+                      </span>
+                    </div>
 
-                  {/* Feature Tags */}
-                  {game.features && game.features.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {game.features.slice(0, 3).map((feat, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 rounded-lg bg-white/75 text-[10px] font-medium text-[#355968] border border-white/90 shadow-xs"
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle line-clamp-1 group-hover:text-[#0d9488] transition-colors">
+                        {game.title}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedGame(game)}
+                        className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] cursor-pointer flex-shrink-0"
+                        title="Lihat Detail Produk"
+                        aria-label={`Lihat detail ${game.title}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-[#355968] line-clamp-2 leading-relaxed">
+                      {game.shortDescription || game.description}
+                    </p>
+
+                    {/* Feature Tags */}
+                    {game.features && game.features.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {game.features.slice(0, 3).map((feat, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 rounded-lg bg-white/75 text-[10px] font-medium text-[#355968] border border-white/90 shadow-xs"
+                          >
+                            {feat}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Duration Plans & Direct Selection */}
+                  <div className="pt-3 border-t border-[#0f2c38]/10 space-y-2.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-semibold text-[#4a6f7d]">Pilih Paket Durasi:</span>
+                      <span className="font-mono font-bold text-[#0f766e]">
+                        Mulai {formatRupiah(startingPrice)}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {plans.map((plan) => (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          onClick={() => handleChoosePlan(game, plan)}
+                          className="min-h-[50px] px-3 py-2 rounded-2xl liquid-glass-button text-white text-left flex flex-col justify-center cursor-pointer"
                         >
-                          {feat}
-                        </span>
+                          <span className="text-[11px] font-extrabold leading-tight flex items-center gap-1">
+                            <Clock className="w-3 h-3 opacity-90 flex-shrink-0" />
+                            <span className="truncate">{plan.label}</span>
+                          </span>
+                          <span className="text-xs font-mono font-bold text-emerald-100 mt-0.5">
+                            {formatRupiah(plan.price)}
+                          </span>
+                        </button>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                {/* Pricing & CTA */}
-                <div className="pt-3 border-t border-[#0f2c38]/10 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    {game.originalPrice && game.originalPrice > game.price && (
-                      <span className="text-[11px] line-through text-[#5a7d8a] font-mono block">
-                        {formatRupiah(game.originalPrice)}
-                      </span>
-                    )}
-                    <span className="text-base sm:text-lg font-extrabold font-mono text-[#0f766e]">
-                      {formatRupiah(game.price)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => setSelectedGame(game)}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] cursor-pointer"
-                      title="Lihat Detail Produk"
-                      aria-label={`Lihat detail ${game.title}`}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleStartCheckout(game)}
-                      className="min-h-[44px] flex items-center gap-1.5 px-4 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
-                    >
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>Beli</span>
-                    </button>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* DETAIL MODAL (Mobile Bottom Sheet) */}
+      {/* DETAIL MODAL (Scroll-Locked Sheet) */}
       {selectedGame && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
           onClick={() => setSelectedGame(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Detail ${selectedGame.title}`}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-8 space-y-5 shadow-2xl custom-scrollbar"
+            className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden"
           >
             {/* Mobile Drag Handle */}
-            <div className="sm:hidden flex justify-center pb-1">
+            <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
               <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
             </div>
 
             <button
+              type="button"
               onClick={() => setSelectedGame(null)}
               aria-label="Tutup detail game premium"
               className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer z-20"
@@ -467,402 +325,200 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({ onNavigateHo
               <X className="w-4 h-4" />
             </button>
 
-            <div className="relative h-48 sm:h-56 rounded-2xl overflow-hidden bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/80">
-              <img
-                src={selectedGame.bannerUrl || selectedGame.coverUrl}
-                alt={selectedGame.title}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0f2c38]/85 via-[#0f2c38]/25 to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
-                <div className="min-w-0">
-                  <span className="text-xs text-emerald-200 font-semibold">{selectedGame.category}</span>
-                  <h2 className="heading-font text-xl sm:text-2xl font-bold text-white line-clamp-2">
+            <div className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y p-5 sm:p-8 space-y-5 custom-scrollbar">
+              {/* Top 1:1 Icon + Title */}
+              <div className="flex items-center gap-4 pr-10">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white shadow-md flex-shrink-0">
+                  <img
+                    src={selectedGame.iconUrl || selectedGame.coverUrl || selectedGame.bannerUrl}
+                    alt={selectedGame.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100/90 text-amber-900 border border-amber-300/70 text-[10px] font-extrabold uppercase">
+                    <Crown className="w-3 h-3 text-amber-600" />
+                    <span>{selectedGame.category || 'Games'}</span>
+                  </span>
+                  <h2 className="heading-font text-xl sm:text-2xl font-extrabold text-[#0f2c38] text-3d-subtle leading-tight">
                     {selectedGame.title}
                   </h2>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <span className="text-lg sm:text-xl font-extrabold text-emerald-200 font-mono">
-                    {formatRupiah(selectedGame.price)}
-                  </span>
+                  <p className="text-xs text-[#4a6f7d] font-medium">
+                    {selectedGame.developer} • {selectedGame.version} • {selectedGame.fileSize}
+                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Screenshots */}
-            {selectedGame.screenshots && selectedGame.screenshots.length > 0 && (
-              <div className="space-y-2">
+              {/* Screenshots */}
+              {selectedGame.screenshots && selectedGame.screenshots.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-bold text-[#0f2c38] uppercase tracking-wider">
+                    Tangkapan Layar
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {selectedGame.screenshots.map((s, idx) => (
+                      <img
+                        key={idx}
+                        src={s}
+                        alt={`Screenshot ${idx + 1}`}
+                        referrerPolicy="no-referrer"
+                        className="rounded-xl border border-white/80 h-28 w-full object-cover shadow-sm"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              <div className="space-y-1.5 text-xs text-[#355968] leading-relaxed">
+                <h3 className="text-xs font-bold text-[#0f2c38] uppercase tracking-wider">Deskripsi</h3>
+                <p>{selectedGame.description || selectedGame.shortDescription}</p>
+              </div>
+
+              {/* Plans Selector inside Detail Modal */}
+              <div className="pt-4 border-t border-[#0f2c38]/10 space-y-3">
                 <h3 className="text-xs font-bold text-[#0f2c38] uppercase tracking-wider">
-                  Tangkapan Layar
+                  Pilih Paket Durasi &amp; Lanjut Pembayaran
                 </h3>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {selectedGame.screenshots.map((s, idx) => (
-                    <img
-                      key={idx}
-                      src={s}
-                      alt={`Screenshot ${idx + 1}`}
-                      referrerPolicy="no-referrer"
-                      className="rounded-xl border border-white/80 h-28 w-full object-cover shadow-sm"
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {getPlansForGame(selectedGame).map((plan) => (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => handleChoosePlan(selectedGame, plan)}
+                      className="min-h-[52px] px-4 py-3 rounded-2xl liquid-glass-button text-white flex items-center justify-between gap-3 cursor-pointer"
+                    >
+                      <span className="text-xs font-extrabold flex items-center gap-1.5">
+                        <Clock className="w-4 h-4" />
+                        <span>{plan.label}</span>
+                      </span>
+                      <span className="font-mono text-sm font-extrabold text-emerald-100">
+                        {formatRupiah(plan.price)}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Description */}
-            <div className="space-y-1.5 text-xs text-[#355968] leading-relaxed">
-              <h3 className="text-xs font-bold text-[#0f2c38] uppercase tracking-wider">Deskripsi</h3>
-              <p>{selectedGame.description || selectedGame.shortDescription}</p>
-            </div>
-
-            {/* CTA */}
-            <div className="pt-4 border-t border-[#0f2c38]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-xs text-[#4a6f7d] font-medium">
-                <span>Versi: {selectedGame.version}</span> • <span>Ukuran: {selectedGame.fileSize}</span>
-              </div>
-              <button
-                onClick={() => handleStartCheckout(selectedGame)}
-                className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs cursor-pointer"
-              >
-                Lanjutkan ke Pembayaran QiosPay
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* CHECKOUT MODAL (Buy Now Flow) */}
-      {checkoutGame && (
+      {/* CONFIRMATION MODAL (Duration + Price + Confirm Redirect to Admin Link) */}
+      {confirmingPurchase && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
-          onClick={() => setCheckoutGame(null)}
+          onClick={() => setConfirmingPurchase(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Konfirmasi Paket Game Premium"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-7 space-y-5 shadow-2xl"
+            className="relative w-full max-w-md max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden"
           >
-            <div className="sm:hidden flex justify-center">
+            <div className="sm:hidden flex justify-center pt-3 flex-shrink-0">
               <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
             </div>
 
             <button
-              onClick={() => setCheckoutGame(null)}
-              aria-label="Tutup form pembelian"
+              type="button"
+              onClick={() => setConfirmingPurchase(null)}
+              aria-label="Tutup konfirmasi pembelian"
               className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-3 pr-8">
-              <div className="w-12 h-12 rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#0d9488] flex-shrink-0">
-                <ShoppingBag className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle">
-                  Pembelian Game Premium
-                </h3>
-                <p className="text-xs text-[#355968] truncate">{checkoutGame.title}</p>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-white/75 border border-white/90 flex items-center justify-between shadow-sm">
-              <span className="text-xs text-[#355968] font-medium">Total Tagihan (QiosPay):</span>
-              <span className="text-base font-extrabold text-[#0f766e] font-mono">
-                {formatRupiah(checkoutGame.price)}
-              </span>
-            </div>
-
-            {checkoutError && (
-              <div className="p-3 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>{checkoutError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmitCheckout} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[#0f2c38]">Nama Lengkap</label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Contoh: Budi Pratama"
-                  required
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
-                />
+            <div className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y p-5 sm:p-7 space-y-5">
+              <div className="flex items-center gap-3.5 pr-8">
+                <div className="w-14 h-14 aspect-square rounded-2xl overflow-hidden bg-white/90 border border-white shadow-md flex-shrink-0">
+                  <img
+                    src={
+                      confirmingPurchase.game.iconUrl ||
+                      confirmingPurchase.game.coverUrl ||
+                      confirmingPurchase.game.bannerUrl
+                    }
+                    alt={confirmingPurchase.game.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#0d9488] block">
+                    Konfirmasi Pembelian
+                  </span>
+                  <h3 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle line-clamp-1">
+                    {confirmingPurchase.game.title}
+                  </h3>
+                  <p className="text-[11px] text-[#4a6f7d] font-mono">
+                    {confirmingPurchase.game.version} • {confirmingPurchase.game.fileSize}
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[#0f2c38]">
-                  Alamat Email (Untuk Pengiriman Akses Download)
-                </label>
-                <input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="budi@gmail.com"
-                  required
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
-                />
-                <span className="text-[11px] text-[#4a6f7d] block">
-                  Link dan token unduhan aman akan dikaitkan langsung ke email ini.
+              {/* Duration & Price Summary Box */}
+              <div className="p-4 rounded-2xl bg-white/80 border border-white/90 space-y-2.5 text-xs shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[#4a6f7d] font-medium">Paket Durasi:</span>
+                  <span className="px-2.5 py-1 rounded-xl bg-[#d7f5eb] text-[#0f766e] border border-[#99e8cc] font-extrabold">
+                    {confirmingPurchase.plan.label}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#0f2c38]/10">
+                  <span className="text-[#4a6f7d] font-medium">Total Harga:</span>
+                  <span className="text-lg font-extrabold font-mono text-[#0f766e]">
+                    {formatRupiah(confirmingPurchase.plan.price)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#dff1ff]/80 border border-[#bae6fd] text-[#0369a1] text-xs flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#0284c7]" />
+                <span>
+                  Setelah Anda menekan tombol <strong className="text-[#0f2c38]">Konfirmasi</strong>, halaman akan otomatis menuju link pembayaran yang sudah mencakup link download game.
                 </span>
               </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={isSubmittingOrder || !customerName.trim() || !customerEmail.trim()}
-                  className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isSubmittingOrder ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      <span>Menyiapkan Invoice QiosPay...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Buat Tagihan Pembayaran</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ACTIVE TRANSACTION & PAYMENT STATUS MODAL */}
-      {activeOrder && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
-          onClick={() => setActiveOrder(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-7 space-y-5 shadow-2xl"
-          >
-            <div className="sm:hidden flex justify-center">
-              <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
-            </div>
-
-            <button
-              onClick={() => setActiveOrder(null)}
-              aria-label="Tutup status transaksi"
-              className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Status Header */}
-            <div className="text-center space-y-2">
-              <div
-                className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center border shadow-sm ${
-                  activeOrder.status === 'PAID'
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                    : activeOrder.status === 'EXPIRED' || activeOrder.status === 'CANCELLED'
-                    ? 'bg-rose-50 border-rose-200 text-rose-700'
-                    : 'bg-amber-50 border-amber-200 text-amber-700'
-                }`}
-              >
-                {activeOrder.status === 'PAID' ? (
-                  <CheckCircle2 className="w-7 h-7" />
-                ) : activeOrder.status === 'EXPIRED' || activeOrder.status === 'CANCELLED' ? (
-                  <AlertCircle className="w-7 h-7" />
-                ) : (
-                  <Clock className="w-7 h-7" />
-                )}
-              </div>
-
-              <span
-                className={`px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-block border ${
-                  activeOrder.status === 'PAID'
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : activeOrder.status === 'EXPIRED' || activeOrder.status === 'CANCELLED'
-                    ? 'bg-rose-50 text-rose-800 border-rose-200'
-                    : 'bg-amber-50 text-amber-800 border-amber-200'
-                }`}
-              >
-                STATUS: {activeOrder.status}
-              </span>
-
-              <h3 className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle">
-                {activeOrder.status === 'PAID'
-                  ? 'Pembayaran Berhasil Terverifikasi!'
-                  : activeOrder.status === 'EXPIRED'
-                  ? 'Tagihan Pembayaran Kedaluwarsa'
-                  : 'Menunggu Pembayaran QiosPay'}
-              </h3>
-            </div>
-
-            {/* Order Details */}
-            <div className="p-4 rounded-2xl bg-white/75 border border-white/90 space-y-2 text-xs shadow-sm">
-              <div className="flex justify-between gap-2 text-[#355968]">
-                <span>ID Pesanan:</span>
-                <span className="font-mono text-[#0f2c38] font-bold">{activeOrder.id}</span>
-              </div>
-              <div className="flex justify-between gap-2 text-[#355968]">
-                <span>Produk:</span>
-                <span className="text-[#0f2c38] font-semibold line-clamp-1">{activeOrder.gameTitle}</span>
-              </div>
-              <div className="flex justify-between gap-2 text-[#355968]">
-                <span>Total:</span>
-                <span className="font-mono text-[#0f766e] font-extrabold">{formatRupiah(activeOrder.amount)}</span>
-              </div>
-              {activeOrder.qiospayInvoiceId && (
-                <div className="flex justify-between gap-2 text-[#355968]">
-                  <span>QiosPay Invoice:</span>
-                  <span className="font-mono text-[#4a6f7d]">{activeOrder.qiospayInvoiceId}</span>
+              {redirectTriggered && (
+                <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+                  <span>Tautan pembayaran telah dibuka. Jika tab baru tidak terbuka otomatis, klik tombol buka langsung di bawah.</span>
                 </div>
               )}
-            </div>
 
-            {/* Action based on status */}
-            {activeOrder.status === 'PAID' ? (
-              <div className="space-y-3 pt-1">
-                <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600" />
-                  <span>Akses unduhan aktif selama 48 jam ke depan.</span>
-                </div>
-
-                {downloadInfo ? (
-                  <a
-                    href={downloadInfo.downloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Unduh Game Sekarang ({downloadInfo.fileSize})</span>
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => fetchDownloadAccess(activeOrder.downloadToken, activeOrder.id, activeOrder.customerEmail)}
-                    disabled={verifyingDownload}
-                    className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    {verifyingDownload ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    ) : (
-                      <Download className="w-4 h-4" />
-                    )}
-                    <span>Ambil Tautan Unduhan Aman</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3 pt-1">
-                {activeOrder.qiospayPaymentUrl && (
-                  <a
-                    href={activeOrder.qiospayPaymentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    <span>Buka Halaman Pembayaran QiosPay</span>
-                  </a>
-                )}
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setConfirmingPurchase(null)}
+                  className="min-h-[46px] px-5 py-3 rounded-2xl liquid-glass-button-secondary text-xs font-bold text-[#355968] hover:text-[#0f2c38] cursor-pointer"
+                >
+                  Batal
+                </button>
 
                 <button
-                  onClick={() => checkOrderStatus(activeOrder.id)}
-                  disabled={isPollingStatus}
-                  className="w-full min-h-[46px] py-3 rounded-2xl liquid-glass-button-secondary text-[#0f2c38] font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer"
+                  type="button"
+                  onClick={handleConfirmRedirect}
+                  className="flex-1 min-h-[46px] px-5 py-3 rounded-2xl liquid-glass-button text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 text-[#0284c7] ${isPollingStatus ? 'animate-spin' : ''}`} />
-                  <span>Periksa Status Pembayaran</span>
+                  <span>Konfirmasi &amp; Bayar Sekarang</span>
+                  <ExternalLink className="w-4 h-4" />
                 </button>
               </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* LOOKUP EXISTING ORDER MODAL */}
-      {isLookupOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
-          onClick={() => setIsLookupOpen(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-7 space-y-5 shadow-2xl"
-          >
-            <div className="sm:hidden flex justify-center">
-              <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
-            </div>
-
-            <button
-              onClick={() => setIsLookupOpen(false)}
-              aria-label="Tutup pencarian pesanan"
-              className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center gap-3 pr-8">
-              <div className="w-12 h-12 rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#0284c7] flex-shrink-0">
-                <Download className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle">
-                  Cek Status Pesanan
-                </h3>
-                <p className="text-xs text-[#355968]">Masukkan Order ID dan email pembelian Anda</p>
-              </div>
-            </div>
-
-            {lookupError && (
-              <div className="p-3 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>{lookupError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleLookupOrder} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[#0f2c38]">Order ID</label>
-                <input
-                  type="text"
-                  value={lookupOrderId}
-                  onChange={(e) => setLookupOrderId(e.target.value)}
-                  placeholder="ORD-1730000000-ABCD"
-                  required
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none font-mono shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[#0f2c38]">Alamat Email Pembelian</label>
-                <input
-                  type="email"
-                  value={lookupEmail}
-                  onChange={(e) => setLookupEmail(e.target.value)}
-                  placeholder="budi@gmail.com"
-                  required
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] placeholder-[#648896] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
-                />
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={lookupLoading || !lookupOrderId.trim() || !lookupEmail.trim()}
-                  className="w-full min-h-[48px] py-3 rounded-2xl liquid-glass-button text-white font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              {redirectTriggered && (
+                <a
+                  href={confirmingPurchase.plan.paymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full min-h-[42px] px-4 py-2.5 rounded-2xl bg-white/85 border border-white text-[#0284c7] font-bold text-xs flex items-center justify-center gap-2 hover:bg-white transition-colors"
                 >
-                  {lookupLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      <span>Mencari Transaksi...</span>
-                    </>
-                  ) : (
-                    <span>Ambil Tautan Unduhan</span>
-                  )}
-                </button>
-              </div>
-            </form>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Buka Link Pembayaran Secara Langsung</span>
+                </a>
+              )}
+            </div>
           </div>
         </div>
       )}

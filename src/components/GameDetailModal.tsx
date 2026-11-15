@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Download,
@@ -19,6 +19,7 @@ import { Game } from '../types/game';
 import { GameCard } from './GameCard';
 import { safeOpenExternalUrl } from '../utils/urlValidation';
 import { incrementDownloadCounter } from '../lib/supabaseService';
+import { useScrollLock } from '../utils/useScrollLock';
 
 interface GameDetailModalProps {
   game: Game | null;
@@ -46,6 +47,17 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
   const [activeTab, setActiveTab] = useState<'about' | 'guide' | 'changelog' | 'security'>('about');
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useScrollLock(Boolean(game));
+
+  useEffect(() => {
+    if (game && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+    setActiveTab('about');
+    setSelectedScreenshot(null);
+  }, [game?.id]);
 
   if (!game) return null;
 
@@ -79,71 +91,80 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-[#0f2c38]/25 backdrop-blur-md overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-[#0f2c38]/25 backdrop-blur-md overscroll-none"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-4xl liquid-glass rounded-t-[28px] sm:rounded-3xl overflow-hidden my-0 sm:my-auto max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-4xl liquid-glass rounded-t-[28px] sm:rounded-3xl overflow-hidden my-0 sm:my-auto max-h-[92vh] flex flex-col overscroll-contain"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-game-title"
       >
-        {/* Mobile Grab Handle */}
-        <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mt-2.5 mb-1 sm:hidden shrink-0" />
+        {/* Mobile Grab Handle + Dedicated Top Action Bar (prevents text overlap on scroll) */}
+        <div className="shrink-0 bg-white/80 backdrop-blur-xl border-b border-[#0f2c38]/10 px-4 sm:px-6 pt-2.5 pb-3 z-30">
+          <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mb-2.5 sm:hidden" />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-extrabold text-[#0f2c38] truncate">
+              {game.title}
+            </span>
 
-        {/* Sticky Actions Header */}
-        <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
-          {onOpenModPage && (
-            <button
-              onClick={() => onOpenModPage(modSlug)}
-              className="min-h-[40px] px-3 py-2 rounded-2xl bg-white/95 hover:bg-white border border-white text-[#0f2c38] shadow-[0_6px_16px_-4px_rgba(15,44,56,0.22)] tactile-press flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-              aria-label="Open full page"
-              title="Open full page"
-            >
-              <span>Full Page</span>
-              <ExternalLink className="w-3.5 h-3.5 text-[#0d9488]" />
-            </button>
-          )}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              {onOpenModPage && (
+                <button
+                  onClick={() => onOpenModPage(modSlug)}
+                  className="min-h-[38px] px-3 py-1.5 rounded-2xl bg-white/95 hover:bg-white border border-white text-[#0f2c38] shadow-[0_4px_12px_-3px_rgba(15,44,56,0.16)] tactile-press flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                  aria-label="Open full page"
+                  title="Open full page"
+                >
+                  <span>Full Page</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-[#0d9488]" />
+                </button>
+              )}
 
-          <button
-            onClick={handleShare}
-            className="min-w-[40px] min-h-[40px] p-2.5 rounded-2xl bg-white/95 hover:bg-white border border-white text-[#0f2c38] shadow-[0_6px_16px_-4px_rgba(15,44,56,0.22)] tactile-press flex items-center justify-center cursor-pointer"
-            aria-label="Share direct URL"
-            title="Copy URL"
-          >
-            {copiedLink ? (
-              <span className="text-[11px] text-[#0d9488] font-bold px-1">Copied!</span>
-            ) : (
-              <Share2 className="w-4 h-4 text-[#0284c7]" />
-            )}
-          </button>
+              <button
+                onClick={handleShare}
+                className="min-w-[38px] min-h-[38px] p-2 rounded-2xl bg-white/95 hover:bg-white border border-white text-[#0f2c38] shadow-[0_4px_12px_-3px_rgba(15,44,56,0.16)] tactile-press flex items-center justify-center cursor-pointer"
+                aria-label="Share direct URL"
+                title="Copy URL"
+              >
+                {copiedLink ? (
+                  <span className="text-[11px] text-[#0d9488] font-bold px-1">Copied!</span>
+                ) : (
+                  <Share2 className="w-4 h-4 text-[#0284c7]" />
+                )}
+              </button>
 
-          <button
-            onClick={(e) => onToggleSave(game.id, e)}
-            className={`min-w-[40px] min-h-[40px] p-2.5 rounded-2xl flex items-center justify-center cursor-pointer shadow-[0_6px_16px_-4px_rgba(15,44,56,0.22)] tactile-press ${
-              isSaved
-                ? 'liquid-glass-button text-white'
-                : 'bg-white/95 hover:bg-white border border-white text-[#355968]'
-            }`}
-            aria-label={isSaved ? 'Remove from saved' : 'Save'}
-          >
-            <Bookmark className="w-4 h-4 fill-current" />
-          </button>
+              <button
+                onClick={(e) => onToggleSave(game.id, e)}
+                className={`min-w-[38px] min-h-[38px] p-2 rounded-2xl flex items-center justify-center cursor-pointer shadow-[0_4px_12px_-3px_rgba(15,44,56,0.16)] tactile-press ${
+                  isSaved
+                    ? 'liquid-glass-button text-white'
+                    : 'bg-white/95 hover:bg-white border border-white text-[#355968]'
+                }`}
+                aria-label={isSaved ? 'Remove from saved' : 'Save'}
+              >
+                <Bookmark className="w-4 h-4 fill-current" />
+              </button>
 
-          <button
-            onClick={onClose}
-            className="min-w-[40px] min-h-[40px] p-2.5 rounded-2xl bg-white/95 hover:bg-white border border-white text-[#0f2c38] shadow-[0_6px_16px_-4px_rgba(15,44,56,0.22)] tactile-press flex items-center justify-center cursor-pointer"
-            aria-label="Close dialog"
-          >
-            <X className="w-4 h-4" />
-          </button>
+              <button
+                onClick={onClose}
+                className="min-w-[38px] min-h-[38px] p-2 rounded-2xl bg-white/95 hover:bg-white border border-white text-[#0f2c38] shadow-[0_4px_12px_-3px_rgba(15,44,56,0.16)] tactile-press flex items-center justify-center cursor-pointer"
+                aria-label="Close dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Scrollable Container */}
-        <div className="overflow-y-auto custom-scrollbar flex-grow">
+        <div
+          ref={scrollContainerRef}
+          className="overflow-y-auto custom-scrollbar flex-grow overscroll-y-contain touch-pan-y"
+        >
           {/* Hero Banner Section */}
-          <div className="relative h-40 sm:h-56 w-full bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] overflow-hidden">
+          <div className="relative h-36 sm:h-52 w-full bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] overflow-hidden">
             <img
               src={game.bannerUrl || game.coverUrl}
               alt=""
@@ -157,8 +178,8 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
           {/* Main Info Header */}
           <div className="px-5 sm:px-8 -mt-16 relative z-20 pb-5 border-b border-[#0f2c38]/10">
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 items-start sm:items-end">
-              {/* Cover Art */}
-              <div className="w-24 sm:w-32 aspect-[4/5] flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white bg-white/70 shadow-[0_12px_28px_-8px_rgba(15,44,56,0.20)] relative">
+              {/* Cover Art (1:1 Icon Aspect) */}
+              <div className="w-24 sm:w-32 aspect-square flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white bg-white/70 shadow-[0_12px_28px_-8px_rgba(15,44,56,0.20)] relative">
                 <img
                   src={game.coverUrl}
                   alt={game.title}

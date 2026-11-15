@@ -19,6 +19,7 @@ import { isValidHttpUrl } from '../utils/urlValidation';
 import { safeFetchJson } from '../utils/apiClient';
 import { uploadToSupabaseStorage, UploadProgress } from '../lib/storageService';
 import { saveItemToSupabase } from '../lib/supabaseService';
+import { useScrollLock } from '../utils/useScrollLock';
 
 interface ItemFormModalProps {
   initialItem?: Item | null;
@@ -38,6 +39,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   onSaved,
 }) => {
   const isEditing = Boolean(initialItem);
+  useScrollLock(true);
 
   const [type, setType] = useState<ItemType>(initialItem?.type || defaultType);
   const [title, setTitle] = useState(initialItem?.title || '');
@@ -1050,7 +1052,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
             <div className="p-4 rounded-2xl liquid-glass-subtle space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-[#0f2c38] uppercase">
-                  Main Cover Image (3:4 aspect)
+                  Main Cover / Icon Image (1:1 aspect)
                 </label>
                 <label className="cursor-pointer text-xs font-semibold text-[#0284c7] hover:underline flex items-center gap-1">
                   <Upload className="w-3.5 h-3.5" />
@@ -1065,7 +1067,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               </div>
 
               <div className="flex gap-4 items-center">
-                <div className="w-16 h-22 rounded-xl overflow-hidden bg-white/80 border border-white flex-shrink-0">
+                <div className="w-20 h-20 aspect-square rounded-xl overflow-hidden bg-white/80 border border-white flex-shrink-0">
                   <img
                     src={coverUrl}
                     alt="Cover preview"

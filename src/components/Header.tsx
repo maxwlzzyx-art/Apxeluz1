@@ -1,5 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Compass, Search, X, Bookmark, Filter, Layers, Shield, Crown } from 'lucide-react';
+
+const WEB_PROFILE_ICON_URL =
+  'https://cdn.phototourl.com/anon/2026-11-15-95ccde76-958a-450f-91b0-60424cee492b.jpg';
 
 interface HeaderProps {
   activeTab: 'home' | 'saved' | 'premium' | 'admin' | 'all';
@@ -34,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+  const [profileIconFailed, setProfileIconFailed] = useState(false);
 
   const handleLogoClick = () => {
     clickCountRef.current += 1;
@@ -76,8 +80,18 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="APXELUZ Home"
             title="APXELUZ"
           >
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-gradient-to-br from-[#d7f5eb] via-[#e4f5fc] to-white border border-white/95 shadow-[0_6px_14px_-4px_rgba(13,148,136,0.22),inset_0_1.5px_1px_rgba(255,255,255,0.98),inset_0_-2px_0_rgba(13,148,136,0.20)] flex items-center justify-center text-[#0d9488] shrink-0">
-              <Layers className="w-4 h-4 md:w-5 md:h-5 text-[#0d9488]" />
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl overflow-hidden bg-gradient-to-br from-[#d7f5eb] via-[#e4f5fc] to-white border border-white/95 shadow-[0_6px_14px_-4px_rgba(13,148,136,0.22),inset_0_1.5px_1px_rgba(255,255,255,0.98),inset_0_-2px_0_rgba(13,148,136,0.20)] flex items-center justify-center text-[#0d9488] shrink-0">
+              {!profileIconFailed ? (
+                <img
+                  src={WEB_PROFILE_ICON_URL}
+                  alt="APXELUZ Profile"
+                  referrerPolicy="no-referrer"
+                  onError={() => setProfileIconFailed(true)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Layers className="w-4 h-4 md:w-5 md:h-5 text-[#0d9488]" />
+              )}
             </div>
             <span className="heading-font font-extrabold text-lg md:text-xl tracking-tight text-[#0f2c38] text-3d-subtle whitespace-nowrap">
               APXE<span className="text-[#0d9488]">LUZ</span>

@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { X, Crown, Save, Loader2, AlertCircle } from 'lucide-react';
-import { PremiumGame } from '../types/premium';
+import {
+  X,
+  Crown,
+  Save,
+  Loader2,
+  AlertCircle,
+  Plus,
+  Trash2,
+  Clock,
+  Link2,
+} from 'lucide-react';
+import { PremiumGame, PremiumPaymentPlan } from '../types/premium';
 import { slugify } from '../utils/adminValidation';
+import {
+  buildDefaultPlansForGame,
+  normalizePaymentPlans,
+  validatePaymentPlans,
+  getStartingPrice,
+  formatRupiah,
+} from '../utils/premiumPlans';
+import { useScrollLock } from '../utils/useScrollLock';
 
 interface AdminPremiumModalProps {
   isOpen: boolean;
@@ -16,9 +34,10 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
   onSave,
   initialGame,
 }) => {
+  useScrollLock(isOpen);
+
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
-  const [price, setPrice] = useState('35000');
   const [originalPrice, setOriginalPrice] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
@@ -26,7 +45,6 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
   const [coverUrl, setCoverUrl] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
   const [screenshotsText, setScreenshotsText] = useState('');
-  const [downloadUrl, setDownloadUrl] = useState('');
   const [version, setVersion] = useState('v1.0.0');
   const [fileSize, setFileSize] = useState('1.5 GB');
   const [featuresText, setFeaturesText] = useState('');
@@ -34,6 +52,9 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
   const [developer, setDeveloper] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [visibility, setVisibility] = useState<'published' | 'draft'>('published');
+  const [paymentPlans, setPaymentPlans] = useState<PremiumPaymentPlan[]>(() =>
+    buildDefaultPlansForGame(20000, 'https://apxeluz.my.id/premium-checkout')
+  );
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +63,6 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
     if (initialGame) {
       setTitle(initialGame.title || '');
       setSlug(initialGame.slug || '');
-      setPrice(String(initialGame.price || 0));
       setOriginalPrice(initialGame.originalPrice ? String(initialGame.originalPrice) : '');
       setShortDescription(initialGame.shortDescription || '');
       setDescription(initialGame.description || '');
@@ -50,7 +70,6 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
       setCoverUrl(initialGame.coverUrl || '');
       setBannerUrl(initialGame.bannerUrl || '');
       setScreenshotsText((initialGame.screenshots || []).join('\n'));
-      setDownloadUrl(initialGame.downloadUrl || '');
       setVersion(initialGame.version || 'v1.0.0');
       setFileSize(initialGame.fileSize || '500 MB');
       setFeaturesText((initialGame.features || []).join('\n'));
@@ -58,18 +77,19 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
       setDeveloper(initialGame.developer || 'Independent Developer');
       setIsActive(initialGame.isActive !== false);
       setVisibility(initialGame.visibility || 'published');
+      setPaymentPlans(
+        normalizePaymentPlans(initialGame.paymentPlans, initialGame.price, initialGame.downloadUrl)
+      );
     } else {
       setTitle('');
       setSlug('');
-      setPrice('35000');
-      setOriginalPrice('50000');
+      setOriginalPrice('35000');
       setShortDescription('');
       setDescription('');
       setIconUrl('');
       setCoverUrl('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80');
       setBannerUrl('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80');
       setScreenshotsText('');
-      setDownloadUrl('https://apxeluz.my.id/downloads/premium/game.apk');
       setVersion('v1.0.0');
       setFileSize('1.2 GB');
       setFeaturesText('60FPS Graphics\nFull Gamepad Support');
@@ -77,6 +97,7 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
       setDeveloper('Independent Developer');
       setIsActive(true);
       setVisibility('published');
+      setPaymentPlans(buildDefaultPlansForGame(20000, 'https://apxeluz.my.id/premium-checkout'));
     }
     setError(null);
   }, [initialGame, isOpen]);
@@ -88,18 +109,84 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
     }
   };
 
+  const handlePlanChange = (
+    index: number,
+    patch: Partial<PremiumPaymentPlan>
+  ) => {
+    setPaymentPlans((prev) =>
+      prev.map((plan, idx) => (idx === index ? { ...plan, ...patch } : plan))
+    );
+  };
+
+  const handleToggleLifetime = (index: number, isLifetime: boolean) => {
+    setPaymentPlans((prev) =>
+      prev.map((plan, idx) => {
+        if (idx !== index) return plan;
+        if (isLifetime) {
+          return {
+            ...plan,
+            durationDays: null,
+            label:
+              !plan.label || /^\d+\s*Hari$/i.test(plan.label.trim())
+                ? 'Lifetime'
+                : plan.label,
+          };
+        }
+        const fallbackDays = plan.durationDays && plan.durationDays > 0 ? plan.durationDays : 30;
+        return {
+          ...plan,
+          durationDays: fallbackDays,
+          label:
+            plan.label.trim().toLowerCase() === 'lifetime'
+              ? `${fallbackDays} Hari`
+              : plan.label,
+        };
+      })
+    );
+  };
+
+  const handleAddPlan = () => {
+    setPaymentPlans((prev) => [
+      ...prev,
+      {
+        id: `plan-${Date.now()}`,
+        label: '7 Hari',
+        durationDays: 7,
+        price: 10000,
+        paymentUrl: prev[0]?.paymentUrl || 'https://apxeluz.my.id/premium-checkout',
+      },
+    ]);
+  };
+
+  const handleRemovePlan = (index: number) => {
+    setPaymentPlans((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== index) : prev));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !downloadUrl.trim()) {
-      setError('Judul dan URL Download wajib diisi.');
+    if (!title.trim()) {
+      setError('Judul Game Premium wajib diisi.');
       return;
     }
 
-    const numPrice = Number(price);
-    if (isNaN(numPrice) || numPrice < 0) {
-      setError('Harga harus berupa angka valid (>= 0).');
+    const planCheck = validatePaymentPlans(paymentPlans);
+    if (!planCheck.valid) {
+      setError(planCheck.error || 'Periksa kembali daftar paket durasi & link pembayaran.');
       return;
     }
+
+    const sanitizedPlans: PremiumPaymentPlan[] = paymentPlans.map((p, idx) => ({
+      id: p.id?.trim() || `plan-${idx + 1}`,
+      label: p.label.trim(),
+      durationDays:
+        p.durationDays === null || p.durationDays === undefined
+          ? null
+          : Math.max(1, Math.round(Number(p.durationDays))),
+      price: Math.max(0, Number(p.price)),
+      paymentUrl: p.paymentUrl.trim(),
+    }));
+
+    const startingPrice = getStartingPrice({ price: 0, paymentPlans: sanitizedPlans });
 
     try {
       setSaving(true);
@@ -119,7 +206,7 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
         id: initialGame?.id,
         title: title.trim(),
         slug: slug.trim() || slugify(title),
-        price: numPrice,
+        price: startingPrice,
         originalPrice: originalPrice ? Number(originalPrice) : undefined,
         shortDescription: shortDescription.trim(),
         description: description.trim(),
@@ -127,7 +214,8 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
         coverUrl: coverUrl.trim(),
         bannerUrl: bannerUrl.trim(),
         screenshots,
-        downloadUrl: downloadUrl.trim(),
+        downloadUrl: sanitizedPlans[0]?.paymentUrl || '',
+        paymentPlans: sanitizedPlans,
         version: version.trim() || 'v1.0.0',
         fileSize: fileSize.trim() || '500 MB',
         features,
@@ -147,49 +235,60 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
 
   if (!isOpen) return null;
 
+  const startingPricePreview = getStartingPrice({ price: 0, paymentPlans });
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/30 backdrop-blur-md"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={initialGame ? 'Edit Game Premium' : 'Tambah Game Premium Baru'}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[28px] sm:rounded-3xl liquid-glass p-5 sm:p-8 space-y-5 shadow-2xl custom-scrollbar"
+        className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden"
       >
-        <div className="sm:hidden flex justify-center">
-          <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
+        <div className="p-5 sm:px-8 sm:pt-7 sm:pb-4 border-b border-[#0f2c38]/10 flex-shrink-0">
+          <div className="sm:hidden flex justify-center mb-3">
+            <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup modal game premium"
+            className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="flex items-center gap-3 pr-10">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100/80 border border-amber-300/70 flex items-center justify-center text-amber-700 flex-shrink-0">
+              <Crown className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="heading-font text-lg sm:text-xl font-extrabold text-[#0f2c38] text-3d-subtle">
+                {initialGame ? 'Edit Game Premium' : 'Tambah Game Premium Baru'}
+              </h2>
+              <p className="text-xs text-[#355968]">
+                Atur paket durasi (30 Hari / Lifetime), harga Rupiah, serta link pembayaran yang sudah mencakup akses download.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <button
-          onClick={onClose}
-          aria-label="Tutup modal game premium"
-          className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y p-5 sm:p-8 pt-4 space-y-5 custom-scrollbar"
         >
-          <X className="w-4 h-4" />
-        </button>
+          {error && (
+            <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
 
-        <div className="flex items-center gap-3 pr-10">
-          <div className="w-12 h-12 rounded-2xl bg-amber-100/80 border border-amber-300/70 flex items-center justify-center text-amber-700 flex-shrink-0">
-            <Crown className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="heading-font text-lg sm:text-xl font-extrabold text-[#0f2c38] text-3d-subtle">
-              {initialGame ? 'Edit Game Premium' : 'Tambah Game Premium Baru'}
-            </h2>
-            <p className="text-xs text-[#355968]">
-              Kelola metadata produk, harga Rupiah, status publikasi, dan file unduhan.
-            </p>
-          </div>
-        </div>
-
-        {error && (
-          <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="block text-xs font-semibold text-[#0f2c38]">Judul Game *</label>
@@ -216,30 +315,160 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[#0f2c38]">Harga Jual (IDR / Rupiah) *</label>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="35000"
-                min="0"
-                required
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f766e] text-xs outline-none font-mono font-bold shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
-              />
+          {/* Paket Durasi & Link Pembayaran Builder */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-white/75 border border-white/90 space-y-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-xs sm:text-sm font-extrabold text-[#0f2c38] flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-[#0d9488]" />
+                  <span>Paket Durasi &amp; Link Pembayaran *</span>
+                </h3>
+                <p className="text-[11px] text-[#4a6f7d] mt-0.5">
+                  Link bayar yang dimasukkan sudah mencakup link download otomatis setelah pembeli menekan Konfirmasi.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddPlan}
+                className="min-h-[38px] px-3.5 py-1.5 rounded-xl liquid-glass-button text-white text-[11px] font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Tambah Paket</span>
+              </button>
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[#0f2c38]">Harga Asli / Coret (Opsional)</label>
-              <input
-                type="number"
-                value={originalPrice}
-                onChange={(e) => setOriginalPrice(e.target.value)}
-                placeholder="60000"
-                min="0"
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#4a6f7d] text-xs outline-none font-mono shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
-              />
+            <div className="space-y-3">
+              {paymentPlans.map((plan, idx) => {
+                const isLifetime = plan.durationDays === null || plan.durationDays === undefined;
+                return (
+                  <div
+                    key={plan.id || idx}
+                    className="p-3.5 rounded-2xl bg-[#f4fbf8] border border-[#0d9488]/20 space-y-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-extrabold text-[#0f766e] uppercase tracking-wider">
+                        Paket #{idx + 1}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1.5 text-[11px] font-semibold text-[#0f2c38] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isLifetime}
+                            onChange={(e) => handleToggleLifetime(idx, e.target.checked)}
+                            className="w-4 h-4 accent-[#0d9488] rounded cursor-pointer"
+                          />
+                          <span>Lifetime (Permanen)</span>
+                        </label>
+                        {paymentPlans.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePlan(idx)}
+                            aria-label={`Hapus paket ${plan.label}`}
+                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-semibold text-[#355968]">
+                          Label Tombol *
+                        </label>
+                        <input
+                          type="text"
+                          value={plan.label}
+                          onChange={(e) => handlePlanChange(idx, { label: e.target.value })}
+                          placeholder="30 Hari / Lifetime"
+                          required
+                          className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-white border border-white text-[#0f2c38] text-xs outline-none focus:border-[#0d9488]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-semibold text-[#355968]">
+                          {isLifetime ? 'Durasi' : 'Jumlah Hari *'}
+                        </label>
+                        {isLifetime ? (
+                          <div className="min-h-[40px] px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center">
+                            Selamanya (Lifetime)
+                          </div>
+                        ) : (
+                          <input
+                            type="number"
+                            min={1}
+                            value={plan.durationDays ?? 30}
+                            onChange={(e) => {
+                              const days = Math.max(1, Number(e.target.value) || 1);
+                              handlePlanChange(idx, {
+                                durationDays: days,
+                                label:
+                                  /^\d+\s*Hari$/i.test(plan.label.trim()) || !plan.label.trim()
+                                    ? `${days} Hari`
+                                    : plan.label,
+                              });
+                            }}
+                            required
+                            className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-white border border-white text-[#0f2c38] text-xs font-mono outline-none focus:border-[#0d9488]"
+                          />
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-semibold text-[#355968]">
+                          Harga (IDR) *
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={plan.price}
+                          onChange={(e) =>
+                            handlePlanChange(idx, { price: Math.max(0, Number(e.target.value) || 0) })
+                          }
+                          placeholder="20000"
+                          required
+                          className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-white border border-white text-[#0f766e] font-bold font-mono text-xs outline-none focus:border-[#0d9488]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-semibold text-[#355968] flex items-center gap-1">
+                        <Link2 className="w-3.5 h-3.5 text-[#0284c7]" />
+                        <span>Link Pembayaran Admin (Sudah Include Download) *</span>
+                      </label>
+                      <input
+                        type="url"
+                        value={plan.paymentUrl}
+                        onChange={(e) => handlePlanChange(idx, { paymentUrl: e.target.value })}
+                        placeholder="https://saweria.co/... atau https://trakteer.id/... atau link checkout Anda"
+                        required
+                        className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-white border border-white text-[#0f2c38] font-mono text-xs outline-none focus:border-[#0d9488]"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#0f2c38]/10 text-[11px] text-[#355968]">
+              <span>
+                Harga Mulai di Katalog:{' '}
+                <strong className="font-mono text-[#0f766e]">{formatRupiah(startingPricePreview)}</strong>
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[#4a6f7d]">Harga Coret (Opsional):</span>
+                <input
+                  type="number"
+                  value={originalPrice}
+                  onChange={(e) => setOriginalPrice(e.target.value)}
+                  placeholder="35000"
+                  min={0}
+                  className="w-28 min-h-[34px] px-2.5 py-1 rounded-xl bg-white border border-[#0f2c38]/10 text-[#4a6f7d] text-xs font-mono outline-none focus:border-[#0d9488]"
+                />
+              </div>
             </div>
           </div>
 
@@ -278,30 +507,28 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="block text-xs font-semibold text-[#0f2c38]">URL File Unduhan Rahasia *</label>
-            <input
-              type="url"
-              value={downloadUrl}
-              onChange={(e) => setDownloadUrl(e.target.value)}
-              placeholder="https://storage.supabase.co/apks/game.apk"
-              required
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none font-mono shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
-            />
-            <span className="text-[11px] text-[#4a6f7d] block">
-              Tautan ini hanya diberikan kepada pembeli setelah pembayaran terverifikasi oleh webhook QiosPay.
-            </span>
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="block text-xs font-semibold text-[#0f2c38]">Developer / Modder</label>
+              <input
+                type="text"
+                value={developer}
+                onChange={(e) => setDeveloper(e.target.value)}
+                placeholder="Independent Developer"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
+              />
+            </div>
 
-          <div className="space-y-1">
-            <label className="block text-xs font-semibold text-[#0f2c38]">Deskripsi Singkat</label>
-            <input
-              type="text"
-              value={shortDescription}
-              onChange={(e) => setShortDescription(e.target.value)}
-              placeholder="Remaster grafis 60FPS dengan controller support..."
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
-            />
+            <div className="space-y-1">
+              <label className="block text-xs font-semibold text-[#0f2c38]">Deskripsi Singkat</label>
+              <input
+                type="text"
+                value={shortDescription}
+                onChange={(e) => setShortDescription(e.target.value)}
+                placeholder="Remaster grafis 60FPS dengan controller support..."
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
+              />
+            </div>
           </div>
 
           <div className="space-y-1">
@@ -317,18 +544,9 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[#0f2c38]">URL Cover / Thumbnail</label>
-              <input
-                type="url"
-                value={coverUrl}
-                onChange={(e) => setCoverUrl(e.target.value)}
-                placeholder="https://..."
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[#0f2c38]">URL Icon</label>
+              <label className="block text-xs font-semibold text-[#0f2c38]">
+                URL Icon / Cover (Rasio 1:1)
+              </label>
               <input
                 type="url"
                 value={iconUrl}
@@ -337,6 +555,49 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
                 className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
               />
             </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-semibold text-[#0f2c38]">
+                URL Cover / Thumbnail (1:1)
+              </label>
+              <input
+                type="url"
+                value={coverUrl}
+                onChange={(e) => setCoverUrl(e.target.value)}
+                placeholder="https://..."
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
+              />
+            </div>
+          </div>
+
+          {(iconUrl || coverUrl) && (
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/70 border border-white">
+              <div className="w-14 h-14 aspect-square rounded-2xl overflow-hidden bg-white border border-white shadow-sm flex-shrink-0">
+                <img
+                  src={iconUrl || coverUrl}
+                  alt="Preview icon 1:1"
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="text-[11px] text-[#355968]">
+                <strong className="text-[#0f2c38] block">Pratinjau Icon (1:1)</strong>
+                <span>Semua kartu game ditampilkan dalam format kotak 1:1 agar konsisten di mobile dan desktop.</span>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold text-[#0f2c38]">
+              Fitur Unggulan (Satu baris per fitur)
+            </label>
+            <textarea
+              value={featuresText}
+              onChange={(e) => setFeaturesText(e.target.value)}
+              rows={2}
+              placeholder="60FPS Graphics&#10;Full Gamepad Support"
+              className="w-full px-3.5 py-2 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
+            />
           </div>
 
           <div className="space-y-1">
@@ -357,7 +618,7 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <span className="text-xs font-bold text-[#0f2c38] block">Status Produk Aktif</span>
-                <span className="text-[11px] text-[#4a6f7d]">Bisa dibeli oleh publik</span>
+                <span className="text-[11px] text-[#4a6f7d]">Bisa dipilih oleh publik</span>
               </div>
               <input
                 type="checkbox"
@@ -374,7 +635,7 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
               </div>
               <select
                 value={visibility}
-                onChange={(e) => setVisibility(e.target.value as any)}
+                onChange={(e) => setVisibility(e.target.value as 'published' | 'draft')}
                 className="min-h-[40px] px-3 py-1.5 rounded-xl bg-white/90 border border-white text-[#0f2c38] text-xs font-semibold outline-none"
               >
                 <option value="published" className="bg-[#f2faf7] text-[#0f2c38]">

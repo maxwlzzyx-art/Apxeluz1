@@ -540,17 +540,25 @@ export async function saveSettingsToSupabase(settings: WebsiteSettings): Promise
 }
 
 // ==============================================================================
-// PREMIUM GAMES & ORDERS (Requirement 4, 5, & 6)
+// PREMIUM GAMES (Link-Based Day/Time Payment Plans)
 // ==============================================================================
 
-import type { PremiumGame, Order, ProductAccess } from '../types/premium';
+import type { PremiumGame } from '../types/premium';
+import { getStartingPrice, normalizePaymentPlans } from '../utils/premiumPlans';
 
 export function premiumRowToGame(row: any): PremiumGame {
+  const paymentPlans = normalizePaymentPlans(
+    row.payment_plans || row.paymentPlans,
+    Number(row.price || 20000),
+    row.download_url || row.downloadUrl
+  );
+  const price = getStartingPrice({ price: Number(row.price || 0), paymentPlans });
+
   return {
     id: row.id,
     title: row.title || 'Untitled Premium Game',
     slug: row.slug,
-    price: Number(row.price || 0),
+    price,
     originalPrice: row.original_price ? Number(row.original_price) : undefined,
     shortDescription: row.short_description || '',
     description: row.description || '',
@@ -558,7 +566,8 @@ export function premiumRowToGame(row: any): PremiumGame {
     coverUrl: row.cover_url || '',
     bannerUrl: row.banner_url || '',
     screenshots: Array.isArray(row.screenshots) ? row.screenshots : [],
-    downloadUrl: row.download_url || '',
+    downloadUrl: row.download_url || paymentPlans[0]?.paymentUrl || '',
+    paymentPlans,
     version: row.version || 'v1.0.0',
     fileSize: row.file_size || '500 MB',
     features: Array.isArray(row.features) ? row.features : [],
@@ -587,21 +596,20 @@ export function subscribeToPremiumGames(
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        // Fallback: If remote table is not yet migrated in Supabase, fetch from backend API
+      if (error || !data || data.length === 0) {
         try {
           const apiRes = await fetch('/api/v1/premium-games');
           if (apiRes.ok) {
             const apiData = await apiRes.json();
             if (Array.isArray(apiData)) {
-              onUpdate(apiData);
+              onUpdate(apiData.map((g) => premiumRowToGame(g)));
               return;
             }
           }
         } catch {
           // Ignore
         }
-        if (onError) onError(error);
+        if (error && onError) onError(error);
         return;
       }
       onUpdate((data || []).map(premiumRowToGame));
@@ -644,7 +652,6 @@ export function subscribeToPremiumGames(
  */
 export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Promise<PremiumGame> {
   let targetId = game.id;
-  // If no ID provided, try looking up existing row by slug to avoid slug unique constraint collision
   if (!targetId && game.slug) {
     try {
       const { data: existing } = await supabase
@@ -661,11 +668,14 @@ export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Pro
   }
 
   const safeId = ensureUUID(targetId);
-  const row = {
+  const normalizedPlans = normalizePaymentPlans(game.paymentPlans, game.price, game.downloadUrl);
+  const startingPrice = getStartingPrice({ price: Number(game.price || 0), paymentPlans: normalizedPlans });
+
+  const baseRow = {
     id: safeId,
     title: game.title || 'Untitled Premium Game',
     slug: game.slug,
-    price: game.price,
+    price: startingPrice,
     original_price: game.originalPrice || null,
     short_description: game.shortDescription || '',
     description: game.description || '',
@@ -673,7 +683,7 @@ export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Pro
     cover_url: game.coverUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
     banner_url: game.bannerUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
     screenshots: game.screenshots || [],
-    download_url: game.downloadUrl || '',
+    download_url: game.downloadUrl || normalizedPlans[0]?.paymentUrl || '',
     version: game.version || 'v1.0.0',
     file_size: game.fileSize || '500 MB',
     features: game.features || [],
@@ -684,23 +694,37 @@ export async function savePremiumGameToSupabase(game: Partial<PremiumGame>): Pro
     updated_at: new Date().toISOString(),
   };
 
+  const rowWithPlans = {
+    ...baseRow,
+    payment_plans: normalizedPlans,
+  };
+
   try {
     const { data, error } = await supabase
       .from('premium_games')
-      .upsert(row, { onConflict: 'id' })
+      .upsert(rowWithPlans, { onConflict: 'id' })
       .select()
       .single();
 
     if (error) {
-      console.warn('Supabase savePremiumGame notice:', error.message);
-      // Fallback return constructed game if table is not yet created in Supabase
-      return premiumRowToGame(row);
+      // Retry without payment_plans if remote Supabase table lacks column yet
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('premium_games')
+        .upsert(baseRow, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (fallbackError) {
+        console.warn('Supabase savePremiumGame notice:', fallbackError.message);
+        return premiumRowToGame(rowWithPlans);
+      }
+      return premiumRowToGame({ ...fallbackData, payment_plans: normalizedPlans });
     }
 
     return premiumRowToGame(data);
   } catch (err: any) {
     console.warn('Supabase savePremiumGame fallback:', err?.message);
-    return premiumRowToGame(row);
+    return premiumRowToGame(rowWithPlans);
   }
 }
 
@@ -718,5 +742,6 @@ export async function deletePremiumGameFromSupabase(id: string): Promise<void> {
     throw new Error(error.message);
   }
 }
+
 
 

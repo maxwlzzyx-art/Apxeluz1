@@ -5,18 +5,16 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { Item, Category, WebsiteSettings, AdminStats } from './src/types/admin';
-import { PremiumGame, Order, PaymentLog, ProductAccess } from './src/types/premium';
+import { PremiumGame } from './src/types/premium';
 import { formatFileSize, slugify } from './src/utils/adminValidation';
-import { isValidHttpUrl } from './src/utils/urlValidation';
+import {
+  getStartingPrice,
+  normalizePaymentPlans,
+  normalizePremiumGameRecord,
+  validatePaymentPlans,
+} from './src/utils/premiumPlans';
 import { PRIMARY_ADMIN_EMAIL, isAuthorizedAdminEmail } from './src/lib/auth';
 import { checkLoginLock, recordLoginFailure, recordLoginSuccess } from './src/lib/rateLimiter';
-import {
-  createQiosPayInvoice,
-  verifyQiosPaySignature,
-  generateDownloadAccessToken,
-  verifyDownloadAccessToken,
-  getQiosPayConfig,
-} from './src/lib/qiospayService';
 import { buildSecurityHeaders } from './src/lib/securityHeaders';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,9 +47,6 @@ interface DatabaseSchema {
   categories: Category[];
   settings: WebsiteSettings;
   premiumGames: PremiumGame[];
-  orders: Order[];
-  paymentLogs: PaymentLog[];
-  productAccess: ProductAccess[];
 }
 
 function getDefaultSamplePremiumGames(): PremiumGame[] {
@@ -60,18 +55,33 @@ function getDefaultSamplePremiumGames(): PremiumGame[] {
       id: 'prem-gta-sa',
       title: 'Grand Theft Auto: San Andreas — Definitive HD Edition',
       slug: 'gta-san-andreas-definitive-hd',
-      price: 35000,
-      originalPrice: 65000,
+      price: 20000,
+      originalPrice: 50000,
       shortDescription: 'Visual remaster 60FPS dengan tekstur 4K HD, audio lossless, dan controller support penuh.',
       description: 'Nikmati petualangan Carl Johnson di Los Santos dengan grafis Definitive Edition yang telah dioptimasi khusus untuk perangkat Android ARM64. Menggunakan lighting shader modern, HD textures pack, dan kompatibilitas gamepad Bluetooth.',
-      iconUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=256&q=80',
+      iconUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=512&q=80',
       coverUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
       bannerUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
       screenshots: [
         'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
       ],
-      downloadUrl: 'https://apxeluz.my.id/downloads/premium/gta_sa_def_v2.0_full.apk',
+      paymentPlans: [
+        {
+          id: 'gta-30d',
+          label: '30 Hari',
+          durationDays: 30,
+          price: 20000,
+          paymentUrl: 'https://apxeluz.my.id/pay/gta-sa-30-hari',
+        },
+        {
+          id: 'gta-lifetime',
+          label: 'Lifetime',
+          durationDays: null,
+          price: 30000,
+          paymentUrl: 'https://apxeluz.my.id/pay/gta-sa-lifetime',
+        },
+      ],
       version: 'v2.1.0-DEF',
       fileSize: '2.4 GB',
       features: ['Full 60FPS Unlock', '4K Textures Pack', 'Full Gamepad Support', 'All Radio Stations Unlocked'],
@@ -86,18 +96,33 @@ function getDefaultSamplePremiumGames(): PremiumGame[] {
       id: 'prem-hollow-knight',
       title: 'Hollow Knight: Voidheart Mobile Edition',
       slug: 'hollow-knight-voidheart-mobile',
-      price: 25000,
-      originalPrice: 50000,
+      price: 20000,
+      originalPrice: 45000,
       shortDescription: 'Port Android resmi komunitas dengan resolusi native 120Hz dan layar sentuh responsif.',
       description: 'Jelajahi Hallownest yang megah di genggaman Anda. Seluruh 4 paket konten ekspansi (Hidden Dreams, The Grimm Troupe, Lifeblood, Godmaster) terintegrasi dengan optimalisasi performa Snapdragon & Dimensity.',
-      iconUrl: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=256&q=80',
+      iconUrl: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=512&q=80',
       coverUrl: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=800&q=80',
       bannerUrl: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=1200&q=80',
       screenshots: [
         'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=800&q=80',
       ],
-      downloadUrl: 'https://apxeluz.my.id/downloads/premium/hollow_knight_voidheart.apk',
+      paymentPlans: [
+        {
+          id: 'hk-30d',
+          label: '30 Hari',
+          durationDays: 30,
+          price: 20000,
+          paymentUrl: 'https://apxeluz.my.id/pay/hollow-knight-30-hari',
+        },
+        {
+          id: 'hk-lifetime',
+          label: 'Lifetime',
+          durationDays: null,
+          price: 30000,
+          paymentUrl: 'https://apxeluz.my.id/pay/hollow-knight-lifetime',
+        },
+      ],
       version: 'v1.5.78',
       fileSize: '1.2 GB',
       features: ['Native 120Hz Support', 'Godmaster DLC included', 'Custom On-Screen Controls'],
@@ -112,17 +137,32 @@ function getDefaultSamplePremiumGames(): PremiumGame[] {
       id: 'prem-re4-hd',
       title: 'Resident Evil 4 Mobile Remake Remastered',
       slug: 're4-mobile-remake-hd',
-      price: 40000,
-      originalPrice: 70000,
+      price: 20000,
+      originalPrice: 60000,
       shortDescription: 'Survival horror legendaris dengan texture modding HD dan kontrol modern over-the-shoulder.',
       description: 'Penyelamatan putri Presiden Ashley Graham kini lebih mendebarkan dengan audio 3D spasial, kontrol bidikan halus, dan mod grafis Definitive.',
-      iconUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=256&q=80',
+      iconUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=512&q=80',
       coverUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80',
       bannerUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80',
       screenshots: [
         'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80',
       ],
-      downloadUrl: 'https://apxeluz.my.id/downloads/premium/re4_remake_hd.apk',
+      paymentPlans: [
+        {
+          id: 're4-30d',
+          label: '30 Hari',
+          durationDays: 30,
+          price: 20000,
+          paymentUrl: 'https://apxeluz.my.id/pay/re4-hd-30-hari',
+        },
+        {
+          id: 're4-lifetime',
+          label: 'Lifetime',
+          durationDays: null,
+          price: 30000,
+          paymentUrl: 'https://apxeluz.my.id/pay/re4-hd-lifetime',
+        },
+      ],
       version: 'v1.1.2',
       fileSize: '1.8 GB',
       features: ['Over-the-shoulder Camera', 'English & Japanese Voices', 'Weapon Upgrades Unlocked'],
@@ -154,9 +194,6 @@ function getInitialDb(): DatabaseSchema {
       defaultArchitecture: 'ARM64',
     },
     premiumGames: getDefaultSamplePremiumGames(),
-    orders: [],
-    paymentLogs: [],
-    productAccess: [],
   };
 }
 
@@ -169,13 +206,14 @@ function readDb(): DatabaseSchema {
     }
     const data = fs.readFileSync(DB_FILE, 'utf-8');
     const parsed = JSON.parse(data);
-    // Ensure all array properties exist
     if (!parsed.premiumGames || parsed.premiumGames.length === 0) {
       parsed.premiumGames = getDefaultSamplePremiumGames();
+    } else {
+      parsed.premiumGames = parsed.premiumGames.map((g: PremiumGame) => normalizePremiumGameRecord(g));
     }
-    if (!parsed.orders) parsed.orders = [];
-    if (!parsed.paymentLogs) parsed.paymentLogs = [];
-    if (!parsed.productAccess) parsed.productAccess = [];
+    delete parsed.orders;
+    delete parsed.paymentLogs;
+    delete parsed.productAccess;
     return parsed;
   } catch (err) {
     console.error('Failed reading database, returning default', err);
@@ -470,13 +508,15 @@ async function startServer() {
   });
 
   // -------------------------------------------------------------
-  // PREMIUM GAMES & QIOSPAY PAYMENT ENDPOINTS (Requirement 4, 5, 6, 7)
+  // PREMIUM GAMES PUBLIC ROUTES (Duration/Time Plan Links)
   // -------------------------------------------------------------
 
   // GET /api/v1/premium-games — Public catalog
   app.get('/api/v1/premium-games', (_req: Request, res: Response) => {
     const db = readDb();
-    const activePublished = db.premiumGames.filter((g) => g.isActive && g.visibility !== 'draft');
+    const activePublished = db.premiumGames
+      .filter((g) => g.isActive && g.visibility !== 'draft')
+      .map((g) => normalizePremiumGameRecord(g));
     return res.json(activePublished);
   });
 
@@ -489,319 +529,7 @@ async function startServer() {
     if (!game || !game.isActive || game.visibility === 'draft') {
       return res.status(404).json({ error: 'Game premium tidak ditemukan atau sedang tidak aktif.' });
     }
-    return res.json(game);
-  });
-
-  // POST /api/v1/checkout/create — Create Order & QiosPay Invoice
-  app.post('/api/v1/checkout/create', async (req: Request, res: Response) => {
-    try {
-      const { gameId, customerName, customerEmail } = req.body;
-
-      if (!gameId || !customerName || !customerEmail) {
-        return res.status(400).json({ error: 'gameId, customerName, dan customerEmail wajib diisi.' });
-      }
-
-      // Validasi email
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
-        return res.status(400).json({ error: 'Alamat email tidak valid.' });
-      }
-
-      const db = readDb();
-      // Server-side price validation: ALWAYS fetch true price from DB
-      const game = db.premiumGames.find((g) => g.id === gameId || g.slug === gameId);
-      if (!game) {
-        return res.status(404).json({ error: 'Produk game premium tidak ditemukan.' });
-      }
-
-      const realAmount = Number(game.price);
-      if (isNaN(realAmount) || realAmount <= 0) {
-        return res.status(400).json({ error: 'Harga produk tidak valid.' });
-      }
-
-      // Create unique order ID
-      const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-
-      // Call QiosPay Invoice API
-      const invoiceResult = await createQiosPayInvoice({
-        refId: orderId,
-        amount: realAmount,
-        customerName: customerName.trim(),
-        customerEmail: customerEmail.trim().toLowerCase(),
-        productName: game.title,
-        returnUrl: `${req.protocol}://${req.get('host')}/premium?order_id=${orderId}`,
-        callbackUrl: `${req.protocol}://${req.get('host')}/api/v1/webhooks/qiospay`,
-      });
-
-      if (!invoiceResult.success) {
-        return res.status(500).json({
-          error: invoiceResult.error || 'Gagal membuat invoice pembayaran QiosPay.',
-        });
-      }
-
-      const newOrder: Order = {
-        id: orderId,
-        gameId: game.id,
-        gameTitle: game.title,
-        customerName: customerName.trim(),
-        customerEmail: customerEmail.trim().toLowerCase(),
-        amount: realAmount,
-        status: 'PENDING',
-        qiospayInvoiceId: invoiceResult.invoiceId,
-        qiospayPaymentUrl: invoiceResult.paymentUrl,
-        qiospayQrString: invoiceResult.qrString,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      db.orders.unshift(newOrder);
-      writeDb(db);
-
-      return res.status(201).json({
-        success: true,
-        orderId,
-        invoiceId: invoiceResult.invoiceId,
-        paymentUrl: invoiceResult.paymentUrl,
-        qrString: invoiceResult.qrString,
-        amount: realAmount,
-        status: 'PENDING',
-        gameTitle: game.title,
-        isSandbox: invoiceResult.isSandbox,
-      });
-    } catch (err: any) {
-      console.error('Checkout creation error:', err);
-      return res.status(500).json({ error: 'Terjadi kesalahan sistem saat memproses checkout.' });
-    }
-  });
-
-  // GET /api/v1/transactions/:id — Query order status
-  app.get('/api/v1/transactions/:id', (req: Request, res: Response) => {
-    const { id } = req.params;
-    const db = readDb();
-    const order = db.orders.find((o) => o.id === id || o.qiospayInvoiceId === id);
-
-    if (!order) {
-      return res.status(404).json({ error: 'Pesanan tidak ditemukan.' });
-    }
-
-    // Check if product access token already generated
-    const access = db.productAccess.find((pa) => pa.orderId === order.id);
-    const downloadToken = access ? access.downloadToken : order.downloadToken;
-
-    return res.json({
-      orderId: order.id,
-      gameId: order.gameId,
-      gameTitle: order.gameTitle,
-      amount: order.amount,
-      status: order.status,
-      paymentUrl: order.qiospayPaymentUrl,
-      qrString: order.qiospayQrString,
-      invoiceId: order.qiospayInvoiceId,
-      downloadToken,
-      paidAt: order.paidAt,
-      createdAt: order.createdAt,
-    });
-  });
-
-  // POST /api/v1/webhooks/qiospay — Secure QiosPay Callback with HMAC-SHA256 & TimingSafeEqual
-  app.post('/api/v1/webhooks/qiospay', (req: Request, res: Response) => {
-    try {
-      const rawBody = (req as any).rawBody || Buffer.from(JSON.stringify(req.body));
-      const body = req.body || {};
-
-      // Retrieve signature and timestamp from headers or payload
-      const signature =
-        (req.headers['x-signature'] as string) ||
-        (req.headers['x-qiospay-signature'] as string) ||
-        (req.headers['x-callback-signature'] as string) ||
-        body.signature ||
-        '';
-
-      const timestamp =
-        (req.headers['x-timestamp'] as string) ||
-        (req.headers['x-qiospay-timestamp'] as string) ||
-        (req.headers['x-callback-timestamp'] as string) ||
-        body.timestamp ||
-        Date.now();
-
-      const ip = getClientIp(req);
-
-      // Verify HMAC-SHA256 signature
-      const verification = verifyQiosPaySignature({
-        rawBody,
-        timestamp,
-        signature,
-      });
-
-      const db = readDb();
-
-      // Log callback attempt
-      const logEntry: PaymentLog = {
-        id: `plog-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        orderId: body.ref_id || body.order_id || 'unknown',
-        invoiceId: body.invoice_id,
-        eventType: body.event || 'unknown',
-        status: body.status || 'unknown',
-        amount: body.amount ? Number(body.amount) : undefined,
-        ipAddress: ip,
-        signatureValid: verification.isValid,
-        createdAt: new Date().toISOString(),
-      };
-      db.paymentLogs.unshift(logEntry);
-
-      if (!verification.isValid) {
-        console.warn(`[QiosPay Webhook] Invalid signature from IP ${ip}: ${verification.reason}`);
-        writeDb(db);
-        return res.status(401).json({
-          success: false,
-          error: `Verifikasi tanda tangan webhook gagal: ${verification.reason}`,
-        });
-      }
-
-      // Handle ping event
-      if (body.event === 'ping') {
-        writeDb(db);
-        return res.json({ success: true, message: 'pong' });
-      }
-
-      const refId = body.ref_id || body.order_id;
-      const order = db.orders.find((o) => o.id === refId || o.qiospayInvoiceId === body.invoice_id);
-
-      if (!order) {
-        writeDb(db);
-        return res.status(404).json({ error: `Order ref_id "${refId}" tidak ditemukan di database.` });
-      }
-
-      // Idempotency: if order is already PAID, return 200 without duplicate processing
-      if (order.status === 'PAID') {
-        writeDb(db);
-        return res.json({ success: true, message: 'Transaksi ini telah diproses sebelumnya (Idempotent).' });
-      }
-
-      // Verify nominal amount matches database order
-      if (body.amount && Number(body.amount) !== Number(order.amount)) {
-        console.error(`[QiosPay Webhook] Nominal mismatch: expected ${order.amount}, received ${body.amount}`);
-        writeDb(db);
-        return res.status(400).json({ error: 'Nominal transaksi tidak cocok dengan database.' });
-      }
-
-      // Event handling
-      if (body.event === 'invoice.paid' || body.status === 'PAID') {
-        order.status = 'PAID';
-        order.paidAt = new Date().toISOString();
-        order.paymentMethod = body.payment_method || 'QRIS';
-
-        // Generate cryptographic, time-limited download access token
-        const tokenInfo = generateDownloadAccessToken({
-          orderId: order.id,
-          gameId: order.gameId,
-          customerEmail: order.customerEmail,
-          expiresInHours: 48, // 48 hour download window
-        });
-
-        order.downloadToken = tokenInfo.token;
-
-        const access: ProductAccess = {
-          id: `pa-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-          orderId: order.id,
-          gameId: order.gameId,
-          customerEmail: order.customerEmail,
-          downloadToken: tokenInfo.token,
-          downloadCount: 0,
-          expiresAt: tokenInfo.expiresAt,
-          createdAt: new Date().toISOString(),
-        };
-
-        db.productAccess.unshift(access);
-        writeDb(db);
-
-        console.log(`[QiosPay Webhook] Order ${order.id} marked as PAID. Download token created.`);
-        return res.json({
-          success: true,
-          message: 'Pembayaran terverifikasi dan hak akses download telah diberikan.',
-          orderId: order.id,
-        });
-      } else if (body.event === 'invoice.expired' || body.status === 'EXPIRED') {
-        order.status = 'EXPIRED';
-        order.updatedAt = new Date().toISOString();
-        writeDb(db);
-        return res.json({ success: true, message: 'Status order diperbarui: EXPIRED' });
-      } else if (body.event === 'invoice.cancelled' || body.status === 'CANCELLED') {
-        order.status = 'CANCELLED';
-        order.updatedAt = new Date().toISOString();
-        writeDb(db);
-        return res.json({ success: true, message: 'Status order diperbarui: CANCELLED' });
-      }
-
-      writeDb(db);
-      return res.json({ success: true, message: 'Event diterima' });
-    } catch (err: any) {
-      console.error('QiosPay webhook processing error:', err);
-      return res.status(500).json({ error: 'Internal webhook error' });
-    }
-  });
-
-  // POST /api/v1/download/access — Verify token and grant download URL
-  app.post('/api/v1/download/access', (req: Request, res: Response) => {
-    const { token, orderId, email } = req.body;
-
-    const db = readDb();
-
-    // 1. Token verification route
-    if (token) {
-      const verifyResult = verifyDownloadAccessToken(token);
-      if (!verifyResult.valid) {
-        return res.status(403).json({
-          error: verifyResult.reason || 'Token akses download tidak valid atau telah kedaluwarsa.',
-        });
-      }
-
-      const game = db.premiumGames.find((g) => g.id === verifyResult.gameId);
-      if (!game) {
-        return res.status(404).json({ error: 'File game premium tidak ditemukan.' });
-      }
-
-      return res.json({
-        success: true,
-        downloadUrl: game.downloadUrl,
-        gameTitle: game.title,
-        version: game.version,
-        fileSize: game.fileSize,
-      });
-    }
-
-    // 2. Order ID + Email lookup route
-    if (orderId && email) {
-      const cleanEmail = email.trim().toLowerCase();
-      const order = db.orders.find(
-        (o) => o.id === orderId && o.customerEmail.toLowerCase() === cleanEmail
-      );
-
-      if (!order) {
-        return res.status(404).json({ error: 'Pesanan tidak ditemukan atau email tidak sesuai.' });
-      }
-
-      if (order.status !== 'PAID') {
-        return res.status(403).json({
-          error: `Pesanan belum dibayar (Status: ${order.status}). Selesaikan pembayaran untuk mengunduh.`,
-        });
-      }
-
-      const game = db.premiumGames.find((g) => g.id === order.gameId);
-      if (!game) {
-        return res.status(404).json({ error: 'File game premium tidak ditemukan.' });
-      }
-
-      return res.json({
-        success: true,
-        downloadUrl: game.downloadUrl,
-        gameTitle: game.title,
-        version: game.version,
-        fileSize: game.fileSize,
-        downloadToken: order.downloadToken,
-      });
-    }
-
-    return res.status(400).json({ error: 'Token atau Order ID dan Email wajib disertakan.' });
+    return res.json(normalizePremiumGameRecord(game));
   });
 
   // -------------------------------------------------------------
@@ -1074,30 +802,41 @@ async function startServer() {
   });
 
   // -------------------------------------------------------------
-  // ADMIN PREMIUM GAMES & ORDERS MANAGEMENT (Requirement 4 & 5)
+  // ADMIN PREMIUM GAMES MANAGEMENT (Duration/Day Plans & Links)
   // -------------------------------------------------------------
   app.get('/api/admin/premium-games', requireAdmin, (_req: Request, res: Response) => {
     const db = readDb();
-    return res.json(db.premiumGames);
+    return res.json(db.premiumGames.map((g) => normalizePremiumGameRecord(g)));
   });
 
   app.post('/api/admin/premium-games', requireAdmin, (req: Request, res: Response) => {
     const data = req.body;
     const db = readDb();
 
-    if (!data.title || !data.downloadUrl) {
-      return res.status(400).json({ error: 'Judul dan Download URL wajib diisi.' });
+    if (!data.title || !String(data.title).trim()) {
+      return res.status(400).json({ error: 'Judul game premium wajib diisi.' });
     }
+
+    const plans = normalizePaymentPlans(data.paymentPlans, Number(data.price || 20000), data.downloadUrl);
+    const planValidation = validatePaymentPlans(plans);
+    if (!planValidation.valid) {
+      return res.status(400).json({ error: planValidation.error || 'Paket pembayaran tidak valid.' });
+    }
+
+    const startingPrice = getStartingPrice({ price: Number(data.price || 0), paymentPlans: plans });
 
     // If game with ID already exists, update it cleanly
     if (data.id) {
       const existingIdx = db.premiumGames.findIndex((g) => g.id === data.id);
       if (existingIdx !== -1) {
-        db.premiumGames[existingIdx] = {
+        db.premiumGames[existingIdx] = normalizePremiumGameRecord({
           ...db.premiumGames[existingIdx],
           ...data,
+          price: startingPrice,
+          paymentPlans: plans,
+          downloadUrl: data.downloadUrl || plans[0]?.paymentUrl || '',
           updatedAt: new Date().toISOString(),
-        };
+        });
         writeDb(db);
         return res.json(db.premiumGames[existingIdx]);
       }
@@ -1110,7 +849,6 @@ async function startServer() {
       slug = `${baseSlug}-${counter++}`;
     }
 
-    const price = Number(data.price || 0);
     // Standard UUID generator matching Supabase schema
     const newId = (data.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.id))
       ? data.id
@@ -1118,9 +856,9 @@ async function startServer() {
 
     const newPremiumGame: PremiumGame = {
       id: newId,
-      title: data.title.trim(),
+      title: String(data.title).trim(),
       slug,
-      price,
+      price: startingPrice,
       originalPrice: data.originalPrice ? Number(data.originalPrice) : undefined,
       shortDescription: data.shortDescription || '',
       description: data.description || '',
@@ -1128,7 +866,8 @@ async function startServer() {
       coverUrl: data.coverUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
       bannerUrl: data.bannerUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
       screenshots: Array.isArray(data.screenshots) ? data.screenshots : [],
-      downloadUrl: data.downloadUrl.trim(),
+      downloadUrl: data.downloadUrl?.trim() || plans[0]?.paymentUrl || '',
+      paymentPlans: plans,
       version: data.version || 'v1.0.0',
       fileSize: data.fileSize || '500 MB',
       features: Array.isArray(data.features) ? data.features : [],
@@ -1157,7 +896,7 @@ async function startServer() {
     }
 
     if (index === -1) {
-      // Upsert: Create game if not found
+      const plans = normalizePaymentPlans(data.paymentPlans, Number(data.price || 20000), data.downloadUrl);
       const newId = (id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
         ? id
         : crypto.randomUUID();
@@ -1166,7 +905,7 @@ async function startServer() {
         id: newId,
         title: data.title || 'Untitled Premium Game',
         slug: slugify(data.slug || data.title) || `game-${Date.now()}`,
-        price: Number(data.price || 0),
+        price: getStartingPrice({ price: Number(data.price || 0), paymentPlans: plans }),
         originalPrice: data.originalPrice ? Number(data.originalPrice) : undefined,
         shortDescription: data.shortDescription || '',
         description: data.description || '',
@@ -1174,7 +913,8 @@ async function startServer() {
         coverUrl: data.coverUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
         bannerUrl: data.bannerUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
         screenshots: Array.isArray(data.screenshots) ? data.screenshots : [],
-        downloadUrl: data.downloadUrl || '',
+        downloadUrl: data.downloadUrl || plans[0]?.paymentUrl || '',
+        paymentPlans: plans,
         version: data.version || 'v1.0.0',
         fileSize: data.fileSize || '500 MB',
         features: Array.isArray(data.features) ? data.features : [],
@@ -1192,15 +932,26 @@ async function startServer() {
 
     const current = db.premiumGames[index];
     const newSlug = data.slug ? slugify(data.slug) : current.slug;
+    const plans = Array.isArray(data.paymentPlans)
+      ? normalizePaymentPlans(data.paymentPlans, current.price, data.downloadUrl || current.downloadUrl)
+      : normalizePaymentPlans(current.paymentPlans, current.price, current.downloadUrl);
 
-    const updatedGame: PremiumGame = {
+    if (Array.isArray(data.paymentPlans)) {
+      const validation = validatePaymentPlans(plans);
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error || 'Paket pembayaran tidak valid.' });
+      }
+    }
+
+    const updatedGame: PremiumGame = normalizePremiumGameRecord({
       ...current,
       ...data,
       slug: newSlug,
-      price: data.price !== undefined ? Number(data.price) : current.price,
+      paymentPlans: plans,
+      price: getStartingPrice({ price: data.price !== undefined ? Number(data.price) : current.price, paymentPlans: plans }),
       originalPrice: data.originalPrice !== undefined ? Number(data.originalPrice) : current.originalPrice,
       updatedAt: new Date().toISOString(),
-    };
+    });
 
     db.premiumGames[index] = updatedGame;
     writeDb(db);
@@ -1221,56 +972,6 @@ async function startServer() {
     writeDb(db);
 
     return res.json({ success: true, message: `Game premium "${deleted.title}" berhasil dihapus.` });
-  });
-
-  app.get('/api/admin/orders', requireAdmin, (_req: Request, res: Response) => {
-    const db = readDb();
-    return res.json({
-      orders: db.orders,
-      logs: db.paymentLogs.slice(0, 50),
-    });
-  });
-
-  app.put('/api/admin/orders/:id/status', requireAdmin, (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { status } = req.body;
-    const db = readDb();
-
-    const order = db.orders.find((o) => o.id === id);
-    if (!order) {
-      return res.status(404).json({ error: 'Pesanan tidak ditemukan.' });
-    }
-
-    if (!['PENDING', 'PAID', 'EXPIRED', 'CANCELLED'].includes(status)) {
-      return res.status(400).json({ error: 'Status tidak valid.' });
-    }
-
-    order.status = status as any;
-    order.updatedAt = new Date().toISOString();
-
-    if (status === 'PAID' && !order.downloadToken) {
-      order.paidAt = new Date().toISOString();
-      const tokenInfo = generateDownloadAccessToken({
-        orderId: order.id,
-        gameId: order.gameId,
-        customerEmail: order.customerEmail,
-      });
-      order.downloadToken = tokenInfo.token;
-
-      db.productAccess.unshift({
-        id: `pa-${Date.now()}`,
-        orderId: order.id,
-        gameId: order.gameId,
-        customerEmail: order.customerEmail,
-        downloadToken: tokenInfo.token,
-        downloadCount: 0,
-        expiresAt: tokenInfo.expiresAt,
-        createdAt: new Date().toISOString(),
-      });
-    }
-
-    writeDb(db);
-    return res.json({ success: true, order });
   });
 
   // -------------------------------------------------------------

@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { Layers } from 'lucide-react';
+import { useScrollLock } from '../utils/useScrollLock';
+
+const WEB_PROFILE_ICON_URL =
+  'https://cdn.phototourl.com/anon/2026-11-15-95ccde76-958a-450f-91b0-60424cee492b.jpg';
 
 export const Footer: React.FC = () => {
   const [modalContent, setModalContent] = useState<{ title: string; body: string } | null>(null);
+  const [profileIconFailed, setProfileIconFailed] = useState(false);
+
+  useScrollLock(Boolean(modalContent));
 
   const openLegalModal = (type: 'privacy' | 'terms') => {
     switch (type) {
@@ -27,8 +34,18 @@ export const Footer: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* APXELUZ Branding */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/95 flex items-center justify-center text-[#0d9488] shadow-sm">
-              <Layers className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl overflow-hidden bg-gradient-to-br from-[#d7f5eb] to-[#dff1ff] border border-white/95 flex items-center justify-center text-[#0d9488] shadow-sm">
+              {!profileIconFailed ? (
+                <img
+                  src={WEB_PROFILE_ICON_URL}
+                  alt="APXELUZ Profile"
+                  referrerPolicy="no-referrer"
+                  onError={() => setProfileIconFailed(true)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Layers className="w-4 h-4" />
+              )}
             </div>
             <span className="heading-font font-extrabold text-base tracking-tight text-[#0f2c38]">
               APXE<span className="text-[#0d9488]">LUZ</span>
@@ -64,11 +81,11 @@ export const Footer: React.FC = () => {
       {/* Mobile-Friendly Frosted Bottom Sheet / Info Dialog */}
       {modalContent && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/25 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/25 backdrop-blur-md overscroll-none"
           onClick={() => setModalContent(null)}
         >
           <div
-            className="w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 sm:p-7 text-left"
+            className="w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 sm:p-7 text-left overscroll-y-contain"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mb-4 sm:hidden" />

@@ -207,8 +207,8 @@ export const ModPage: React.FC<ModPageProps> = ({
         {/* Info Header */}
         <div className="px-5 sm:px-9 -mt-20 relative z-20 pb-6 border-b border-[#0f2c38]/10">
           <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-end">
-            {/* Cover Art */}
-            <div className="w-28 sm:w-36 aspect-[4/5] flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white shadow-[0_14px_32px_-8px_rgba(15,44,56,0.22)] bg-white/75 relative">
+            {/* Cover Art (1:1 Icon Aspect) */}
+            <div className="w-28 sm:w-36 aspect-square flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white shadow-[0_14px_32px_-8px_rgba(15,44,56,0.22)] bg-white/75 relative">
               <img
                 src={mod.coverUrl}
                 alt={mod.title}

@@ -13,6 +13,7 @@ import {
 import { Game } from '../types/game';
 import { isValidHttpUrl, safeOpenExternalUrl, getHostingProvider } from '../utils/urlValidation';
 import { incrementDownloadCounter } from '../lib/supabaseService';
+import { useScrollLock } from '../utils/useScrollLock';
 
 interface DownloadModalProps {
   game: Game | null;
@@ -25,6 +26,8 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
   const [redirectedName, setRedirectedName] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
+
+  useScrollLock(Boolean(game));
 
   if (!game) return null;
 
@@ -80,32 +83,33 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/25 backdrop-blur-md overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/25 backdrop-blur-md overscroll-none"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg liquid-glass rounded-t-[28px] sm:rounded-3xl p-5 sm:p-7 overflow-hidden text-left"
+        className="relative w-full max-w-lg max-h-[92vh] flex flex-col liquid-glass rounded-t-[28px] sm:rounded-3xl p-5 sm:p-7 overflow-hidden text-left overscroll-contain"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="download-title"
       >
-        <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mb-3 sm:hidden" />
+        <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mb-3 sm:hidden shrink-0" />
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 min-w-[40px] min-h-[40px] p-2 rounded-2xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] flex items-center justify-center cursor-pointer"
+          className="absolute top-4 right-4 min-w-[40px] min-h-[40px] p-2 rounded-2xl liquid-glass-button-secondary text-[#355968] hover:text-[#0f2c38] flex items-center justify-center cursor-pointer z-10"
           aria-label="Close download modal"
         >
           <X className="w-4 h-4" />
         </button>
 
-        {/* Modal Header */}
-        <div className="flex items-center gap-3.5 mb-5 pb-4 border-b border-[#0f2c38]/10 pr-10">
-          <div className="w-14 h-16 rounded-2xl overflow-hidden bg-white/70 border border-white flex-shrink-0 shadow-md">
-            <img src={game.coverUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-          </div>
+        <div className="overflow-y-auto custom-scrollbar overscroll-y-contain touch-pan-y flex-grow">
+          {/* Modal Header */}
+          <div className="flex items-center gap-3.5 mb-5 pb-4 border-b border-[#0f2c38]/10 pr-10">
+            <div className="w-14 h-14 aspect-square rounded-2xl overflow-hidden bg-white/70 border border-white flex-shrink-0 shadow-md">
+              <img src={game.coverUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+            </div>
           <div className="min-w-0">
             <p className="text-[11px] font-bold text-[#0d9488] tabular-nums">
               {game.status} · {game.version}
@@ -254,6 +258,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
               Opens the destination page in a new browser tab.
             </p>
           </div>
+        </div>
         </div>
       </div>
     </div>

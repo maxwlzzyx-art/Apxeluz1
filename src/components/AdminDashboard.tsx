@@ -28,17 +28,15 @@ import {
   HardDrive,
   Download,
   Crown,
-  ShoppingBag,
-  CreditCard,
-  CheckCircle2,
 } from 'lucide-react';
 import { Item, Category, WebsiteSettings, AdminStats, ItemType } from '../types/admin';
-import { PremiumGame, Order } from '../types/premium';
+import { PremiumGame } from '../types/premium';
 import { ItemFormModal } from './ItemFormModal';
 import { AdminPremiumModal } from './AdminPremiumModal';
 import { PRIMARY_ADMIN_EMAIL } from '../lib/auth';
 import { safeFetchJson } from '../utils/apiClient';
-import { slugify } from '../utils/adminValidation';
+import { formatRupiah, getStartingPrice } from '../utils/premiumPlans';
+import { useScrollLock } from '../utils/useScrollLock';
 import {
   subscribeToAllAdminItems,
   subscribeToCategories,
@@ -92,7 +90,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     defaultArchitecture: 'ARM64',
   });
   const [premiumGames, setPremiumGames] = useState<PremiumGame[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -106,6 +103,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [editingPremiumGame, setEditingPremiumGame] = useState<PremiumGame | null>(null);
   const [deletingPremiumGame, setDeletingPremiumGame] = useState<PremiumGame | null>(null);
+
+  useScrollLock(Boolean(deletingPremiumGame || deletingItem || deletingCategory));
 
   // Category editing state
   const [newCatName, setNewCatName] = useState('');
@@ -128,13 +127,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined;
 
-      const [statsRes, itemsRes, catsRes, settingsRes, premRes, ordersRes] = await Promise.all([
+      const [statsRes, itemsRes, catsRes, settingsRes, premRes] = await Promise.all([
         safeFetchJson<AdminStats>('/api/admin/stats', { headers }),
         safeFetchJson<Item[]>('/api/admin/items', { headers }),
         safeFetchJson<Category[]>('/api/categories'),
         safeFetchJson<WebsiteSettings>('/api/admin/settings', { headers }),
         safeFetchJson<PremiumGame[]>('/api/admin/premium-games', { headers }),
-        safeFetchJson<{ orders: Order[] }>('/api/admin/orders', { headers }),
       ]);
 
       if (statsRes.ok && statsRes.data) setStats(statsRes.data);
@@ -164,8 +162,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }
         }
       }
-
-      if (ordersRes.ok && Array.isArray(ordersRes.data?.orders)) setOrders(ordersRes.data.orders);
     } catch (err) {
       console.warn('Administrative data load notice:', err);
     } finally {
@@ -676,7 +672,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {items.slice(0, 5).map((item) => (
                   <div key={item.id} className="py-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-12 rounded-xl overflow-hidden bg-white/80 border border-white flex-shrink-0">
+                      <div className="w-11 h-11 aspect-square rounded-xl overflow-hidden bg-white/80 border border-white flex-shrink-0">
                         <img src={item.coverUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       </div>
                       <div className="min-w-0">
@@ -772,7 +768,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <tr key={item.id} className="hover:bg-white/40 transition-colors">
                       <td className="py-3 pl-2">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-12 rounded-xl overflow-hidden bg-white/80 border border-white flex-shrink-0">
+                          <div className="w-11 h-11 aspect-square rounded-xl overflow-hidden bg-white/80 border border-white flex-shrink-0">
                             <img src={item.coverUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                           </div>
                           <div>
@@ -1215,7 +1211,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* SECTION 4: PREMIUM GAMES & QIOSPAY TRANSACTIONS (Requirement 4 & 5) */}
+      {/* SECTION 4: PREMIUM GAMES & LINK PAKET */}
       {activeSection === 'premium' && (
         <div className="space-y-6">
           {/* Top Actions & Summary */}
@@ -1223,10 +1219,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div>
               <h2 className="heading-font text-lg font-extrabold text-[#0f2c38] text-3d-subtle flex items-center gap-2">
                 <Crown className="w-5 h-5 text-amber-600" />
-                <span>Manajemen Game Premium & Transaksi QiosPay</span>
+                <span>Manajemen Game Premium &amp; Link Paket</span>
               </h2>
               <p className="text-xs text-[#355968] mt-1">
-                Kelola katalog game berbayar, harga IDR, file unduhan, dan pantau status transaksi QiosPay secara real-time.
+                Atur katalog game premium, pilihan durasi (mis. 30 Hari = Rp 20.000 &amp; Lifetime = Rp 30.000), serta link pembayaran yang sudah mencakup file unduhan.
               </p>
             </div>
 
@@ -1243,30 +1239,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="p-4 rounded-3xl liquid-glass-card space-y-1">
               <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Total Game Premium</span>
               <div className="text-2xl font-extrabold text-[#0f2c38] font-mono">{premiumGames.length}</div>
             </div>
 
             <div className="p-4 rounded-3xl liquid-glass-card space-y-1">
-              <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Total Pesanan</span>
-              <div className="text-2xl font-extrabold text-[#0f2c38] font-mono">{orders.length}</div>
-            </div>
-
-            <div className="p-4 rounded-3xl liquid-glass-card space-y-1">
-              <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Pesanan Terbayar (PAID)</span>
+              <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Produk Aktif</span>
               <div className="text-2xl font-extrabold text-[#0d9488] font-mono">
-                {orders.filter((o) => o.status === 'PAID').length}
+                {premiumGames.filter((g) => g.isActive).length}
               </div>
             </div>
 
             <div className="p-4 rounded-3xl liquid-glass-card space-y-1">
-              <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Total Pendapatan (IDR)</span>
-              <div className="text-xl font-extrabold text-[#0284c7] font-mono">
-                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(
-                  orders.filter((o) => o.status === 'PAID').reduce((acc, curr) => acc + (curr.amount || 0), 0)
-                )}
+              <span className="text-[11px] text-[#4a6f7d] uppercase font-semibold">Total Paket Durasi</span>
+              <div className="text-2xl font-extrabold text-[#0284c7] font-mono">
+                {premiumGames.reduce((acc, g) => acc + (g.paymentPlans?.length || 0), 0)}
               </div>
             </div>
           </div>
@@ -1290,8 +1279,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <thead className="bg-white/50 text-[#4a6f7d] border-b border-[#0f2c38]/10">
                     <tr>
                       <th className="py-3 px-4">Game</th>
-                      <th className="py-3 px-4">Harga (IDR)</th>
-                      <th className="py-3 px-4">Versi & Ukuran</th>
+                      <th className="py-3 px-4">Paket Durasi &amp; Harga</th>
+                      <th className="py-3 px-4">Versi &amp; Ukuran</th>
                       <th className="py-3 px-4">Status Aktif</th>
                       <th className="py-3 px-4">Visibilitas</th>
                       <th className="py-3 px-4 text-right">Aksi</th>
@@ -1302,20 +1291,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <tr key={game.id} className="hover:bg-white/40 transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={game.iconUrl || game.coverUrl}
-                              alt={game.title}
-                              referrerPolicy="no-referrer"
-                              className="w-9 h-9 rounded-xl object-cover bg-white/80 border border-white"
-                            />
+                            <div className="w-11 h-11 aspect-square rounded-xl overflow-hidden bg-white/80 border border-white flex-shrink-0">
+                              <img
+                                src={game.iconUrl || game.coverUrl}
+                                alt={game.title}
+                                referrerPolicy="no-referrer"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
                             <div>
                               <span className="font-bold text-[#0f2c38] block">{game.title}</span>
                               <span className="text-[10px] text-[#4a6f7d] font-mono">/{game.slug}</span>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-[#0f766e]">
-                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(game.price)}
+                        <td className="py-3 px-4">
+                          <div className="flex flex-wrap gap-1.5">
+                            {Array.isArray(game.paymentPlans) && game.paymentPlans.length > 0 ? (
+                              game.paymentPlans.map((plan) => (
+                                <span
+                                  key={plan.id}
+                                  className="px-2 py-0.5 rounded-lg bg-[#d7f5eb] text-[#0f766e] border border-[#99e8cc] font-mono text-[10px] font-bold"
+                                >
+                                  {plan.label}: {formatRupiah(plan.price)}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="font-mono font-bold text-[#0f766e]">
+                                {formatRupiah(getStartingPrice(game))}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3 px-4 font-mono text-[11px] text-[#355968]">
                           {game.version} • {game.fileSize}
@@ -1363,89 +1369,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* QiosPay Orders & Transaction Logs Table */}
-          <div className="rounded-3xl liquid-glass overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-[#0f2c38]/10 flex items-center justify-between">
-              <h3 className="heading-font text-sm font-extrabold text-[#0f2c38] uppercase tracking-wider flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-[#0284c7]" />
-                <span>Riwayat Transaksi & Pembayaran QiosPay</span>
-                <span className="text-xs font-mono text-[#0284c7]">({orders.length})</span>
-              </h3>
-            </div>
-
-            {orders.length === 0 ? (
-              <div className="text-center py-12 text-[#4a6f7d] text-xs">
-                Belum ada transaksi pembayaran yang tercatat. Transaksi pembelian akan muncul otomatis di sini.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-white/50 text-[#4a6f7d] border-b border-[#0f2c38]/10">
-                    <tr>
-                      <th className="py-3 px-4">Order ID & QiosPay Invoice</th>
-                      <th className="py-3 px-4">Pembeli</th>
-                      <th className="py-3 px-4">Produk</th>
-                      <th className="py-3 px-4">Nominal</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4">Tanggal Transaksi</th>
-                      <th className="py-3 px-4 text-right">Akses Unduhan</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#0f2c38]/10 text-[#355968]">
-                    {orders.map((order) => (
-                      <tr key={order.id} className="hover:bg-white/40 transition-colors">
-                        <td className="py-3 px-4">
-                          <span className="font-mono font-bold text-[#0f2c38] block">{order.id}</span>
-                          <span className="text-[10px] text-[#4a6f7d] font-mono">{order.qiospayInvoiceId || '-'}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-semibold text-[#0f2c38] block">{order.customerName}</span>
-                          <span className="text-[10px] text-[#4a6f7d] font-mono">{order.customerEmail}</span>
-                        </td>
-                        <td className="py-3 px-4 font-medium text-[#0f2c38]">{order.gameTitle}</td>
-                        <td className="py-3 px-4 font-mono font-bold text-[#0f766e]">
-                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(order.amount)}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${
-                              order.status === 'PAID'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : order.status === 'EXPIRED' || order.status === 'CANCELLED'
-                                ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                : 'bg-amber-50 text-amber-800 border-amber-200'
-                            }`}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-[#4a6f7d] font-mono text-[11px]">
-                          {new Date(order.createdAt).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono text-[10px]">
-                          {order.status === 'PAID' ? (
-                            <span className="text-[#0d9488] font-bold flex items-center justify-end gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Token Diberikan</span>
-                            </span>
-                          ) : (
-                            <span className="text-[#4a6f7d]">Menunggu Pembayaran</span>
-                          )}
                         </td>
                       </tr>
                     ))}

@@ -21,6 +21,7 @@ export interface SecurityHeadersOptions {
 const DEFAULT_SUPABASE_ORIGIN = 'https://tgkldegrzhtmcpojkygh.supabase.co';
 const DEFAULT_UNSPLASH_ORIGIN = 'https://images.unsplash.com';
 const IMAGEKIT_ORIGIN = 'https://ik.imagekit.io';
+const PHOTOTOURL_ORIGIN = 'https://cdn.phototourl.com';
 const GOOGLE_FONTS_STYLE_ORIGIN = 'https://fonts.googleapis.com';
 const GOOGLE_FONTS_FONT_ORIGIN = 'https://fonts.gstatic.com';
 
@@ -52,7 +53,7 @@ export function extractOriginPair(rawUrl?: string): { httpsOrigin: string; wssOr
 
 /**
  * Builds a least-privilege Content-Security-Policy header value tailored to APXELUZ
- * (React + Vite + Express + Supabase + Google Fonts + Unsplash + ImageKit).
+ * (React + Vite + Express + Supabase + Google Fonts + Unsplash + ImageKit + PhotoToURL).
  */
 export function buildContentSecurityPolicy(options: SecurityHeadersOptions = {}): string {
   const {
@@ -71,6 +72,7 @@ export function buildContentSecurityPolicy(options: SecurityHeadersOptions = {})
       supabaseHttp,
       DEFAULT_UNSPLASH_ORIGIN,
       IMAGEKIT_ORIGIN,
+      PHOTOTOURL_ORIGIN,
     ])
   );
 

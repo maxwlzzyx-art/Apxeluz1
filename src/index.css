@@ -278,3 +278,9 @@
   font-family: var(--font-heading);
   letter-spacing: -0.015em;
 }
+
+.modal-scroll-lock {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+

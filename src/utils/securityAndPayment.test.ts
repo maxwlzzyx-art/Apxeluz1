@@ -1,12 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  verifyQiosPaySignature,
-  generateQiosPaySignature,
-  generateDownloadAccessToken,
-  verifyDownloadAccessToken,
-} from '../lib/qiospayService';
-import {
   checkLoginLock,
   recordLoginFailure,
   recordLoginSuccess,
@@ -58,79 +52,4 @@ test('Rate Limiter: Allows first and second failed attempt, locks on 3rd attempt
   const cleared = checkLoginLock(testIp, testEmail);
   assert.equal(cleared.isLocked, false);
   assert.equal(cleared.remainingAttempts, 3);
-});
-
-test('QiosPay Webhook: Validates HMAC-SHA256 signature using timingSafeEqual', () => {
-  const testPrivateKey = 'test_secret_private_key_qiospay_2026';
-  const rawBody = JSON.stringify({
-    event: 'invoice.paid',
-    ref_id: 'ORD-12345678',
-    invoice_id: 'QP-INV-999',
-    amount: 50000,
-    status: 'PAID',
-  });
-  const timestamp = Date.now();
-
-  const validSignature = generateQiosPaySignature(rawBody, timestamp, testPrivateKey);
-
-  // 1. Valid signature passes
-  const verificationResult = verifyQiosPaySignature({
-    rawBody,
-    timestamp,
-    signature: validSignature,
-    privateKey: testPrivateKey,
-  });
-  assert.equal(verificationResult.isValid, true);
-
-  // 2. Tampered body fails
-  const tamperedBody = JSON.stringify({
-    event: 'invoice.paid',
-    ref_id: 'ORD-12345678',
-    invoice_id: 'QP-INV-999',
-    amount: 1000, // tampered amount
-    status: 'PAID',
-  });
-  const tamperedResult = verifyQiosPaySignature({
-    rawBody: tamperedBody,
-    timestamp,
-    signature: validSignature,
-    privateKey: testPrivateKey,
-  });
-  assert.equal(tamperedResult.isValid, false);
-
-  // 3. Outdated timestamp (>10 minutes) fails
-  const oldTimestamp = Date.now() - 15 * 60 * 1000;
-  const oldSignature = generateQiosPaySignature(rawBody, oldTimestamp, testPrivateKey);
-  const expiredResult = verifyQiosPaySignature({
-    rawBody,
-    timestamp: oldTimestamp,
-    signature: oldSignature,
-    privateKey: testPrivateKey,
-  });
-  assert.equal(expiredResult.isValid, false);
-  assert.match(expiredResult.reason || '', /tolerance/i);
-});
-
-test('Download Token: Signs and verifies temporary download access tokens', () => {
-  const tokenData = generateDownloadAccessToken({
-    orderId: 'ORD-12345',
-    gameId: 'game-prem-1',
-    customerEmail: 'buyer@apxeluz.my.id',
-    expiresInHours: 24,
-  });
-
-  assert.ok(tokenData.token);
-  assert.ok(tokenData.expiresAt);
-
-  // Verify valid token
-  const verified = verifyDownloadAccessToken(tokenData.token);
-  assert.equal(verified.valid, true);
-  assert.equal(verified.orderId, 'ORD-12345');
-  assert.equal(verified.gameId, 'game-prem-1');
-  assert.equal(verified.customerEmail, 'buyer@apxeluz.my.id');
-
-  // Verify tampered token fails
-  const tampered = tokenData.token.substring(0, tokenData.token.length - 4) + 'AAAA';
-  const tamperedCheck = verifyDownloadAccessToken(tampered);
-  assert.equal(tamperedCheck.valid, false);
 });

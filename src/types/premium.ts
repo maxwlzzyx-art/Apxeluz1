@@ -1,8 +1,16 @@
+export interface PremiumPaymentPlan {
+  id: string;
+  label: string; // e.g. "30 Hari", "7 Hari", "Lifetime"
+  durationDays: number | null; // null = Lifetime
+  price: number; // in IDR (Rupiah), e.g. 20000, 30000
+  paymentUrl: string; // Admin-provided payment + download redirect link
+}
+
 export interface PremiumGame {
   id: string;
   title: string;
   slug: string;
-  price: number; // in IDR (Rupiah)
+  price: number; // Starting/display price in IDR (derived from lowest plan if paymentPlans exists)
   originalPrice?: number;
   shortDescription: string;
   description: string;
@@ -10,7 +18,8 @@ export interface PremiumGame {
   coverUrl: string;
   bannerUrl: string;
   screenshots: string[];
-  downloadUrl: string;
+  downloadUrl?: string; // Optional legacy field; paymentUrl already includes download access
+  paymentPlans: PremiumPaymentPlan[];
   version: string;
   fileSize: string;
   features?: string[];
@@ -20,47 +29,4 @@ export interface PremiumGame {
   visibility?: 'published' | 'draft';
   createdAt?: string;
   updatedAt?: string;
-}
-
-export type OrderStatus = 'PENDING' | 'PAID' | 'EXPIRED' | 'CANCELLED';
-
-export interface Order {
-  id: string; // e.g. ORD-1730000000-abcd
-  gameId: string;
-  gameTitle: string;
-  customerName: string;
-  customerEmail: string;
-  amount: number;
-  status: OrderStatus;
-  qiospayInvoiceId?: string;
-  qiospayPaymentUrl?: string;
-  qiospayQrString?: string;
-  paymentMethod?: string;
-  downloadToken?: string;
-  createdAt: string;
-  updatedAt: string;
-  paidAt?: string;
-}
-
-export interface PaymentLog {
-  id: string;
-  orderId: string;
-  invoiceId?: string;
-  eventType: string;
-  status: string;
-  amount?: number;
-  ipAddress?: string;
-  signatureValid: boolean;
-  createdAt: string;
-}
-
-export interface ProductAccess {
-  id: string;
-  orderId: string;
-  gameId: string;
-  customerEmail: string;
-  downloadToken: string;
-  downloadCount: number;
-  expiresAt: string;
-  createdAt: string;
 }
