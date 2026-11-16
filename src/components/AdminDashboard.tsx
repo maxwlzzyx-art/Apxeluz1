@@ -40,6 +40,7 @@ import {
   PREMIUM_CACHE_KEY,
   mergePremiumGameLists,
   removePremiumGameFromList,
+  shouldAbortOnRestError,
   upsertPremiumGameInList,
 } from '../utils/premiumPersistence';
 import { useScrollLock } from '../utils/useScrollLock';
@@ -454,8 +455,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       body: JSON.stringify(gameData),
     });
 
-    // Surface backend validation / auth errors directly inside modal
-    if (!apiRes.ok && apiRes.status >= 400 && apiRes.status < 500 && apiRes.error) {
+    // Surface real backend JSON validation / auth errors, but allow 404/405 static-host fallbacks to proceed to Supabase
+    if (shouldAbortOnRestError(apiRes)) {
       throw new Error(apiRes.error);
     }
 
@@ -467,9 +468,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     if (!apiRes.ok && !supaRes.syncedToSupabase) {
       const errorMsg =
-        apiRes.error ||
         supaRes.errorMessage ||
-        'Gagal menyimpan ke server lokal maupun Supabase. Pastikan server berjalan dan tabel Supabase tersedia.';
+        apiRes.error ||
+        'Gagal menyimpan ke server lokal maupun Supabase. Pastikan server berjalan atau tabel Supabase tersedia.';
       throw new Error(errorMsg);
     }
 
@@ -488,7 +489,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         type: 'warning',
         showSql: true,
         message:
-          `Game "${finalSavedGame.title}" tersimpan ke server lokal, tetapi tabel 'public.premium_games' belum ada di Supabase Anda (Error PGRST205). Jalankan skrip SQL Migrasi di Supabase SQL Editor agar tersinkron ke cloud.`,
+          `Game "${finalSavedGame.title}" tersimpan ke server lokal, tetapi tabel 'public.premium_games' belum ada di Supabase Anda. Jalankan SQL Migrasi di Supabase SQL Editor agar tersinkron ke cloud.`,
       });
     } else if (!supaRes.syncedToSupabase) {
       setPremiumSyncNotice({
@@ -498,7 +499,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     } else {
       setPremiumSyncNotice({
         type: 'success',
-        message: `Game "${finalSavedGame.title}" berhasil disimpan ke server & database Supabase.`,
+        message: `Game "${finalSavedGame.title}" berhasil disimpan ke database Supabase.`,
       });
     }
   };
@@ -519,7 +520,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (!apiRes.ok && !supaDel.deletedFromSupabase && !supaDel.tableMissing) {
         setPremiumSyncNotice({
           type: 'error',
-          message: apiRes.error || supaDel.errorMessage || 'Gagal menghapus game premium.',
+          message: supaDel.errorMessage || apiRes.error || 'Gagal menghapus game premium.',
         });
         return;
       }
@@ -560,7 +561,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (!apiRes.ok && !supaRes.syncedToSupabase) {
         setPremiumSyncNotice({
           type: 'error',
-          message: apiRes.error || supaRes.errorMessage || 'Gagal mengubah status aktif.',
+          message: supaRes.errorMessage || apiRes.error || 'Gagal mengubah status aktif.',
         });
         return;
       }

@@ -5,6 +5,7 @@ import {
   isSupabaseMissingTableError,
   mergePremiumGameLists,
   removePremiumGameFromList,
+  shouldAbortOnRestError,
   upsertPremiumGameInList,
 } from './premiumPersistence';
 import { PremiumGame } from '../types/premium';
@@ -105,4 +106,32 @@ test('mergePremiumGameLists deduplicates by id and slug preferring primary sourc
   assert.equal(merged.length, 2);
   assert.equal(merged[0].title, 'Primary Alpha');
   assert.equal(removePremiumGameFromList(merged, 'g2').length, 1);
+});
+
+test('shouldAbortOnRestError ignores 404/405 non-JSON fallback and aborts on JSON 400/401', () => {
+  assert.equal(
+    shouldAbortOnRestError({
+      ok: false,
+      status: 405,
+      error: 'Server returned non-JSON response (405).',
+    }),
+    false
+  );
+  assert.equal(
+    shouldAbortOnRestError({
+      ok: false,
+      status: 404,
+      isHtml: true,
+      error: 'Backend endpoint is not deployed on this server (HTTP 404).',
+    }),
+    false
+  );
+  assert.equal(
+    shouldAbortOnRestError({
+      ok: false,
+      status: 400,
+      error: 'Judul game premium wajib diisi.',
+    }),
+    true
+  );
 });

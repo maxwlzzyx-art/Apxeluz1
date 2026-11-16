@@ -345,10 +345,21 @@ USING (
   AND public.is_admin()
 );
 
--- Enable Realtime for dynamic live synchronization
-ALTER PUBLICATION supabase_realtime ADD TABLE public.apps;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.categories;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.website_settings;
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.apps;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.categories;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.website_settings;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ==============================================================================
 -- 11. CATEGORY COUNT DYNAMIC AUTO-SYNCHRONIZATION TRIGGER
@@ -454,7 +465,10 @@ TO authenticated
 USING (public.is_admin())
 WITH CHECK (public.is_admin());
 
--- Realtime for premium games
-ALTER PUBLICATION supabase_realtime ADD TABLE public.premium_games;
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.premium_games;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 

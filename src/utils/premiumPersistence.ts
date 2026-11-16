@@ -70,3 +70,16 @@ export function filterPublicPremiumGames(list: PremiumGame[]): PremiumGame[] {
     .filter((game) => game && game.isActive !== false && game.visibility !== 'draft')
     .map((game) => normalizePremiumGameRecord(game));
 }
+
+export function shouldAbortOnRestError(apiRes: {
+  ok: boolean;
+  status: number;
+  error?: string;
+  isHtml?: boolean;
+}): boolean {
+  if (apiRes.ok) return false;
+  if (apiRes.isHtml) return false;
+  if (apiRes.status === 404 || apiRes.status === 405 || apiRes.status === 0) return false;
+  if (apiRes.error && apiRes.error.includes('non-JSON response')) return false;
+  return apiRes.status >= 400 && apiRes.status < 500 && Boolean(apiRes.error);
+}

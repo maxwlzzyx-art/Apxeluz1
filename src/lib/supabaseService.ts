@@ -551,12 +551,11 @@ import {
   mergePremiumGameLists,
 } from '../utils/premiumPersistence';
 
-export const PREMIUM_GAMES_SQL_MIGRATION = `-- Jalankan di Supabase Dashboard > SQL Editor > New Query > Run
-CREATE TABLE IF NOT EXISTS public.premium_games (
+export const PREMIUM_GAMES_SQL_MIGRATION = `CREATE TABLE IF NOT EXISTS public.premium_games (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
-  price NUMERIC NOT NULL CHECK (price >= 0),
+  price NUMERIC NOT NULL DEFAULT 20000,
   original_price NUMERIC,
   short_description TEXT DEFAULT '',
   description TEXT DEFAULT '',
@@ -572,25 +571,18 @@ CREATE TABLE IF NOT EXISTS public.premium_games (
   category TEXT DEFAULT 'Action',
   developer TEXT DEFAULT 'Independent Developer',
   is_active BOOLEAN DEFAULT TRUE,
-  visibility TEXT DEFAULT 'published' CHECK (visibility IN ('published', 'draft')),
+  visibility TEXT DEFAULT 'published',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.premium_games
-  ADD COLUMN IF NOT EXISTS payment_plans JSONB DEFAULT '[]'::jsonb;
-
 ALTER TABLE public.premium_games ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Public can view active premium games" ON public.premium_games;
-CREATE POLICY "Public can view active premium games"
-ON public.premium_games FOR SELECT TO public
-USING (is_active = TRUE AND (visibility = 'published' OR public.is_admin()));
+DROP POLICY IF EXISTS "Public view premium" ON public.premium_games;
+CREATE POLICY "Public view premium" ON public.premium_games FOR SELECT TO public USING (is_active = TRUE AND visibility = 'published');
 
-DROP POLICY IF EXISTS "Admins can manage premium games" ON public.premium_games;
-CREATE POLICY "Admins can manage premium games"
-ON public.premium_games FOR ALL TO authenticated
-USING (public.is_admin()) WITH CHECK (public.is_admin());`;
+DROP POLICY IF EXISTS "Admin manage premium" ON public.premium_games;
+CREATE POLICY "Admin manage premium" ON public.premium_games FOR ALL TO authenticated USING ((auth.jwt() ->> 'email') IN ('pindahserverezeer@gmail.com', 'maxwlzzyx@gmail.com')) WITH CHECK ((auth.jwt() ->> 'email') IN ('pindahserverezeer@gmail.com', 'maxwlzzyx@gmail.com'));`;
 
 export interface SavePremiumGameResult {
   game: PremiumGame;
