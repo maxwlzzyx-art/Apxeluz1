@@ -20,6 +20,7 @@ import { GameCard } from './GameCard';
 import { safeOpenExternalUrl } from '../utils/urlValidation';
 import { incrementDownloadCounter } from '../lib/supabaseService';
 import { useScrollLock } from '../utils/useScrollLock';
+import { useSwipeToClose } from '../utils/useSwipeToClose';
 
 interface GameDetailModalProps {
   game: Game | null;
@@ -50,6 +51,10 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useScrollLock(Boolean(game));
+  const { sheetMotionClass, handleBarClass, dragHandlers } = useSwipeToClose(
+    onClose,
+    Boolean(game)
+  );
 
   useEffect(() => {
     if (game && scrollContainerRef.current) {
@@ -95,17 +100,21 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-4xl liquid-glass rounded-t-[28px] sm:rounded-3xl overflow-hidden my-0 sm:my-auto max-h-[92vh] flex flex-col overscroll-contain"
+        className={`relative w-full max-w-4xl liquid-glass rounded-t-[28px] sm:rounded-3xl overflow-hidden my-0 sm:my-auto max-h-[92vh] flex flex-col overscroll-contain ${sheetMotionClass}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-game-title"
       >
-        {/* Mobile Grab Handle + Dedicated Top Action Bar (prevents text overlap on scroll) */}
-        <div className="shrink-0 bg-white/80 backdrop-blur-xl border-b border-[#0f2c38]/10 px-4 sm:px-6 pt-2.5 pb-3 z-30">
-          <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mb-2.5 sm:hidden" />
+        {/* Swipe-down Grab Handle + Dedicated Top Action Bar */}
+        <div
+          {...dragHandlers}
+          className="shrink-0 bg-white/85 backdrop-blur-xl border-b border-[#D3DDE3] px-4 sm:px-6 pt-2.5 pb-3 z-30 touch-none select-none cursor-grab active:cursor-grabbing"
+          title="Geser ke bawah untuk menutup"
+        >
+          <div className={`${handleBarClass} mx-auto mb-2.5`} />
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-extrabold text-[#0f2c38] truncate">
+            <span className="text-xs font-extrabold text-[#10242E] truncate">
               {game.title}
             </span>
 

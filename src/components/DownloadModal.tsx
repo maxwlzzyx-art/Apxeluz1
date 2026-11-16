@@ -14,6 +14,7 @@ import { Game } from '../types/game';
 import { isValidHttpUrl, safeOpenExternalUrl, getHostingProvider } from '../utils/urlValidation';
 import { incrementDownloadCounter } from '../lib/supabaseService';
 import { useScrollLock } from '../utils/useScrollLock';
+import { useSwipeToClose } from '../utils/useSwipeToClose';
 
 interface DownloadModalProps {
   game: Game | null;
@@ -28,6 +29,10 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
   const [copied, setCopied] = useState<boolean>(false);
 
   useScrollLock(Boolean(game));
+  const { sheetMotionClass, handleBarClass, dragHandlers } = useSwipeToClose(
+    onClose,
+    Boolean(game)
+  );
 
   if (!game) return null;
 
@@ -87,13 +92,19 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg max-h-[92vh] flex flex-col liquid-glass rounded-t-[28px] sm:rounded-3xl p-5 sm:p-7 overflow-hidden text-left overscroll-contain"
+        className={`relative w-full max-w-lg max-h-[92vh] flex flex-col liquid-glass rounded-t-[28px] sm:rounded-3xl p-5 sm:p-7 pt-2 sm:pt-3 overflow-hidden text-left overscroll-contain ${sheetMotionClass}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="download-title"
       >
-        <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mb-3 sm:hidden shrink-0" />
+        <div
+          {...dragHandlers}
+          className="w-full py-2.5 -mx-2 px-2 flex justify-center shrink-0 touch-none select-none cursor-grab active:cursor-grabbing"
+          title="Geser ke bawah untuk menutup"
+        >
+          <div className={handleBarClass} />
+        </div>
 
         {/* Close Button */}
         <button

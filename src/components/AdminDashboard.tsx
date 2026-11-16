@@ -129,6 +129,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Copy feedback
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+  const [copiedPremiumSlug, setCopiedPremiumSlug] = useState<string | null>(null);
 
   // Image tester state
   const [testImageUrl, setTestImageUrl] = useState('');
@@ -247,6 +248,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     setCopiedSlug(item.slug);
     setTimeout(() => setCopiedSlug(null), 2000);
+  };
+
+  // Copy premium game public deep link
+  const handleCopyPremiumUrl = (game: PremiumGame) => {
+    const identifier = game.slug || game.id;
+    const url = `${window.location.origin}/premium/${identifier}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).catch(() => {});
+    }
+    setCopiedPremiumSlug(game.id);
+    setTimeout(() => setCopiedPremiumSlug(null), 2000);
   };
 
   // Delete Item from Supabase
@@ -1503,12 +1515,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
+                              type="button"
+                              onClick={() => handleCopyPremiumUrl(game)}
+                              className="p-2 rounded-xl liquid-glass-subtle text-[#0D9488] hover:text-[#10242E] cursor-pointer flex items-center gap-1 text-[11px] font-bold"
+                              title="Salin Link Game Premium"
+                              aria-label={`Salin link ${game.title}`}
+                            >
+                              {copiedPremiumSlug === game.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-[#0D9488]" />
+                                  <span className="hidden sm:inline text-[#0D9488]">Tersalin</span>
+                                </>
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <button
                               onClick={() => {
                                 setEditingPremiumGame(game);
                                 setIsPremiumModalOpen(true);
                               }}
-                              className="p-2 rounded-xl liquid-glass-subtle text-[#0284c7] cursor-pointer"
+                              className="p-2 rounded-xl liquid-glass-subtle text-[#1D6FA5] cursor-pointer"
                               title="Edit Produk"
+                              aria-label={`Edit ${game.title}`}
                             >
                               <Edit className="w-3.5 h-3.5" />
                             </button>
@@ -1516,6 +1545,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onClick={() => setDeletingPremiumGame(game)}
                               className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 cursor-pointer"
                               title="Hapus Produk"
+                              aria-label={`Hapus ${game.title}`}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

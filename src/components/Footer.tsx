@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { Layers } from 'lucide-react';
 import { useScrollLock } from '../utils/useScrollLock';
+import { useSwipeToClose } from '../utils/useSwipeToClose';
 
 const WEB_PROFILE_ICON_URL =
   'https://cdn.phototourl.com/anon/2026-11-15-95ccde76-958a-450f-91b0-60424cee492b.jpg';
 
 export const Footer: React.FC = () => {
   const [modalContent, setModalContent] = useState<{ title: string; body: string } | null>(null);
+  const { sheetMotionClass, handleBarClass, dragHandlers } = useSwipeToClose(
+    () => setModalContent(null),
+    Boolean(modalContent)
+  );
   const [profileIconFailed, setProfileIconFailed] = useState(false);
 
   useScrollLock(Boolean(modalContent));
@@ -85,10 +90,16 @@ export const Footer: React.FC = () => {
           onClick={() => setModalContent(null)}
         >
           <div
-            className="w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 sm:p-7 text-left overscroll-y-contain"
+            className={`w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 sm:p-7 pt-2 sm:pt-3 text-left overscroll-y-contain ${sheetMotionClass}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1.5 rounded-full bg-[#0f2c38]/15 mx-auto mb-4 sm:hidden" />
+            <div
+              {...dragHandlers}
+              className="w-full py-2.5 flex justify-center touch-none select-none cursor-grab active:cursor-grabbing mb-1"
+              title="Geser ke bawah untuk menutup"
+            >
+              <div className={handleBarClass} />
+            </div>
             <h2 className="heading-font text-lg font-bold text-[#0f2c38] text-3d-subtle mb-3">
               {modalContent.title}
             </h2>

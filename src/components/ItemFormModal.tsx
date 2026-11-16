@@ -20,6 +20,7 @@ import { safeFetchJson } from '../utils/apiClient';
 import { uploadToSupabaseStorage, UploadProgress } from '../lib/storageService';
 import { saveItemToSupabase } from '../lib/supabaseService';
 import { useScrollLock } from '../utils/useScrollLock';
+import { useSwipeToClose } from '../utils/useSwipeToClose';
 
 interface ItemFormModalProps {
   initialItem?: Item | null;
@@ -40,6 +41,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 }) => {
   const isEditing = Boolean(initialItem);
   useScrollLock(true);
+  const { sheetMotionClass, handleBarClass, dragHandlers } = useSwipeToClose(onClose, true);
 
   const [type, setType] = useState<ItemType>(initialItem?.type || defaultType);
   const [title, setTitle] = useState(initialItem?.title || '');
@@ -460,37 +462,43 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-3xl liquid-glass rounded-t-[28px] sm:rounded-3xl shadow-2xl p-5 sm:p-8 overflow-hidden text-left my-auto max-h-[92vh] flex flex-col"
+        className={`relative w-full max-w-3xl liquid-glass rounded-t-[28px] sm:rounded-3xl shadow-2xl px-5 pb-5 pt-2 sm:px-8 sm:pb-8 sm:pt-3 overflow-hidden text-left my-auto max-h-[92vh] flex flex-col ${sheetMotionClass}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
-        <div className="sm:hidden flex justify-center pb-2 flex-shrink-0">
-          <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
-        </div>
-
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#0f2c38]/10 flex-shrink-0 gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#0d9488] flex-shrink-0">
-              <Package className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="heading-font text-base sm:text-lg font-extrabold text-[#0f2c38] text-3d-subtle uppercase tracking-tight truncate">
-                {isEditing ? `Edit: ${initialItem?.title}` : `Publish New ${type.toUpperCase()}`}
-              </h2>
-              <p className="text-xs text-[#355968] truncate">
-                Upload packages to Supabase Storage and sync instantly with public visitors.
-              </p>
-            </div>
+        <div
+          {...dragHandlers}
+          className="flex-shrink-0 touch-none select-none cursor-grab active:cursor-grabbing"
+          title="Geser ke bawah untuk menutup"
+        >
+          <div className="flex justify-center pt-1 pb-2.5">
+            <div className={handleBarClass} />
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close modal"
-            className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer flex-shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          {/* Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-[#10242E]/10 gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#0D9488] flex-shrink-0">
+                <Package className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="heading-font text-base sm:text-lg font-extrabold text-[#10242E] text-3d-subtle uppercase tracking-tight truncate">
+                  {isEditing ? `Edit: ${initialItem?.title}` : `Publish New ${type.toUpperCase()}`}
+                </h2>
+                <p className="text-xs text-[#4A6270] truncate">
+                  Upload packages to Supabase Storage and sync instantly with public visitors.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Close modal"
+              className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#4A6270] hover:text-[#10242E] cursor-pointer flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Upload Progress Bar Floating Banner */}

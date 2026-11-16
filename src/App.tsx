@@ -94,8 +94,9 @@ function AppContent() {
     if (path === '/admin') {
       return { view: 'admin-dashboard' };
     }
-    if (path === '/premium') {
-      return { view: 'premium' };
+    if (path === '/premium' || path.startsWith('/premium/')) {
+      const premSlug = path.startsWith('/premium/') ? path.slice('/premium/'.length).trim() : undefined;
+      return { view: 'premium', slug: premSlug || undefined };
     }
     if (path.startsWith('/mod/')) {
       return { view: 'item-detail', slug: path.slice('/mod/'.length).trim(), itemType: 'mod' };
@@ -120,8 +121,9 @@ function AppContent() {
         setCurrentRoute({ view: 'admin-login' });
       } else if (path === '/admin') {
         setCurrentRoute({ view: 'admin-dashboard' });
-      } else if (path === '/premium') {
-        setCurrentRoute({ view: 'premium' });
+      } else if (path === '/premium' || path.startsWith('/premium/')) {
+        const premSlug = path.startsWith('/premium/') ? path.slice('/premium/'.length).trim() : undefined;
+        setCurrentRoute({ view: 'premium', slug: premSlug || undefined });
       } else if (path.startsWith('/mod/')) {
         setCurrentRoute({ view: 'item-detail', slug: path.slice('/mod/'.length).trim(), itemType: 'mod' });
       } else if (path.startsWith('/game/')) {
@@ -148,8 +150,9 @@ function AppContent() {
       setCurrentRoute({ view: 'admin-login' });
     } else if (path === '/admin') {
       setCurrentRoute({ view: 'admin-dashboard' });
-    } else if (path === '/premium') {
-      setCurrentRoute({ view: 'premium' });
+    } else if (path === '/premium' || path.startsWith('/premium/')) {
+      const premSlug = path.startsWith('/premium/') ? path.slice('/premium/'.length).trim() : undefined;
+      setCurrentRoute({ view: 'premium', slug: premSlug || undefined });
     } else if (path.startsWith('/mod/')) {
       setCurrentRoute({ view: 'item-detail', slug: path.slice('/mod/'.length).trim(), itemType: 'mod' });
     } else if (path.startsWith('/game/')) {
@@ -501,7 +504,16 @@ function AppContent() {
           )
         ) : currentRoute.view === 'premium' ? (
           /* VIEW: Dedicated Premium Games Page */
-          <PremiumGamesView onNavigateHome={() => navigateTo('/')} />
+          <PremiumGamesView
+            onNavigateHome={() => navigateTo('/')}
+            initialSlug={currentRoute.slug}
+            onSyncSlug={(slug) => {
+              const target = slug ? `/premium/${slug}` : '/premium';
+              if (window.location.pathname !== target) {
+                window.history.replaceState(null, '', target);
+              }
+            }}
+          />
         ) : currentRoute.view === 'saved' ? (
           /* VIEW 4: Saved Items Collection */
           <section className="py-2 sm:py-4 space-y-6">

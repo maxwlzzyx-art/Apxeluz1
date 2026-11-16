@@ -20,6 +20,7 @@ import {
   formatRupiah,
 } from '../utils/premiumPlans';
 import { useScrollLock } from '../utils/useScrollLock';
+import { useSwipeToClose } from '../utils/useSwipeToClose';
 
 interface AdminPremiumModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
   initialGame,
 }) => {
   useScrollLock(isOpen);
+  const { sheetMotionClass, handleBarClass, dragHandlers } = useSwipeToClose(onClose, isOpen);
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -247,18 +249,22 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden"
+        className={`relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden ${sheetMotionClass}`}
       >
-        <div className="p-5 sm:px-8 sm:pt-7 sm:pb-4 border-b border-[#0f2c38]/10 flex-shrink-0">
-          <div className="sm:hidden flex justify-center mb-3">
-            <div className="w-10 h-1 rounded-full bg-[#0f2c38]/20" />
+        <div
+          {...dragHandlers}
+          className="px-5 pt-2 pb-4 sm:px-8 sm:pt-3 sm:pb-4 border-b border-[#10242E]/10 flex-shrink-0 touch-none select-none cursor-grab active:cursor-grabbing"
+          title="Geser ke bawah untuk menutup"
+        >
+          <div className="flex justify-center pt-1 pb-3">
+            <div className={handleBarClass} />
           </div>
 
           <button
             type="button"
             onClick={onClose}
             aria-label="Tutup modal game premium"
-            className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#355968] hover:text-[#0f2c38] cursor-pointer"
+            className="absolute top-4 right-4 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-2xl liquid-glass-subtle text-[#4A6270] hover:text-[#10242E] cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -520,25 +526,29 @@ export const AdminPremiumModal: React.FC<AdminPremiumModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[#0f2c38]">Deskripsi Singkat</label>
-              <input
-                type="text"
+              <label className="block text-xs font-semibold text-[#10242E]">
+                Deskripsi Singkat (Bisa Enter untuk baris baru)
+              </label>
+              <textarea
                 value={shortDescription}
                 onChange={(e) => setShortDescription(e.target.value)}
-                placeholder="Remaster grafis 60FPS dengan controller support..."
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
+                rows={2}
+                placeholder="Remaster grafis 60FPS&#10;Support full controller"
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-white/85 border border-[#D3DDE3] focus:border-[#0D9488] text-[#10242E] text-xs outline-none shadow-[inset_0_2px_4px_rgba(16,36,46,0.05)]"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-semibold text-[#0f2c38]">Deskripsi Lengkap</label>
+            <label className="block text-xs font-semibold text-[#10242E]">
+              Deskripsi Lengkap (Tekan Enter untuk spasi ke bawah / paragraf baru)
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Jelaskan fitur-fitur eksklusif dari game premium ini..."
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-white/80 border border-white/90 focus:border-[#0d9488] text-[#0f2c38] text-xs outline-none shadow-[inset_0_2px_4px_rgba(15,44,56,0.05)]"
+              rows={5}
+              placeholder="Baris 1: Fitur utama game&#10;&#10;Baris 2: Detail tambahan & cara pasang"
+              className="w-full px-3.5 py-2.5 rounded-2xl bg-white/85 border border-[#D3DDE3] focus:border-[#0D9488] text-[#10242E] text-xs leading-relaxed outline-none shadow-[inset_0_2px_4px_rgba(16,36,46,0.05)]"
             />
           </div>
 
