@@ -2,6 +2,8 @@ import React, { useRef } from 'react';
 import { ChevronRight, ChevronLeft, Package, Zap, Trophy, Sparkles, Inbox, Plus } from 'lucide-react';
 import { Game } from '../types/game';
 import { GameCard } from './GameCard';
+import { GameCardSkeleton } from './GameCardSkeleton';
+import { getSkeletonCountForLayout } from '../utils/loadingState';
 
 interface GameRowProps {
   title: string;
@@ -14,6 +16,7 @@ interface GameRowProps {
   showRanking?: boolean;
   emptyMessage?: string;
   onAddContent?: () => void;
+  isLoading?: boolean;
 }
 
 export const GameRow: React.FC<GameRowProps> = ({
@@ -27,6 +30,7 @@ export const GameRow: React.FC<GameRowProps> = ({
   showRanking = false,
   emptyMessage = 'No items currently in this section. Ready for new releases.',
   onAddContent,
+  isLoading = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -76,9 +80,16 @@ export const GameRow: React.FC<GameRowProps> = ({
           <h2 className="heading-font text-base sm:text-lg font-bold tracking-tight text-[#10242E] text-3d-subtle">
             {title}
           </h2>
-          <span className="text-xs text-[#4A6270] font-medium tabular-nums">
-            ({games.length})
-          </span>
+          {isLoading && games.length === 0 ? (
+            <span
+              aria-hidden="true"
+              className="inline-block h-4 w-7 rounded-md liquid-glass-skeleton-slot"
+            />
+          ) : (
+            <span className="text-xs text-[#4A6270] font-medium tabular-nums">
+              ({games.length})
+            </span>
+          )}
         </div>
 
         {games.length > 0 && (
@@ -114,8 +125,21 @@ export const GameRow: React.FC<GameRowProps> = ({
         )}
       </div>
 
-      {/* Content Area: Empty State or Cards */}
-      {games.length === 0 ? (
+      {/* Content Area: Skeleton Loader, Empty State, or Cards */}
+      {isLoading && games.length === 0 ? (
+        <div
+          role="status"
+          aria-busy="true"
+          aria-label={`Loading ${title}`}
+          data-testid={`skeleton-row-${iconType}`}
+          className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar mobile-scroll-row pb-3 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0"
+        >
+          <span className="sr-only">Loading {title}</span>
+          {Array.from({ length: getSkeletonCountForLayout('row') }).map((_, idx) => (
+            <GameCardSkeleton key={idx} showRanking={showRanking} />
+          ))}
+        </div>
+      ) : games.length === 0 ? (
         <div className="p-5 sm:p-7 rounded-3xl liquid-glass flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-[#E3F2F0] border border-[#D3DDE3] flex items-center justify-center text-[#0D9488] shadow-sm">
@@ -148,7 +172,7 @@ export const GameRow: React.FC<GameRowProps> = ({
       ) : (
         <div
           ref={scrollContainerRef}
-          className="flex gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-3 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory"
+          className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar mobile-scroll-row scroll-smooth pb-3 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory"
         >
           {games.map((game, index) => (
             <GameCard

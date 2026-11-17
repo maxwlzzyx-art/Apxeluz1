@@ -32,7 +32,7 @@ export function useSwipeToClose(onClose: () => void, isOpen = true) {
     }, 170);
   }, [onClose]);
 
-  const beginDrag = (clientY: number, target: EventTarget | null) => {
+  const beginDrag = useCallback((clientY: number, target: EventTarget | null) => {
     const el = target as HTMLElement | null;
     if (el && el.closest('button, a, input, select, textarea')) {
       return false;
@@ -41,17 +41,17 @@ export function useSwipeToClose(onClose: () => void, isOpen = true) {
     startTimeRef.current = Date.now();
     deltaYRef.current = 0;
     return true;
-  };
+  }, []);
 
-  const moveDrag = (clientY: number) => {
+  const moveDrag = useCallback((clientY: number) => {
     if (startYRef.current === null) return;
     const diff = clientY - startYRef.current;
     const nextDelta = diff > 0 ? diff : 0;
     deltaYRef.current = nextDelta;
     setDeltaY(nextDelta);
-  };
+  }, []);
 
-  const endDrag = () => {
+  const endDrag = useCallback(() => {
     if (startYRef.current === null) return;
     const elapsed = Date.now() - startTimeRef.current;
     const currentDelta = deltaYRef.current;
@@ -63,7 +63,36 @@ export function useSwipeToClose(onClose: () => void, isOpen = true) {
       deltaYRef.current = 0;
       setDeltaY(0);
     }
-  };
+  }, [triggerClose]);
+
+  // Attach non-passive window touchmove/touchend guards while dragging so touch
+  // gestures starting on the top handle never get hijacked by browser pull-to-refresh
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onWindowTouchMove = (e: TouchEvent) => {
+      if (startYRef.current === null || e.touches.length !== 1) return;
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+      moveDrag(e.touches[0].clientY);
+    };
+
+    const onWindowTouchEnd = () => {
+      if (startYRef.current === null) return;
+      endDrag();
+    };
+
+    window.addEventListener('touchmove', onWindowTouchMove, { passive: false });
+    window.addEventListener('touchend', onWindowTouchEnd);
+    window.addEventListener('touchcancel', onWindowTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchmove', onWindowTouchMove);
+      window.removeEventListener('touchend', onWindowTouchEnd);
+      window.removeEventListener('touchcancel', onWindowTouchEnd);
+    };
+  }, [isOpen, moveDrag, endDrag]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;

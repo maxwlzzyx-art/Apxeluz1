@@ -28,6 +28,8 @@ test('getSwipeStage transitions cleanly between idle, pulling, ready, and closin
 
 test('getSwipeSheetClasses and getSwipeHandleClasses return valid Tailwind classes without inline styles', () => {
   assert.ok(getSwipeSheetClasses('closing').includes('translate-y-full'));
-  assert.ok(getSwipeSheetClasses('ready').includes('translate-y-8'));
+  assert.ok(getSwipeSheetClasses('closing').includes('sheet-dragging'));
+  assert.ok(getSwipeSheetClasses('ready').includes('translate-y-12'));
+  assert.ok(getSwipeSheetClasses('pulling').includes('translate-y-4'));
   assert.ok(getSwipeHandleClasses('ready').includes('bg-[#0D9488]'));
 });

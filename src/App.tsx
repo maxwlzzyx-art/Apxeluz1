@@ -12,11 +12,18 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Footer } from './components/Footer';
 import { PremiumGamesView } from './components/PremiumGamesView';
+import { LiquidGlassFilterDefs } from './components/LiquidGlassFilterDefs';
+import { GameSkeletonGrid } from './components/GameCardSkeleton';
 import { REGISTERED_MODS } from './data/games';
 import { Game, FilterOptions } from './types/game';
 import { Item, Category, WebsiteSettings } from './types/admin';
 import { filterGames, sortGames } from './utils/gameFilters';
 import { formatFileSize } from './utils/adminValidation';
+import {
+  AsyncCollectionLoadState,
+  INITIAL_COLLECTION_LOAD_STATE,
+  isCollectionLoading,
+} from './utils/loadingState';
 import {
   Bookmark,
   Search,
@@ -178,6 +185,12 @@ function AppContent() {
   const [rawItems, setRawItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [websiteSettings, setWebsiteSettings] = useState<WebsiteSettings | null>(null);
+  const [itemsLoadState, setItemsLoadState] = useState<AsyncCollectionLoadState>(
+    INITIAL_COLLECTION_LOAD_STATE
+  );
+  const [categoriesLoadState, setCategoriesLoadState] = useState<AsyncCollectionLoadState>(
+    INITIAL_COLLECTION_LOAD_STATE
+  );
 
   // Fallback REST fetcher for static/fullstack environments
   const fetchPublicData = useCallback(async () => {
@@ -199,6 +212,9 @@ function AppContent() {
       }
     } catch (err) {
       console.warn('Public repository data REST fallback notice:', err);
+    } finally {
+      setItemsLoadState((prev) => (prev.restSettled ? prev : { ...prev, restSettled: true }));
+      setCategoriesLoadState((prev) => (prev.restSettled ? prev : { ...prev, restSettled: true }));
     }
   }, []);
 
@@ -207,6 +223,7 @@ function AppContent() {
   useEffect(() => {
     const unsubItems = subscribeToPublishedItems(
       (supabaseItems) => {
+        setItemsLoadState((prev) => ({ ...prev, supabaseSettled: true }));
         if (supabaseItems && supabaseItems.length > 0) {
           setRawItems(supabaseItems);
         } else {
@@ -216,15 +233,22 @@ function AppContent() {
       },
       (err) => {
         console.warn('Supabase subscription fallback:', err);
+        setItemsLoadState((prev) => ({ ...prev, supabaseSettled: true }));
         fetchPublicData();
       }
     );
 
-    const unsubCategories = subscribeToCategories((cats) => {
-      if (cats && cats.length > 0) {
-        setCategories(cats);
+    const unsubCategories = subscribeToCategories(
+      (cats) => {
+        setCategoriesLoadState((prev) => ({ ...prev, supabaseSettled: true }));
+        if (cats && cats.length > 0) {
+          setCategories(cats);
+        }
+      },
+      () => {
+        setCategoriesLoadState((prev) => ({ ...prev, supabaseSettled: true }));
       }
-    });
+    );
 
     const unsubSettings = subscribeToSettings((sett) => {
       if (sett) {
@@ -240,6 +264,9 @@ function AppContent() {
       unsubSettings();
     };
   }, [fetchPublicData]);
+
+  const isLoadingItems = isCollectionLoading(itemsLoadState, rawItems.length);
+  const isLoadingCategories = isCollectionLoading(categoriesLoadState, categories.length);
 
   // Map server items to public Game model
   const repositoryGames: Game[] = useMemo(() => {
@@ -389,7 +416,8 @@ function AppContent() {
   const isAdminAuthenticated = status === 'authenticated';
 
   return (
-    <div className="min-h-screen flex flex-col font-sans selection:bg-[#0d9488]/20 selection:text-[#0f2c38] overflow-x-hidden">
+    <div className="relative min-h-screen flex flex-col font-sans selection:bg-[#0d9488]/20 selection:text-[#0f2c38] overflow-x-hidden">
+      <LiquidGlassFilterDefs />
       {/* Liquid Glass Header & Mobile Bottom Navigation */}
       <Header
         activeTab={
@@ -552,7 +580,7 @@ function AppContent() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                 {savedGames.map((game) => (
                   <GameCard
                     key={game.id}
@@ -561,6 +589,7 @@ function AppContent() {
                     isSaved={true}
                     onToggleSave={handleToggleSave}
                     headingLevel="h2"
+                    fluid={true}
                   />
                 ))}
               </div>
@@ -622,7 +651,9 @@ function AppContent() {
               onReset={handleResetFilters}
             />
 
-            {filteredAndSortedGames.length === 0 ? (
+            {isLoadingItems && filteredAndSortedGames.length === 0 ? (
+              <GameSkeletonGrid count={5} variant="free" label="Loading search results" />
+            ) : filteredAndSortedGames.length === 0 ? (
               <div className="text-center py-16 px-6 liquid-glass rounded-3xl space-y-3.5">
                 <Search className="w-11 h-11 mx-auto text-[#4a6f7d]" />
                 <h2 className="heading-font text-lg font-bold text-[#0f2c38] text-3d-subtle">
@@ -643,7 +674,7 @@ function AppContent() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                 {filteredAndSortedGames.map((game) => (
                   <GameCard
                     key={game.id}
@@ -652,34 +683,38 @@ function AppContent() {
                     isSaved={savedGameIds.has(game.id)}
                     onToggleSave={handleToggleSave}
                     headingLevel="h2"
+                    fluid={true}
                   />
                 ))}
               </div>
             )}
           </section>
         ) : (
-          /* VIEW 6: Main Homepage in Pastel Liquid Glass 3D */
-          <div className="space-y-6 sm:space-y-8">
+          /* VIEW 6: Main Homepage in Tactile 3D Porcelain Glass */
+          <div className="space-y-5 sm:space-y-8">
             {/* Primary Unique Homepage H1 inside Frosted Solid Panel */}
-            <section className="relative overflow-hidden rounded-3xl liquid-glass p-5 sm:p-7">
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5 max-w-2xl">
-                  <h1 className="heading-font text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10242E] text-3d text-balance leading-tight">
+            <section className="relative overflow-hidden rounded-3xl liquid-glass p-4 sm:p-7">
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
+                <div className="space-y-1 max-w-2xl">
+                  <h1 className="heading-font text-xl sm:text-3xl font-extrabold tracking-tight text-[#10242E] text-3d text-balance leading-tight">
                     {websiteSettings?.siteName || 'APXELUZ'}{' '}
                     <span className="text-[#0D9488]">
                       App &amp; Mod Repository
                     </span>
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#4A6270] leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#4A6270] leading-relaxed line-clamp-2 sm:line-clamp-none">
                     {websiteSettings?.siteDescription ||
                       'Curated Android games, applications, and verified community mods in a clean 3D library.'}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 shrink-0">
+                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-0.5 sm:pt-0">
+                  <span className="text-[11px] font-bold text-[#4A6270] tabular-nums sm:hidden">
+                    {isLoadingItems ? 'Loading...' : `${repositoryGames.length} Releases`}
+                  </span>
                   <button
                     onClick={() => navigateTo('/premium')}
-                    className="min-h-[44px] px-5 py-2.5 rounded-2xl liquid-glass-button text-white text-xs font-bold whitespace-nowrap cursor-pointer"
+                    className="min-h-[42px] sm:min-h-[44px] px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl liquid-glass-button text-white text-xs font-bold whitespace-nowrap cursor-pointer"
                   >
                     Explore Premium
                   </button>
@@ -693,6 +728,7 @@ function AppContent() {
               onSelectCategory={(cat) => setFilters((prev) => ({ ...prev, category: cat }))}
               onSeeMore={() => setIsFiltersOpen(true)}
               categories={hotCategoryItems}
+              isLoading={isLoadingCategories}
             />
 
             {/* 2. Browse All & Filters Button */}
@@ -714,6 +750,7 @@ function AppContent() {
               savedGameIds={savedGameIds}
               onToggleSave={handleToggleSave}
               emptyMessage="No newly added releases currently listed. The repository is ready for new uploads."
+              isLoading={isLoadingItems}
             />
 
             {/* 4. Popular Games Section */}
@@ -726,6 +763,7 @@ function AppContent() {
               onToggleSave={handleToggleSave}
               showRanking={true}
               emptyMessage="No trending download statistics recorded yet."
+              isLoading={isLoadingItems}
             />
 
             {/* 5. Latest Mods Section */}
@@ -737,6 +775,7 @@ function AppContent() {
               savedGameIds={savedGameIds}
               onToggleSave={handleToggleSave}
               emptyMessage="No community mods published in this collection yet. Direct URLs remain accessible."
+              isLoading={isLoadingItems}
             />
           </div>
         )}

@@ -34,167 +34,425 @@
     --color-mood-danger: #FFE4E6;
   }
 
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     background-color: var(--color-neutral-canvas);
     color: var(--color-neutral-ink);
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overscroll-behavior-y: contain;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }
 
-/* 3D Soft Text Depth (Zero Neon, Solid Ink) */
+/* 3D Soft Sculpted Typography Depth (Zero Neon, Solid Ink) */
 .text-3d {
   text-shadow:
-    0 2px 4px rgba(16, 36, 46, 0.12),
-    0 1px 0 rgba(255, 255, 255, 0.9);
+    0 2px 4px rgba(16, 36, 46, 0.11),
+    0 1px 0 rgba(255, 255, 255, 0.92);
 }
 
 .text-3d-subtle {
   text-shadow:
     0 1px 2px rgba(16, 36, 46, 0.08),
-    0 1px 0 rgba(255, 255, 255, 0.8);
+    0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-/* Solid Frosted Liquid Panels with Soft 3D Layered Depth (Zero Gradients) */
-.liquid-glass {
-  background-color: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid var(--color-neutral-border);
+/* Ambient Solid-Color Refraction Field for Floating Liquid Glass (Zero Gradients) */
+.liquid-glass-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(110px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.liquid-glass-orb-primary {
+  top: -120px;
+  left: -80px;
+  width: 440px;
+  height: 440px;
+  background-color: var(--color-primary-soft);
+}
+
+.liquid-glass-orb-secondary {
+  top: 120px;
+  right: -110px;
+  width: 480px;
+  height: 480px;
+  background-color: var(--color-secondary-soft);
+}
+
+.liquid-glass-orb-calm {
+  bottom: 8%;
+  left: 14%;
+  width: 420px;
+  height: 420px;
+  background-color: var(--color-mood-calm);
+}
+
+.liquid-glass-orb-warm {
+  bottom: -110px;
+  right: 12%;
+  width: 340px;
+  height: 340px;
+  background-color: var(--color-tertiary-soft);
+  opacity: 0.36;
+}
+
+/* Sticky Navbar & Floating Dock Liquid Glass (True GPU Frosted Blur + Specular Bevel) */
+.liquid-glass-navbar {
+  background-color: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(22px) saturate(190%);
+  -webkit-backdrop-filter: blur(22px) saturate(190%);
+  border-color: rgba(255, 255, 255, 0.92);
   box-shadow:
-    0 14px 30px -10px rgba(16, 36, 46, 0.10),
-    0 4px 10px -2px rgba(16, 36, 46, 0.05),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -3px 0 rgba(211, 221, 227, 0.55);
+    0 12px 30px -10px rgba(16, 36, 46, 0.14),
+    0 2px 6px -1px rgba(16, 36, 46, 0.05),
+    inset 0 1.5px 0 rgba(255, 255, 255, 1),
+    inset 0 -1.5px 0 rgba(211, 221, 227, 0.78);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Realistic Frosted Liquid Glass Sheet & Panel Surface (GPU-Promoted, Zero Gradients) */
+.liquid-glass {
+  background-color: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 22px 46px -12px rgba(16, 36, 46, 0.16),
+    0 6px 16px -4px rgba(16, 36, 46, 0.07),
+    0 0 0 1px rgba(16, 36, 46, 0.06),
+    inset 0 2px 0 rgba(255, 255, 255, 1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 -3px 0 rgba(211, 221, 227, 0.65);
+}
+
+/* Translucent Liquid Glass Input & Select Well */
+.liquid-glass-input {
+  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 4px 12px -4px rgba(16, 36, 46, 0.08),
+    0 0 0 1px rgba(16, 36, 46, 0.07),
+    inset 0 2px 4px rgba(16, 36, 46, 0.06),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.94);
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.liquid-glass-input:focus {
+  background-color: rgba(255, 255, 255, 0.92);
+  border-color: var(--color-primary);
+  box-shadow:
+    0 8px 18px -6px rgba(13, 148, 136, 0.2),
+    0 0 0 3px rgba(13, 148, 136, 0.16),
+    inset 0 1.5px 3px rgba(16, 36, 46, 0.04);
+}
+
+/* Matte Recessed Well for Instrument Slots & Spec Readouts */
+.recessed-well {
+  background-color: rgba(230, 236, 239, 0.74);
+  backdrop-filter: blur(12px) saturate(165%);
+  -webkit-backdrop-filter: blur(12px) saturate(165%);
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  box-shadow:
+    0 0 0 1px rgba(16, 36, 46, 0.06),
+    inset 0 2px 4px rgba(16, 36, 46, 0.07),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.92);
 }
 
 .liquid-glass-subtle {
-  background-color: var(--color-mood-calm);
-  border: 1px solid var(--color-neutral-border);
+  background-color: rgba(227, 242, 240, 0.72);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.94);
   box-shadow:
-    0 4px 12px -4px rgba(16, 36, 46, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 6px 14px -4px rgba(16, 36, 46, 0.1),
+    0 0 0 1px rgba(16, 36, 46, 0.06),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.98),
     inset 0 -2px 0 rgba(16, 36, 46, 0.08);
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease;
-}
-
-.liquid-glass-subtle:active {
-  transform: translateY(1.5px) scale(0.975);
-  box-shadow:
-    0 2px 6px -2px rgba(16, 36, 46, 0.08),
-    inset 0 2px 4px rgba(16, 36, 46, 0.08);
-}
-
-/* 3D Tactile Card (Solid Neutral Surface) */
-.liquid-glass-card {
-  position: relative;
-  background-color: var(--color-neutral-surface);
-  border: 1px solid var(--color-neutral-border);
-  box-shadow:
-    0 10px 22px -8px rgba(16, 36, 46, 0.10),
-    0 3px 8px -2px rgba(16, 36, 46, 0.05),
-    inset 0 1.5px 0 rgba(255, 255, 255, 1),
-    inset 0 -3px 0 rgba(211, 221, 227, 0.65);
   transition:
-    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.2s ease;
-}
-
-.liquid-glass-card:hover {
-  border-color: var(--color-primary);
-  box-shadow:
-    0 16px 28px -10px rgba(13, 148, 136, 0.18),
-    0 5px 12px -3px rgba(16, 36, 46, 0.08),
-    inset 0 1.5px 0 rgba(255, 255, 255, 1),
-    inset 0 -3px 0 rgba(13, 148, 136, 0.28);
-  transform: translateY(-2px);
-}
-
-.liquid-glass-card:active {
-  transform: translateY(2px) scale(0.975);
-  box-shadow:
-    0 4px 10px -4px rgba(16, 36, 46, 0.10),
-    inset 0 2px 5px rgba(16, 36, 46, 0.10);
-}
-
-/* 3D Tactile Primary Button (Solid Primer Teal) */
-.liquid-glass-button {
-  position: relative;
-  overflow: hidden;
-  background-color: var(--color-primary);
-  border: 1px solid var(--color-primary-hover);
-  box-shadow:
-    0 8px 16px -6px rgba(13, 148, 136, 0.30),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.32),
-    inset 0 -3px 0 rgba(10, 99, 91, 0.45);
-  transition:
-    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
     background-color 0.16s ease;
 }
 
-.liquid-glass-button:hover {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-1px);
+.liquid-glass-subtle:active {
+  transform: translateY(1.5px) scale(0.96);
   box-shadow:
-    0 12px 20px -6px rgba(13, 148, 136, 0.34),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.38),
-    inset 0 -3px 0 rgba(10, 99, 91, 0.5);
+    0 2px 5px -2px rgba(16, 36, 46, 0.09),
+    inset 0 2px 4px rgba(16, 36, 46, 0.11);
+}
+
+/* Realistic Optical Liquid Glass Card (Elastic Spring + Double Crystal Rim) */
+.liquid-glass-card {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(190%);
+  -webkit-backdrop-filter: blur(18px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 14px 28px -10px rgba(16, 36, 46, 0.15),
+    0 4px 10px -3px rgba(16, 36, 46, 0.07),
+    0 0 0 1px rgba(16, 36, 46, 0.07),
+    inset 0 2px 0 rgba(255, 255, 255, 1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 -3px 0 rgba(211, 221, 227, 0.7);
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+  will-change: transform;
+}
+
+@media (hover: hover) {
+  .liquid-glass-card:hover {
+    background-color: rgba(255, 255, 255, 0.84);
+    border-color: rgba(13, 148, 136, 0.68);
+    box-shadow:
+      0 20px 36px -10px rgba(13, 148, 136, 0.22),
+      0 8px 16px -4px rgba(16, 36, 46, 0.1),
+      0 0 0 1px rgba(13, 148, 136, 0.24),
+      inset 0 2px 0 rgba(255, 255, 255, 1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.85),
+      inset 0 -3px 0 rgba(13, 148, 136, 0.28);
+    transform: translateY(-4px) scale(1.012);
+  }
+}
+
+.liquid-glass-card:active {
+  transform: translateY(2px) scale(0.97);
+  box-shadow:
+    0 5px 12px -4px rgba(16, 36, 46, 0.13),
+    inset 0 2px 5px rgba(16, 36, 46, 0.1);
+}
+
+/* Realistic Optical Liquid Glass Primary Button (Translucent Primer Teal + Crystal Bevel) */
+.liquid-glass-button {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(13, 148, 136, 0.88);
+  backdrop-filter: blur(16px) saturate(195%);
+  -webkit-backdrop-filter: blur(16px) saturate(195%);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow:
+    0 12px 22px -6px rgba(13, 148, 136, 0.38),
+    0 3px 6px -1px rgba(16, 36, 46, 0.12),
+    0 0 0 1px rgba(15, 118, 110, 0.45),
+    inset 0 2px 0 rgba(255, 255, 255, 0.54),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    inset 0 -3.5px 0 rgba(10, 92, 85, 0.56);
+  transition:
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.16s ease;
+}
+
+@media (hover: hover) {
+  .liquid-glass-button:hover {
+    background-color: rgba(15, 118, 110, 0.94);
+    transform: translateY(-2px) scale(1.015);
+    box-shadow:
+      0 16px 26px -6px rgba(13, 148, 136, 0.44),
+      0 4px 10px -2px rgba(16, 36, 46, 0.14),
+      0 0 0 1px rgba(15, 118, 110, 0.55),
+      inset 0 2px 0 rgba(255, 255, 255, 0.62),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.25),
+      inset 0 -3.5px 0 rgba(10, 92, 85, 0.62);
+  }
 }
 
 .liquid-glass-button:active {
-  transform: translateY(2px) scale(0.97);
+  transform: translateY(2px) scale(0.962);
   box-shadow:
-    0 2px 6px -2px rgba(13, 148, 136, 0.22),
-    inset 0 2px 4px rgba(10, 99, 91, 0.45);
+    0 3px 8px -2px rgba(13, 148, 136, 0.26),
+    inset 0 2.5px 6px rgba(10, 92, 85, 0.58);
 }
 
-/* 3D Tactile Secondary Button (Solid Sky Mood + Neutral Surface) */
+/* Realistic Optical Liquid Glass Secondary Button (Frosted Sky Mood + Specular Rim) */
 .liquid-glass-button-secondary {
-  background-color: var(--color-mood-sky);
-  border: 1px solid var(--color-neutral-border);
+  background-color: rgba(219, 234, 246, 0.76);
+  backdrop-filter: blur(16px) saturate(185%);
+  -webkit-backdrop-filter: blur(16px) saturate(185%);
+  border: 1px solid rgba(255, 255, 255, 0.96);
   box-shadow:
-    0 6px 12px -5px rgba(16, 36, 46, 0.10),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.92),
-    inset 0 -2.5px 0 rgba(29, 111, 165, 0.18);
+    0 8px 18px -5px rgba(16, 36, 46, 0.13),
+    0 2px 5px -1px rgba(16, 36, 46, 0.06),
+    0 0 0 1px rgba(29, 111, 165, 0.14),
+    inset 0 2px 0 rgba(255, 255, 255, 1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 -3px 0 rgba(29, 111, 165, 0.22);
   transition:
-    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
     background-color 0.16s ease,
     border-color 0.16s ease;
 }
 
-.liquid-glass-button-secondary:hover {
-  background-color: var(--color-secondary-soft);
-  border-color: var(--color-secondary);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .liquid-glass-button-secondary:hover {
+    background-color: rgba(219, 234, 246, 0.92);
+    border-color: rgba(29, 111, 165, 0.45);
+    transform: translateY(-1.5px) scale(1.012);
+    box-shadow:
+      0 12px 22px -6px rgba(29, 111, 165, 0.22),
+      0 0 0 1px rgba(29, 111, 165, 0.24),
+      inset 0 2px 0 rgba(255, 255, 255, 1),
+      inset 0 -3px 0 rgba(29, 111, 165, 0.3);
+  }
 }
 
 .liquid-glass-button-secondary:active {
-  transform: translateY(2px) scale(0.975);
+  transform: translateY(2px) scale(0.962);
   box-shadow:
-    0 2px 5px -2px rgba(16, 36, 46, 0.10),
-    inset 0 2px 4px rgba(16, 36, 46, 0.10);
+    0 2px 6px -2px rgba(16, 36, 46, 0.1),
+    inset 0 2px 5px rgba(16, 36, 46, 0.13);
 }
 
-/* Soft Tactile Press Utility for Interactive Pills/Tabs/Chips */
+/* Soft Springy Tactile Press Utility */
 .tactile-press {
   transition:
-    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1),
     background-color 0.15s ease;
 }
 
 .tactile-press:active {
-  transform: translateY(1.5px) scale(0.96);
+  transform: translateY(1.5px) scale(0.95);
+}
+
+/* Mobile Offscreen Card Paint Optimization */
+.perf-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 255px;
+}
+
+/* Smooth Mobile Horizontal Momentum Scrolling */
+.mobile-scroll-row {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: 1rem;
+}
+
+/* Safe-Area Bottom Spacing for Mobile Tab Dock */
+.pb-safe-dock {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Compositor-Only Spring Sheet Entrance & Backdrop Fade */
+@keyframes sheetSpringUp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes backdropFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.sheet-entrance {
+  animation: sheetSpringUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sheet-dragging {
+  animation: none !important;
+}
+
+.backdrop-entrance {
+  animation: backdropFadeIn 0.18s ease-out both;
+}
+
+/* Liquid Glass Skeleton Slots & Compositor-Only Specular Sweep (Zero Gradients) */
+@keyframes liquidGlassShimmer {
+  0% {
+    transform: translate3d(-160%, 0, 0) skewX(-18deg);
+  }
+  100% {
+    transform: translate3d(320%, 0, 0) skewX(-18deg);
+  }
+}
+
+.liquid-glass-skeleton-slot {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(211, 221, 227, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  box-shadow:
+    inset 0 1.5px 2px rgba(16, 36, 46, 0.05),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.liquid-glass-skeleton-slot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 48%;
+  background-color: rgba(255, 255, 255, 0.58);
+  transform: translate3d(-160%, 0, 0) skewX(-18deg);
+  animation: liquidGlassShimmer 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.liquid-glass-skeleton-accent {
+  background-color: rgba(214, 242, 238, 0.82);
+  border-color: rgba(255, 255, 255, 0.94);
+}
+
+.liquid-glass-skeleton-warm {
+  background-color: rgba(254, 243, 199, 0.86);
+  border-color: rgba(255, 255, 255, 0.94);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   .liquid-glass-card,
   .liquid-glass-button,
   .liquid-glass-button-secondary,
+  .liquid-glass-subtle,
   .tactile-press {
     transition: none;
+  }
+  .sheet-entrance,
+  .backdrop-entrance {
+    animation: none;
+  }
+  .liquid-glass-skeleton-slot::after {
+    animation: none;
+    display: none;
   }
 }
 

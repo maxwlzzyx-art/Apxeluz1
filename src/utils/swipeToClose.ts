@@ -29,11 +29,11 @@ export function shouldCloseOnSwipeDown(
 export function getSwipeSheetClasses(stage: SwipeStage): string {
   switch (stage) {
     case 'closing':
-      return 'translate-y-full opacity-0 transition-all duration-200 ease-in';
+      return 'sheet-dragging translate-y-full opacity-0 transition-all duration-200 ease-in';
     case 'ready':
-      return 'translate-y-8 opacity-95 scale-[0.985] transition-transform duration-100 ease-out';
+      return 'sheet-dragging translate-y-12 opacity-95 scale-[0.985] transition-transform duration-100 ease-out';
     case 'pulling':
-      return 'translate-y-2.5 scale-[0.995] transition-transform duration-75 ease-out';
+      return 'sheet-dragging translate-y-4 scale-[0.995] transition-transform duration-75 ease-out';
     case 'idle':
     default:
       return 'translate-y-0 opacity-100 transition-all duration-200 ease-out';
@@ -45,7 +45,7 @@ export function getSwipeHandleClasses(stage: SwipeStage): string {
     return 'w-14 h-1.5 rounded-full bg-[#0D9488] transition-all duration-150';
   }
   if (stage === 'pulling') {
-    return 'w-12 h-1.5 rounded-full bg-[#0D9488]/70 transition-all duration-100';
+    return 'w-12 h-1.5 rounded-full bg-[#0D9488]/75 transition-all duration-100';
   }
-  return 'w-10 h-1.5 rounded-full bg-[#10242E]/20 transition-all duration-150';
+  return 'w-10 h-1.5 rounded-full bg-[#10242E]/25 transition-all duration-150';
 }

@@ -14,12 +14,14 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { HOT_CATEGORIES } from '../data/games';
+import { HotCategoriesSkeleton } from './GameCardSkeleton';
 
 interface HotCategoriesProps {
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
   onSeeMore?: () => void;
   categories?: typeof HOT_CATEGORIES;
+  isLoading?: boolean;
 }
 
 export const HotCategories: React.FC<HotCategoriesProps> = ({
@@ -27,6 +29,7 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
   onSelectCategory,
   onSeeMore,
   categories = HOT_CATEGORIES,
+  isLoading = false,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -108,7 +111,9 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
       </div>
 
       {/* Category Content */}
-      {!categories || categories.length === 0 ? (
+      {isLoading && (!categories || categories.length === 0) ? (
+        <HotCategoriesSkeleton />
+      ) : !categories || categories.length === 0 ? (
         <div className="p-5 sm:p-6 rounded-3xl liquid-glass flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-[#E3F2F0] border border-[#D3DDE3] flex items-center justify-center text-[#0D9488] shadow-sm">
@@ -125,15 +130,15 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
       ) : (
         <div
           ref={scrollRef}
-          className="flex items-center gap-2.5 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-0.5 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory"
+          className="flex items-center gap-2.5 overflow-x-auto no-scrollbar mobile-scroll-row scroll-smooth pb-2 pt-0.5 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory"
         >
           {/* All Categories Interactive Filter Tab */}
           <button
             onClick={() => onSelectCategory('All')}
-            className={`snap-start flex-shrink-0 min-h-[46px] flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold cursor-pointer tactile-press whitespace-nowrap ${
+            className={`snap-start flex-shrink-0 min-h-[46px] flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold cursor-pointer tactile-press whitespace-nowrap ${
               selectedCategory === 'All'
                 ? 'liquid-glass-button text-white'
-                : 'liquid-glass-button-secondary text-[#2c4f5e] hover:text-[#0f2c38]'
+                : 'liquid-glass-button-secondary text-[#10242E]'
             }`}
             aria-label="All Categories"
           >
@@ -149,7 +154,7 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
                 className={`snap-start flex-shrink-0 min-h-[46px] flex items-center gap-2.5 px-3.5 py-2 rounded-2xl cursor-pointer group ${
                   isSelected
                     ? 'liquid-glass-button text-white'
-                    : 'liquid-glass-card text-[#0f2c38]'
+                    : 'liquid-glass-card text-[#10242E]'
                 }`}
                 aria-label={`Filter by ${cat.name}`}
               >
@@ -157,7 +162,7 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
                   className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
                     isSelected
                       ? 'bg-white/25 text-white'
-                      : 'bg-[#E3F2F0] border border-[#D3DDE3]'
+                      : 'recessed-well'
                   }`}
                 >
                   {getCategoryIcon(cat.icon)}
@@ -166,7 +171,7 @@ export const HotCategories: React.FC<HotCategoriesProps> = ({
                   <span className="text-xs font-bold whitespace-nowrap">{cat.name}</span>
                   <span
                     className={`text-[11px] tabular-nums font-medium ${
-                      isSelected ? 'text-white/85' : 'text-[#4A6270]'
+                      isSelected ? 'text-white/90' : 'text-[#4A6270]'
                     }`}
                   >
                     {cat.count} items

@@ -96,11 +96,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-[#0f2c38]/25 backdrop-blur-md overscroll-none"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-[#10242E]/30 backdrop-blur-md overscroll-none backdrop-entrance"
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-4xl liquid-glass rounded-t-[28px] sm:rounded-3xl overflow-hidden my-0 sm:my-auto max-h-[92vh] flex flex-col overscroll-contain ${sheetMotionClass}`}
+        className={`relative w-full max-w-4xl liquid-glass rounded-t-[28px] sm:rounded-3xl overflow-hidden my-0 sm:my-auto max-h-[92vh] flex flex-col overscroll-contain sheet-entrance ${sheetMotionClass}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -109,10 +109,15 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
         {/* Swipe-down Grab Handle + Dedicated Top Action Bar */}
         <div
           {...dragHandlers}
-          className="shrink-0 bg-white/85 backdrop-blur-xl border-b border-[#D3DDE3] px-4 sm:px-6 pt-2.5 pb-3 z-30 touch-none select-none cursor-grab active:cursor-grabbing"
+          className="shrink-0 liquid-glass-navbar border-b px-4 sm:px-6 pt-1 pb-3 z-30 touch-none select-none cursor-grab active:cursor-grabbing"
           title="Geser ke bawah untuk menutup"
         >
-          <div className={`${handleBarClass} mx-auto mb-2.5`} />
+          <div
+            data-testid="modal-drag-handle"
+            className="w-full py-2 flex justify-center items-center"
+          >
+            <div className={handleBarClass} />
+          </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-extrabold text-[#10242E] truncate">
               {game.title}
@@ -122,34 +127,34 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
               {onOpenModPage && (
                 <button
                   onClick={() => onOpenModPage(modSlug)}
-                  className="min-h-[38px] px-3 py-1.5 rounded-2xl bg-white/95 hover:bg-white border border-white text-[#0f2c38] shadow-[0_4px_12px_-3px_rgba(15,44,56,0.16)] tactile-press flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                  className="min-h-[38px] px-3 py-1.5 rounded-2xl liquid-glass-button-secondary text-[#10242E] flex items-center gap-1.5 text-xs font-bold cursor-pointer"
                   aria-label="Open full page"
                   title="Open full page"
                 >
                   <span>Full Page</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-[#0d9488]" />
+                  <ExternalLink className="w-3.5 h-3.5 text-[#0D9488]" />
                 </button>
               )}
 
               <button
                 onClick={handleShare}
-                className="min-w-[38px] min-h-[38px] p-2 rounded-2xl bg-white/95 hover:bg-white border border-white text-[#0f2c38] shadow-[0_4px_12px_-3px_rgba(15,44,56,0.16)] tactile-press flex items-center justify-center cursor-pointer"
+                className="min-w-[38px] min-h-[38px] p-2 rounded-2xl liquid-glass-button-secondary text-[#10242E] flex items-center justify-center cursor-pointer"
                 aria-label="Share direct URL"
                 title="Copy URL"
               >
                 {copiedLink ? (
-                  <span className="text-[11px] text-[#0d9488] font-bold px-1">Copied!</span>
+                  <span className="text-[11px] text-[#0D9488] font-bold px-1">Copied!</span>
                 ) : (
-                  <Share2 className="w-4 h-4 text-[#0284c7]" />
+                  <Share2 className="w-4 h-4 text-[#1D6FA5]" />
                 )}
               </button>
 
               <button
                 onClick={(e) => onToggleSave(game.id, e)}
-                className={`min-w-[38px] min-h-[38px] p-2 rounded-2xl flex items-center justify-center cursor-pointer shadow-[0_4px_12px_-3px_rgba(15,44,56,0.16)] tactile-press ${
+                className={`min-w-[38px] min-h-[38px] p-2 rounded-2xl flex items-center justify-center cursor-pointer tactile-press ${
                   isSaved
                     ? 'liquid-glass-button text-white'
-                    : 'bg-white/95 hover:bg-white border border-white text-[#355968]'
+                    : 'liquid-glass-button-secondary text-[#355968]'
                 }`}
                 aria-label={isSaved ? 'Remove from saved' : 'Save'}
               >
@@ -158,7 +163,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
               <button
                 onClick={onClose}
-                className="min-w-[38px] min-h-[38px] p-2 rounded-2xl bg-white/95 hover:bg-white border border-white text-[#0f2c38] shadow-[0_4px_12px_-3px_rgba(15,44,56,0.16)] tactile-press flex items-center justify-center cursor-pointer"
+                className="min-w-[38px] min-h-[38px] p-2 rounded-2xl liquid-glass-button-secondary text-[#10242E] flex items-center justify-center cursor-pointer"
                 aria-label="Close dialog"
               >
                 <X className="w-4 h-4" />
@@ -173,21 +178,21 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
           className="overflow-y-auto custom-scrollbar flex-grow overscroll-y-contain touch-pan-y"
         >
           {/* Hero Banner Section */}
-          <div className="relative h-36 sm:h-52 w-full bg-[#E3F2F0] border-b border-[#D3DDE3] overflow-hidden">
+          <div className="relative h-32 sm:h-52 w-full bg-[#E3F2F0] border-b border-[#D3DDE3] overflow-hidden">
             <img
               src={game.bannerUrl || game.coverUrl}
               alt=""
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover opacity-85 scale-105"
+              className="w-full h-full object-cover opacity-90 scale-105"
             />
-            <div className="absolute inset-0 bg-[#F2F5F7]/20 pointer-events-none" />
+            <div className="absolute inset-0 bg-[#10242E]/10 pointer-events-none" />
           </div>
 
           {/* Main Info Header */}
-          <div className="px-5 sm:px-8 -mt-16 relative z-20 pb-5 border-b border-[#0f2c38]/10">
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 items-start sm:items-end">
-              {/* Cover Art (1:1 Icon Aspect) */}
-              <div className="w-24 sm:w-32 aspect-square flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white bg-white/70 shadow-[0_12px_28px_-8px_rgba(15,44,56,0.20)] relative">
+          <div className="px-4 sm:px-8 -mt-12 sm:-mt-16 relative z-20 pb-5 border-b border-[#10242E]/10">
+            <div className="flex flex-col sm:flex-row gap-3.5 sm:gap-5 items-start sm:items-end">
+              {/* Cover Art (1:1 Icon Aspect with Elevated Physical Frame) */}
+              <div className="w-20 sm:w-32 aspect-square flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white bg-white shadow-[0_14px_28px_-8px_rgba(16,36,46,0.28)] relative ring-1 ring-black/5">
                 <img
                   src={game.coverUrl}
                   alt={game.title}
@@ -197,37 +202,37 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
               </div>
 
               {/* Title & Clean Unboxed Metadata */}
-              <div className="flex-grow space-y-1.5">
-                <p className="text-xs font-semibold text-[#0d9488] tabular-nums">
+              <div className="flex-grow space-y-1">
+                <p className="text-xs font-semibold text-[#0D9488] tabular-nums">
                   {game.status} · {game.category} · {game.version}
                   {game.obbRequired ? ' · Data Required' : ''}
                 </p>
 
                 <h2
                   id="modal-game-title"
-                  className="heading-font text-xl sm:text-3xl font-extrabold tracking-tight text-[#0f2c38] text-3d"
+                  className="heading-font text-xl sm:text-3xl font-extrabold tracking-tight text-[#10242E] text-3d"
                 >
                   {game.title}
                 </h2>
 
-                <div className="flex items-center gap-2 text-xs text-[#355968] flex-wrap">
+                <div className="flex items-center gap-2 text-xs text-[#4A6270] flex-wrap">
                   <span>
-                    Developer: <strong className="text-[#0f2c38]">{game.developer}</strong>
+                    Developer: <strong className="text-[#10242E]">{game.developer}</strong>
                   </span>
                   {game.porter && (
                     <span>
-                      · Mod by: <strong className="text-[#0284c7]">{game.porter}</strong>
+                      · Mod by: <strong className="text-[#1D6FA5]">{game.porter}</strong>
                     </span>
                   )}
                   <span>· {game.minAndroid}</span>
                 </div>
               </div>
 
-              {/* Primary 3D Tactile Download CTA */}
-              <div className="w-full sm:w-auto flex-shrink-0 pt-1 sm:pt-0">
+              {/* Primary 3D Tactile Download CTA (Desktop; Mobile uses sticky bottom thumb dock + top CTA) */}
+              <div className="hidden sm:block flex-shrink-0">
                 <button
                   onClick={() => onOpenDownload(game)}
-                  className="w-full sm:w-auto min-h-[46px] flex items-center justify-center gap-2 px-6 py-3 rounded-2xl liquid-glass-button text-white font-bold text-sm tracking-wide cursor-pointer"
+                  className="min-h-[46px] flex items-center justify-center gap-2 px-6 py-3 rounded-2xl liquid-glass-button text-white font-bold text-sm tracking-wide cursor-pointer"
                 >
                   <Download className="w-4 h-4 stroke-[2.5]" />
                   <span>Download ({game.fileSize})</span>
@@ -235,37 +240,37 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Quick Specs Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-5 pt-4 border-t border-[#0f2c38]/10 text-xs">
-              <div className="p-3 rounded-2xl liquid-glass-subtle flex items-center gap-2.5">
-                <HardDrive className="w-4 h-4 text-[#0d9488] shrink-0" />
+            {/* Quick Specs Grid (Matte Recessed Instrument Wells) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-4 sm:mt-5 pt-4 border-t border-[#10242E]/10 text-xs">
+              <div className="p-3 rounded-2xl recessed-well flex items-center gap-2.5">
+                <HardDrive className="w-4 h-4 text-[#0D9488] shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-[10px] text-[#4a6f7d] font-medium">File Size</div>
-                  <div className="font-bold text-[#0f2c38] tabular-nums">{game.fileSize}</div>
+                  <div className="text-[10px] text-[#4A6270] font-medium">File Size</div>
+                  <div className="font-bold text-[#10242E] tabular-nums">{game.fileSize}</div>
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl liquid-glass-subtle flex items-center gap-2.5">
-                <Cpu className="w-4 h-4 text-[#0284c7] shrink-0" />
+              <div className="p-3 rounded-2xl recessed-well flex items-center gap-2.5">
+                <Cpu className="w-4 h-4 text-[#1D6FA5] shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-[10px] text-[#4a6f7d] font-medium">Architecture</div>
-                  <div className="font-bold text-[#0f2c38] truncate">{game.architecture}</div>
+                  <div className="text-[10px] text-[#4A6270] font-medium">Architecture</div>
+                  <div className="font-bold text-[#10242E] truncate">{game.architecture}</div>
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl liquid-glass-subtle flex items-center gap-2.5">
-                <Calendar className="w-4 h-4 text-[#0d9488] shrink-0" />
+              <div className="p-3 rounded-2xl recessed-well flex items-center gap-2.5">
+                <Calendar className="w-4 h-4 text-[#0D9488] shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-[10px] text-[#4a6f7d] font-medium">Updated</div>
-                  <div className="font-bold text-[#0f2c38] tabular-nums">{game.updatedDate}</div>
+                  <div className="text-[10px] text-[#4A6270] font-medium">Updated</div>
+                  <div className="font-bold text-[#10242E] tabular-nums">{game.updatedDate}</div>
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl liquid-glass-subtle flex items-center gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-[#0d9488] shrink-0" />
+              <div className="p-3 rounded-2xl recessed-well flex items-center gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-[#0D9488] shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-[10px] text-[#4a6f7d] font-medium">Safety Scan</div>
-                  <div className="font-bold text-[#0d9488] flex items-center gap-1 tabular-nums">
+                  <div className="text-[10px] text-[#4A6270] font-medium">Safety Scan</div>
+                  <div className="font-bold text-[#0F766E] flex items-center gap-1 tabular-nums">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> Clean (0/72)
                   </div>
                 </div>
@@ -595,10 +600,35 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
           </div>
         </div>
 
+        {/* Mobile Sticky Thumb-Zone Download Action Bar */}
+        <div className="sm:hidden shrink-0 liquid-glass-navbar border-t px-4 py-3 pb-safe-dock flex items-center gap-2.5 z-30">
+          <button
+            type="button"
+            onClick={(e) => onToggleSave(game.id, e)}
+            className={`min-w-[46px] min-h-[46px] p-2.5 rounded-2xl flex items-center justify-center cursor-pointer tactile-press shrink-0 ${
+              isSaved
+                ? 'liquid-glass-button text-white'
+                : 'liquid-glass-button-secondary text-[#10242E]'
+            }`}
+            aria-label={isSaved ? 'Hapus dari tersimpan' : 'Simpan item'}
+          >
+            <Bookmark className="w-4 h-4 fill-current" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onOpenDownload(game)}
+            className="flex-1 min-h-[46px] flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-sm tracking-wide cursor-pointer"
+          >
+            <Download className="w-4 h-4 stroke-[2.5]" />
+            <span>Download ({game.fileSize})</span>
+          </button>
+        </div>
+
         {/* Lightbox for screenshots */}
         {selectedScreenshot && (
           <div
-            className="fixed inset-0 z-50 bg-[#0f2c38]/75 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-[#10242E]/80 backdrop-blur-md flex items-center justify-center p-4 backdrop-entrance"
             onClick={() => setSelectedScreenshot(null)}
           >
             <div className="relative max-w-4xl max-h-[90vh]">
@@ -606,11 +636,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 src={selectedScreenshot}
                 alt="Enlarged screenshot"
                 referrerPolicy="no-referrer"
-                className="max-h-[85vh] max-w-full rounded-2xl object-contain border-2 border-white/80 shadow-2xl"
+                className="max-h-[85vh] max-w-full rounded-2xl object-contain border-2 border-white/90 shadow-2xl"
               />
               <button
                 onClick={() => setSelectedScreenshot(null)}
-                className="absolute -top-11 right-0 min-w-[40px] min-h-[40px] rounded-full bg-white/90 text-[#0f2c38] flex items-center justify-center shadow-md cursor-pointer"
+                className="absolute -top-12 right-0 min-w-[44px] min-h-[44px] rounded-full bg-white text-[#10242E] flex items-center justify-center shadow-md cursor-pointer"
                 aria-label="Close preview"
               >
                 <X className="w-5 h-5" />

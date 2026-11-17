@@ -117,7 +117,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
               <select
                 value={filters.category}
                 onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full min-h-[44px] bg-white/80 text-sm font-medium text-[#0f2c38] rounded-2xl px-3.5 py-2 border border-white/95 focus:outline-none focus:border-[#0d9488]/60 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06)] cursor-pointer"
+                className="w-full min-h-[44px] liquid-glass-input text-sm font-medium text-[#10242E] rounded-2xl px-3.5 py-2 focus:outline-none cursor-pointer"
               >
                 {categories.map((c) => (
                   <option key={c} value={c} className="bg-[#f2faf7] text-[#0f2c38]">
@@ -135,7 +135,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
               <select
                 value={filters.status}
                 onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
-                className="w-full min-h-[44px] bg-white/80 text-sm font-medium text-[#0f2c38] rounded-2xl px-3.5 py-2 border border-white/95 focus:outline-none focus:border-[#0d9488]/60 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06)] cursor-pointer"
+                className="w-full min-h-[44px] liquid-glass-input text-sm font-medium text-[#10242E] rounded-2xl px-3.5 py-2 focus:outline-none cursor-pointer"
               >
                 {statusOptions.map((opt) => (
                   <option key={opt.value} value={opt.value} className="bg-[#f2faf7] text-[#0f2c38]">
@@ -155,7 +155,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, architecture: e.target.value }))
                 }
-                className="w-full min-h-[44px] bg-white/80 text-sm font-medium text-[#0f2c38] rounded-2xl px-3.5 py-2 border border-white/95 focus:outline-none focus:border-[#0d9488]/60 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06)] cursor-pointer"
+                className="w-full min-h-[44px] liquid-glass-input text-sm font-medium text-[#10242E] rounded-2xl px-3.5 py-2 focus:outline-none cursor-pointer"
               >
                 {architectures.map((opt) => (
                   <option key={opt.value} value={opt.value} className="bg-[#f2faf7] text-[#0f2c38]">
@@ -178,7 +178,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
                     sortBy: e.target.value as FilterOptions['sortBy'],
                   }))
                 }
-                className="w-full min-h-[44px] bg-white/80 text-sm font-medium text-[#0f2c38] rounded-2xl px-3.5 py-2 border border-white/95 focus:outline-none focus:border-[#0d9488]/60 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06)] cursor-pointer"
+                className="w-full min-h-[44px] liquid-glass-input text-sm font-medium text-[#10242E] rounded-2xl px-3.5 py-2 focus:outline-none cursor-pointer"
               >
                 {sortOptions.map((opt) => (
                   <option key={opt.value} value={opt.value} className="bg-[#f2faf7] text-[#0f2c38]">

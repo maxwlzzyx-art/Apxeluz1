@@ -71,16 +71,16 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Compact Sticky Top Bar (< 15% mobile height combined with bottom nav) */}
-      <header className="sticky top-0 z-40 w-full bg-white/65 backdrop-blur-2xl saturate-150 border-b border-white/80 shadow-[0_6px_20px_-8px_rgba(22,82,94,0.10)] transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 md:h-auto md:py-3 flex items-center justify-between gap-4 md:gap-8">
-          {/* Zone 1: Single-line Brand Wordmark with 3D Liquid Crystal Icon */}
+      <header className="sticky top-0 z-40 w-full liquid-glass-navbar border-b transition-colors">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-[52px] md:h-auto md:py-3 flex items-center justify-between gap-3 md:gap-8">
+          {/* Zone 1: Single-line Brand Wordmark with 3D Tactile Icon */}
           <button
             onClick={handleLogoClick}
-            className="flex items-center gap-2.5 group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0d9488] rounded-2xl p-1 -m-1 select-none cursor-pointer tactile-press shrink-0"
+            className="flex items-center gap-2.5 group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] rounded-2xl p-1 -m-1 select-none cursor-pointer tactile-press shrink-0"
             aria-label="APXELUZ Home"
             title="APXELUZ"
           >
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl overflow-hidden bg-[#D6F2EE] border border-[#D3DDE3] shadow-[0_6px_14px_-4px_rgba(13,148,136,0.22),inset_0_1.5px_1px_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(13,148,136,0.20)] flex items-center justify-center text-[#0D9488] shrink-0">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl overflow-hidden bg-[#D6F2EE] border border-[#D3DDE3] shadow-[0_6px_12px_-4px_rgba(13,148,136,0.24),inset_0_1.5px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(13,148,136,0.22)] flex items-center justify-center text-[#0D9488] shrink-0">
               {!profileIconFailed ? (
                 <img
                   src={WEB_PROFILE_ICON_URL}
@@ -93,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <Layers className="w-4 h-4 md:w-5 md:h-5 text-[#0D9488]" />
               )}
             </div>
-            <span className="heading-font font-extrabold text-lg md:text-xl tracking-tight text-[#10242E] text-3d-subtle whitespace-nowrap">
+            <span className="heading-font font-extrabold text-base md:text-xl tracking-tight text-[#10242E] text-3d-subtle whitespace-nowrap">
               APXE<span className="text-[#0D9488]">LUZ</span>
             </span>
           </button>
@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }
                 }}
                 placeholder="Search games, apps & mods..."
-                className="w-full bg-white/75 text-[#0f2c38] text-sm placeholder:text-[#5c7f8c] pl-10 pr-9 py-2 rounded-2xl border border-white/90 focus:outline-none focus:border-[#0d9488]/60 focus:bg-white/90 focus:ring-2 focus:ring-[#0d9488]/15 shadow-[inset_0_2px_4px_rgba(22,82,94,0.06),0_2px_8px_rgba(255,255,255,0.6)] transition-all"
+                className="w-full liquid-glass-input text-[#10242E] text-sm placeholder:text-[#4A6270] pl-10 pr-9 py-2 rounded-2xl focus:outline-none"
               />
               {searchQuery && (
                 <button
@@ -226,18 +226,18 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex md:hidden items-center gap-1.5 shrink-0">
               <button
                 onClick={handleMobileSearchJump}
-                className="min-w-[44px] min-h-[44px] rounded-2xl liquid-glass-subtle flex items-center justify-center text-[#2c4f5e] cursor-pointer"
+                className="min-w-[40px] min-h-[40px] rounded-xl liquid-glass-subtle flex items-center justify-center text-[#10242E] cursor-pointer"
                 aria-label="Focus search"
               >
-                <Search className="w-4 h-4" />
+                <Search className="w-4 h-4 text-[#0D9488]" />
               </button>
               {onOpenFilters && (
                 <button
                   onClick={onOpenFilters}
-                  className={`min-w-[44px] min-h-[44px] rounded-2xl flex items-center justify-center cursor-pointer tactile-press ${
+                  className={`min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center cursor-pointer tactile-press ${
                     isFiltersOpen
                       ? 'liquid-glass-button text-white'
-                      : 'liquid-glass-subtle text-[#2c4f5e]'
+                      : 'liquid-glass-subtle text-[#10242E]'
                   }`}
                   aria-label="Toggle filters"
                 >
@@ -249,11 +249,11 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </header>
 
-      {/* Mobile Scrollable Search Capsule (Only shown on Discovery/Home route to keep Premium, Saved, and Admin clean) */}
+      {/* Mobile Scrollable Search Capsule (Recessed Tactile Instrument Well) */}
       {showRepositorySearch && (
-        <div className="md:hidden max-w-7xl w-full mx-auto px-4 pt-3">
+        <div className="md:hidden max-w-7xl w-full mx-auto px-4 pt-2.5">
           <div className="relative flex items-center">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-4 h-4 text-[#4a6f7d] pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 w-4 h-4 text-[#4A6270] pointer-events-none" />
             <input
               ref={mobileSearchInputRef}
               type="text"
@@ -261,12 +261,12 @@ export const Header: React.FC<HeaderProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search games, apps & mods..."
               aria-label="Search games, apps & mods"
-              className="w-full min-h-[46px] bg-white/75 text-[#0f2c38] text-sm placeholder:text-[#5c7f8c] pl-11 pr-11 py-2.5 rounded-2xl border border-white/90 focus:outline-none focus:border-[#0d9488]/60 focus:bg-white/95 focus:ring-2 focus:ring-[#0d9488]/15 backdrop-blur-xl shadow-[0_8px_20px_-8px_rgba(22,82,94,0.12),inset_0_2px_4px_rgba(22,82,94,0.05)] transition-all"
+              className="w-full min-h-[44px] liquid-glass-input text-[#10242E] text-sm placeholder:text-[#4A6270] pl-10 pr-10 py-2 rounded-2xl focus:outline-none"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 z-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-[#4a6f7d] hover:text-[#0f2c38] cursor-pointer"
+                className="absolute right-1.5 z-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-[#4A6270] hover:text-[#10242E] cursor-pointer"
                 aria-label="Clear search"
               >
                 <X className="w-4 h-4" />
@@ -276,28 +276,32 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
-      {/* Fixed Mobile Bottom Navigation Bar (Thumb Zone Ergonomics, <= 62px height) */}
+      {/* Fixed Mobile Bottom Tab Dock (Thumb Zone Ergonomics, 60px + safe area <= 15% cap) */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/75 backdrop-blur-2xl saturate-150 border-t border-white/85 shadow-[0_-8px_24px_-8px_rgba(22,82,94,0.12)]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 liquid-glass-navbar border-t pb-safe-dock"
         aria-label="Mobile Navigation"
       >
         <div
-          className={`grid ${isAdminAuthenticated ? 'grid-cols-4' : 'grid-cols-3'} items-center h-[62px] max-w-md mx-auto px-2`}
+          className={`grid ${isAdminAuthenticated ? 'grid-cols-4' : 'grid-cols-3'} items-center h-[60px] max-w-md mx-auto px-2`}
         >
           <button
             onClick={() => {
               setActiveTab('home');
               onNavigateHome();
             }}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
+            className={`relative min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
               activeTab === 'home'
-                ? 'bg-[#D6F2EE] text-[#0F766E] border border-[#0D9488]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(13,148,136,0.2)]'
+                ? 'bg-[#D6F2EE] text-[#0F766E] border border-[#0D9488]/30 shadow-[0_4px_10px_-4px_rgba(13,148,136,0.24),inset_0_1.5px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(13,148,136,0.22)]'
                 : 'text-[#4A6270]'
             }`}
             aria-label="Discover"
           >
-            <Compass className={`w-5 h-5 ${activeTab === 'home' ? 'text-[#0D9488]' : ''}`} />
-            <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Discover</span>
+            <Compass
+              className={`w-[19px] h-[19px] transition-transform ${
+                activeTab === 'home' ? 'text-[#0D9488] scale-105' : ''
+              }`}
+            />
+            <span className="text-[10.5px] font-bold tracking-tight whitespace-nowrap">Discover</span>
           </button>
 
           <button
@@ -305,15 +309,19 @@ export const Header: React.FC<HeaderProps> = ({
               setActiveTab('premium');
               if (onNavigatePremium) onNavigatePremium();
             }}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
+            className={`relative min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
               activeTab === 'premium'
-                ? 'bg-[#FEF3C7] text-[#7C4A03] border border-[#D97706]/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(217,119,6,0.2)]'
+                ? 'bg-[#FEF3C7] text-[#7C4A03] border border-[#D97706]/35 shadow-[0_4px_10px_-4px_rgba(217,119,6,0.22),inset_0_1.5px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(217,119,6,0.22)]'
                 : 'text-[#4A6270]'
             }`}
             aria-label="Premium Game"
           >
-            <Crown className={`w-5 h-5 ${activeTab === 'premium' ? 'text-[#D97706]' : ''}`} />
-            <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Premium</span>
+            <Crown
+              className={`w-[19px] h-[19px] transition-transform ${
+                activeTab === 'premium' ? 'text-[#D97706] scale-105' : ''
+              }`}
+            />
+            <span className="text-[10.5px] font-bold tracking-tight whitespace-nowrap">Premium</span>
           </button>
 
           <button
@@ -323,22 +331,26 @@ export const Header: React.FC<HeaderProps> = ({
                 window.history.pushState(null, '', '/saved');
               }
             }}
-            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
+            className={`relative min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
               activeTab === 'saved'
-                ? 'bg-[#DBEAF6] text-[#165985] border border-[#1D6FA5]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-2px_0_rgba(29,111,165,0.2)]'
+                ? 'bg-[#DBEAF6] text-[#165985] border border-[#1D6FA5]/30 shadow-[0_4px_10px_-4px_rgba(29,111,165,0.22),inset_0_1.5px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(29,111,165,0.22)]'
                 : 'text-[#4A6270]'
             }`}
             aria-label="Saved Items"
           >
             <div className="relative">
-              <Bookmark className={`w-5 h-5 ${activeTab === 'saved' ? 'text-[#1D6FA5]' : ''}`} />
+              <Bookmark
+                className={`w-[19px] h-[19px] transition-transform ${
+                  activeTab === 'saved' ? 'text-[#1D6FA5] scale-105' : ''
+                }`}
+              />
               {savedCount > 0 && (
-                <span className="absolute -top-1 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#1D6FA5] text-white text-[9px] font-bold flex items-center justify-center tabular-nums">
+                <span className="absolute -top-1 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#1D6FA5] text-white text-[9px] font-bold flex items-center justify-center tabular-nums shadow-sm">
                   {savedCount}
                 </span>
               )}
             </div>
-            <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Saved</span>
+            <span className="text-[10.5px] font-bold tracking-tight whitespace-nowrap">Saved</span>
           </button>
 
           {isAdminAuthenticated && (
@@ -349,15 +361,15 @@ export const Header: React.FC<HeaderProps> = ({
                   window.history.pushState(null, '', '/admin');
                 }
               }}
-              className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
+              className={`min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-1 tactile-press cursor-pointer ${
                 activeTab === 'admin'
                   ? 'liquid-glass-button text-white'
-                  : 'text-[#4a6f7d]'
+                  : 'text-[#4A6270]'
               }`}
               aria-label="Admin Dashboard"
             >
-              <Shield className="w-5 h-5" />
-              <span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">Admin</span>
+              <Shield className="w-[19px] h-[19px]" />
+              <span className="text-[10.5px] font-bold tracking-tight whitespace-nowrap">Admin</span>
             </button>
           )}
         </div>

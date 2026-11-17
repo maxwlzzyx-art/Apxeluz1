@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="w-full bg-white/55 backdrop-blur-2xl saturate-150 border-t border-white/80 mt-10 pt-7 pb-24 md:py-8">
+    <footer className="w-full liquid-glass-navbar border-t mt-10 pt-7 pb-24 md:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* APXELUZ Branding */}
@@ -86,11 +86,11 @@ export const Footer: React.FC = () => {
       {/* Mobile-Friendly Frosted Bottom Sheet / Info Dialog */}
       {modalContent && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0f2c38]/25 backdrop-blur-md overscroll-none"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#10242E]/30 backdrop-blur-md overscroll-none backdrop-entrance"
           onClick={() => setModalContent(null)}
         >
           <div
-            className={`w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 sm:p-7 pt-2 sm:pt-3 text-left overscroll-y-contain ${sheetMotionClass}`}
+            className={`w-full max-w-md liquid-glass rounded-t-[28px] sm:rounded-3xl p-6 sm:p-7 pt-2 sm:pt-3 text-left overscroll-y-contain sheet-entrance ${sheetMotionClass}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div

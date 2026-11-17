@@ -5,7 +5,6 @@ import {
   ShoppingBag,
   CheckCircle2,
   ExternalLink,
-  Loader2,
   Clock,
   ShieldCheck,
   ChevronRight,
@@ -26,6 +25,8 @@ import { safeOpenExternalUrl } from '../utils/urlValidation';
 import { useScrollLock } from '../utils/useScrollLock';
 import { useSwipeToClose } from '../utils/useSwipeToClose';
 import { subscribeToPremiumGames } from '../lib/supabaseService';
+import { GameSkeletonGrid } from './GameCardSkeleton';
+import { getSkeletonCountForLayout } from '../utils/loadingState';
 import {
   PREMIUM_CACHE_KEY,
   filterPublicPremiumGames,
@@ -61,6 +62,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
 
   // Selected game for detail modal
   const [selectedGame, setSelectedGame] = useState<PremiumGame | null>(null);
+  const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
   const handledInitialSlugRef = useRef<string | undefined>(undefined);
 
   // Selected plan pending user confirmation
@@ -216,28 +218,28 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn">
-      {/* Hero Banner with Solid 3D Frosted Glass */}
-      <section className="relative overflow-hidden rounded-[28px] sm:rounded-3xl p-5 sm:p-10 liquid-glass border-t-4 border-t-[#0D9488]">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FEF3C7] border border-[#D97706]/35 text-[#7C4A03] text-[11px] font-bold uppercase tracking-wider shadow-sm">
+      {/* Hero Banner with Solid 3D Frosted Glass (Compact on Mobile so Catalog Cards Show Above Fold) */}
+      <section className="relative overflow-hidden rounded-3xl p-4 sm:p-10 liquid-glass border-t-4 border-t-[#0D9488]">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+          <div className="space-y-2 sm:space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF3C7] border border-[#D97706]/35 text-[#7C4A03] text-[10.5px] font-bold uppercase tracking-wider shadow-sm">
               <Crown className="w-3.5 h-3.5 text-[#D97706]" />
-              <span>APXELUZ PREMIUM REPOSITORY</span>
+              <span>APXELUZ PREMIUM</span>
             </div>
-            <h1 className="heading-font text-2xl sm:text-4xl font-extrabold text-[#10242E] text-3d tracking-tight leading-tight">
+            <h1 className="heading-font text-xl sm:text-4xl font-extrabold text-[#10242E] text-3d tracking-tight leading-tight text-balance">
               Eksklusif Game &amp; Mod{' '}
               <span className="text-[#0D9488]">Koleksi Premium</span>
             </h1>
             <p className="text-xs sm:text-sm text-[#4A6270] leading-relaxed">
-              Pilih durasi akses fleksibel (<strong className="text-[#10242E]">30 Hari</strong> atau{' '}
-              <strong className="text-[#10242E]">Lifetime</strong>). Link pembayaran resmi dari admin sudah mencakup tautan unduhan file lengkap secara langsung.
+              Pilih durasi fleksibel (<strong className="text-[#10242E]">30 Hari</strong> atau{' '}
+              <strong className="text-[#10242E]">Lifetime</strong>). Link pembayaran resmi sudah termasuk tautan download langsung.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+          <div className="flex items-center justify-between sm:justify-end gap-2.5">
             <button
               onClick={onNavigateHome}
-              className="flex items-center justify-center gap-2 px-5 py-3 min-h-[46px] rounded-2xl liquid-glass-button-secondary text-[#10242E] font-bold text-xs cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 min-h-[42px] sm:min-h-[46px] rounded-2xl liquid-glass-button-secondary text-[#10242E] font-bold text-xs cursor-pointer"
             >
               <span>Jelajahi Game Gratis</span>
               <ChevronRight className="w-4 h-4 text-[#1D6FA5]" />
@@ -246,16 +248,16 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
         </div>
 
         {/* Feature Highlights */}
-        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-5 mt-5 border-t border-[#D3DDE3] text-xs text-[#4A6270] font-medium">
-          <div className="flex items-center gap-2.5">
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 pt-4 mt-4 border-t border-[#D3DDE3] text-[11px] sm:text-xs text-[#4A6270] font-medium">
+          <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-[#0D9488] flex-shrink-0" />
             <span>Garansi 100% Bersih &amp; Terkurasi</span>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#1D6FA5] flex-shrink-0" />
             <span>Pilihan Durasi 30 Hari &amp; Lifetime</span>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <Link2 className="w-4 h-4 text-[#D97706] flex-shrink-0" />
             <span>Link Bayar Sudah Include Download</span>
           </div>
@@ -281,17 +283,18 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari game premium..."
-            className="w-full min-h-[44px] bg-white/90 text-[#10242E] placeholder-[#4A6270] text-xs pl-10 pr-3.5 py-2.5 rounded-2xl border border-[#D3DDE3] shadow-[inset_0_2px_4px_rgba(16,36,46,0.05)] focus:outline-none focus:border-[#0D9488]"
+            className="w-full min-h-[44px] liquid-glass-input text-[#10242E] placeholder-[#4A6270] text-xs pl-10 pr-3.5 py-2.5 rounded-2xl focus:outline-none"
           />
         </div>
       </div>
 
       {/* Grid of Premium Games (Matched to Free GameCard Layout) */}
-      {loading ? (
-        <div className="py-16 text-center space-y-3 liquid-glass rounded-3xl">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#0D9488]" />
-          <p className="text-xs font-semibold text-[#4A6270]">Memuat katalog game premium...</p>
-        </div>
+      {loading && games.length === 0 ? (
+        <GameSkeletonGrid
+          count={getSkeletonCountForLayout('premium')}
+          variant="premium"
+          label="Memuat katalog game premium"
+        />
       ) : filteredGames.length === 0 ? (
         <div className="text-center py-14 liquid-glass rounded-3xl space-y-3 px-4">
           <ShoppingBag className="w-10 h-10 mx-auto text-[#4A6270]" />
@@ -303,7 +306,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
           {filteredGames.map((game) => {
             const plans = getPlansForGame(game);
             const startingPrice = getStartingPrice(game);
@@ -322,15 +325,16 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
                   }
                 }}
                 aria-label={`Lihat detail ${game.title} versi ${game.version}`}
-                className="group relative flex flex-col cursor-pointer rounded-3xl liquid-glass-card overflow-hidden text-left"
+                className="group relative flex flex-col cursor-pointer rounded-3xl liquid-glass-card perf-card overflow-hidden text-left"
               >
-                {/* Cover Image Container (1:1 Aspect matching GameCard) */}
-                <div className="relative aspect-square w-full overflow-hidden bg-[#E6ECEF]">
+                {/* Cover Image Container (1:1 Aspect with Realistic Inset Glass Bezel) */}
+                <div className="relative aspect-square w-full overflow-hidden bg-[#E6ECEF] ring-1 ring-inset ring-black/5">
                   {(game.iconUrl || game.coverUrl || game.bannerUrl) ? (
                     <img
                       src={game.iconUrl || game.coverUrl || game.bannerUrl}
                       alt={game.title}
                       loading="lazy"
+                      decoding="async"
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300 ease-out"
                     />
@@ -341,32 +345,33 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
                     </div>
                   )}
 
-                  {/* Solid Subtle Bottom Accent Bar */}
+                  {/* Top Specular Edge Gleam + Bottom Shelf Rim */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-white/60 pointer-events-none" />
                   <div className="absolute inset-x-0 bottom-0 h-1 bg-[#10242E]/10 pointer-events-none" />
 
                   {/* Single Top Corner Badges matching GameCard */}
                   <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1 z-10 pointer-events-none">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-xl text-[10px] font-bold tracking-wide bg-[#FEF3C7] text-[#7C4A03] border border-[#D97706]/35 shadow-sm">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[9.5px] sm:text-[10px] font-bold tracking-wide bg-[#FEF3C7]/90 backdrop-blur-md text-[#7C4A03] border border-white/90 shadow-sm">
                       <Crown className="w-3 h-3 text-[#D97706]" />
                       <span>PREMIUM</span>
                     </span>
 
-                    <span className="px-2 py-0.5 rounded-xl text-[10px] font-bold tabular-nums bg-white/90 text-[#10242E] border border-[#D3DDE3] shadow-sm">
+                    <span className="px-2 py-0.5 rounded-xl text-[9.5px] sm:text-[10px] font-bold tabular-nums bg-white/78 backdrop-blur-md text-[#10242E] border border-white/95 shadow-sm truncate max-w-[82px]">
                       {game.version}
                     </span>
                   </div>
 
-                  {/* Tactile Floating Copy-Link Button matching Bookmark position */}
+                  {/* Tactile Floating Copy-Link Keycap Button matching Bookmark position */}
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       copyPremiumLink(game);
                     }}
-                    className={`absolute bottom-2.5 right-2.5 min-w-[40px] min-h-[40px] p-2 rounded-2xl backdrop-blur-xl flex items-center justify-center cursor-pointer tactile-press z-10 ${
+                    className={`absolute bottom-2.5 right-2.5 min-w-[40px] min-h-[40px] p-2 rounded-2xl flex items-center justify-center cursor-pointer tactile-press z-10 ${
                       isCopied
                         ? 'liquid-glass-button text-white'
-                        : 'bg-white/90 text-[#4A6270] hover:text-[#0D9488] border border-[#D3DDE3] shadow-[0_4px_12px_rgba(16,36,46,0.14)]'
+                        : 'bg-white/78 backdrop-blur-md text-[#10242E] hover:text-[#0D9488] border border-white/95 shadow-[0_8px_16px_-4px_rgba(16,36,46,0.2),inset_0_1.5px_0_rgba(255,255,255,1),inset_0_-2px_0_rgba(211,221,227,0.7)]'
                     }`}
                     title={isCopied ? 'Link tersalin!' : 'Salin link game premium'}
                     aria-label={
@@ -380,16 +385,16 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
                 </div>
 
                 {/* Clean Info Area matching GameCard */}
-                <div className="p-3.5 flex flex-col flex-grow justify-between gap-2">
+                <div className="p-3 sm:p-3.5 flex flex-col flex-grow justify-between gap-2">
                   <div>
                     <h3
-                      className="text-sm font-bold text-[#10242E] text-3d-subtle group-hover:text-[#0D9488] transition-colors truncate leading-snug"
+                      className="text-[13px] sm:text-sm font-bold text-[#10242E] text-3d-subtle group-hover:text-[#0D9488] transition-colors truncate leading-snug"
                       title={game.title}
                     >
                       {game.title}
                     </h3>
 
-                    <p className="text-[11px] text-[#4A6270] mt-1 truncate font-medium tabular-nums">
+                    <p className="text-[11px] text-[#4A6270] mt-0.5 sm:mt-1 truncate font-medium tabular-nums">
                       {game.version} · {game.category} · {game.fileSize}
                     </p>
 
@@ -453,7 +458,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
       {/* DETAIL MODAL (Scroll-Locked & Swipe-Down-to-Close Sheet) */}
       {selectedGame && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#10242E]/30 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#10242E]/30 backdrop-blur-md backdrop-entrance"
           onClick={closeGameDetail}
           role="dialog"
           aria-modal="true"
@@ -461,12 +466,12 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden ${detailSwipe.sheetMotionClass}`}
+            className={`relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden sheet-entrance ${detailSwipe.sheetMotionClass}`}
           >
             {/* Top Grab Strip (-) & Action Header */}
             <div
               {...detailSwipe.dragHandlers}
-              className="flex-shrink-0 touch-none select-none cursor-grab active:cursor-grabbing border-b border-[#10242E]/10 bg-white/40"
+              className="flex-shrink-0 touch-none select-none cursor-grab active:cursor-grabbing border-b liquid-glass-navbar"
               title="Geser ke bawah untuk menutup"
             >
               <div className="w-full pt-2.5 pb-1 flex justify-center">
@@ -517,7 +522,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
             <div className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y p-5 sm:p-8 space-y-5 custom-scrollbar">
               {/* Top 1:1 Icon + Title */}
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 aspect-square rounded-2xl overflow-hidden bg-[#E3F2F0] border border-[#D3DDE3] shadow-md flex-shrink-0">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 aspect-square rounded-2xl overflow-hidden bg-[#E3F2F0] border-2 border-white shadow-[0_12px_26px_-8px_rgba(16,36,46,0.22)] ring-1 ring-black/5 flex-shrink-0">
                   {(selectedGame.iconUrl || selectedGame.coverUrl || selectedGame.bannerUrl) ? (
                     <img
                       src={selectedGame.iconUrl || selectedGame.coverUrl || selectedGame.bannerUrl}
@@ -545,7 +550,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
                 </div>
               </div>
 
-              {/* Screenshots */}
+              {/* Screenshots (Tap to Zoom) */}
               {selectedGame.screenshots && selectedGame.screenshots.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-xs font-bold text-[#10242E] uppercase tracking-wider">
@@ -553,13 +558,20 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
                   </h3>
                   <div className="grid grid-cols-2 gap-2.5">
                     {selectedGame.screenshots.map((s, idx) => (
-                      <img
+                      <button
                         key={idx}
-                        src={s}
-                        alt={`Screenshot ${idx + 1}`}
-                        referrerPolicy="no-referrer"
-                        className="rounded-xl border border-[#D3DDE3] h-28 w-full object-cover shadow-sm"
-                      />
+                        type="button"
+                        onClick={() => setSelectedScreenshot(s)}
+                        className="rounded-xl overflow-hidden border border-[#D3DDE3] h-28 w-full shadow-sm cursor-pointer tactile-press"
+                        aria-label={`Perbesar screenshot ${idx + 1}`}
+                      >
+                        <img
+                          src={s}
+                          alt={`Screenshot ${idx + 1}`}
+                          referrerPolicy="no-referrer"
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -629,7 +641,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
       {/* CONFIRMATION MODAL (Duration + Price + Confirm Redirect to Admin Link) */}
       {confirmingPurchase && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#10242E]/30 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#10242E]/30 backdrop-blur-md backdrop-entrance"
           onClick={() => setConfirmingPurchase(null)}
           role="dialog"
           aria-modal="true"
@@ -637,7 +649,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`relative w-full max-w-md max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden ${confirmSwipe.sheetMotionClass}`}
+            className={`relative w-full max-w-md max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden sheet-entrance ${confirmSwipe.sheetMotionClass}`}
           >
             <div
               {...confirmSwipe.dragHandlers}
@@ -751,6 +763,31 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
                 </a>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Screenshot Zoom Overlay */}
+      {selectedScreenshot && (
+        <div
+          className="fixed inset-0 z-[60] bg-[#10242E]/85 backdrop-blur-md flex items-center justify-center p-4 backdrop-entrance"
+          onClick={() => setSelectedScreenshot(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={selectedScreenshot}
+              alt="Pratinjau tangkapan layar"
+              referrerPolicy="no-referrer"
+              className="max-h-[85vh] max-w-full rounded-2xl object-contain border-2 border-white/90 shadow-2xl"
+            />
+            <button
+              type="button"
+              onClick={() => setSelectedScreenshot(null)}
+              aria-label="Tutup pratinjau screenshot"
+              className="absolute -top-12 right-0 min-w-[44px] min-h-[44px] rounded-full bg-white text-[#10242E] flex items-center justify-center shadow-lg cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
       )}
