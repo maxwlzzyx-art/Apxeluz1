@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /premium
+Allow: /guides
+Disallow: /admin
+Disallow: /admin/login
+
+Sitemap: https://apxeluz.my.id/sitemap.xml

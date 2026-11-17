@@ -6,7 +6,15 @@ import { useSwipeToClose } from '../utils/useSwipeToClose';
 const WEB_PROFILE_ICON_URL =
   'https://cdn.phototourl.com/anon/2026-11-15-95ccde76-958a-450f-91b0-60424cee492b.jpg';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onNavigateGuides?: () => void;
+  onNavigatePremium?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({
+  onNavigateGuides,
+  onNavigatePremium,
+}) => {
   const [modalContent, setModalContent] = useState<{ title: string; body: string } | null>(null);
   const { sheetMotionClass, handleBarClass, dragHandlers } = useSwipeToClose(
     () => setModalContent(null),
@@ -56,11 +64,37 @@ export const Footer: React.FC = () => {
               APXE<span className="text-[#0d9488]">LUZ</span>
             </span>
             <span className="text-xs text-[#648b99] hidden sm:inline">·</span>
-            <span className="text-xs text-[#4a6f7d] hidden sm:inline">App &amp; Mod Repository</span>
+            <span className="text-xs text-[#4a6f7d] hidden sm:inline">Curated by Axeluf</span>
           </div>
 
-          {/* Legal Policies */}
-          <div className="flex items-center gap-3 text-xs font-medium text-[#4a6f7d]">
+          {/* Site & Legal Links */}
+          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 text-xs font-medium text-[#4a6f7d]">
+            <a
+              href="/guides"
+              onClick={(e) => {
+                if (onNavigateGuides && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+                  e.preventDefault();
+                  onNavigateGuides();
+                }
+              }}
+              className="min-h-[36px] px-2 inline-flex items-center hover:text-[#0d9488] transition-colors"
+            >
+              Guides
+            </a>
+            <span aria-hidden="true">·</span>
+            <a
+              href="/premium"
+              onClick={(e) => {
+                if (onNavigatePremium && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+                  e.preventDefault();
+                  onNavigatePremium();
+                }
+              }}
+              className="min-h-[36px] px-2 inline-flex items-center hover:text-[#0d9488] transition-colors"
+            >
+              Premium
+            </a>
+            <span aria-hidden="true">·</span>
             <button
               onClick={() => openLegalModal('privacy')}
               className="min-h-[36px] px-2 hover:text-[#0d9488] transition-colors cursor-pointer tactile-press"
@@ -78,7 +112,7 @@ export const Footer: React.FC = () => {
 
           {/* Copyright */}
           <div className="text-xs text-[#5c7f8c]">
-            © {new Date().getFullYear()} APXELUZ.
+            © {new Date().getFullYear()} APXELUZ · Axeluf
           </div>
         </div>
       </div>
