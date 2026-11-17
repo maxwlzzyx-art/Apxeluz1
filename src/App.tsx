@@ -14,10 +14,7 @@ import { Footer } from './components/Footer';
 import { PremiumGamesView } from './components/PremiumGamesView';
 import { LiquidGlassFilterDefs } from './components/LiquidGlassFilterDefs';
 import { GameSkeletonGrid } from './components/GameCardSkeleton';
-import { GuidesView } from './components/GuidesView';
-import { RepositoryEditorialSection } from './components/RepositoryEditorialSection';
 import { REGISTERED_MODS } from './data/games';
-import { EDITORIAL_GUIDES } from './data/editorialContent';
 import { Game, FilterOptions } from './types/game';
 import { Item, Category, WebsiteSettings } from './types/admin';
 import { filterGames, sortGames } from './utils/gameFilters';
@@ -97,7 +94,7 @@ function AppContent() {
 
   // Routing State based on browser URL
   const [currentRoute, setCurrentRoute] = useState<{
-    view: 'home' | 'saved' | 'premium' | 'guides' | 'item-detail' | 'admin-login' | 'admin-dashboard';
+    view: 'home' | 'saved' | 'premium' | 'item-detail' | 'admin-login' | 'admin-dashboard';
     slug?: string;
     itemType?: 'game' | 'app' | 'mod';
   }>(() => {
@@ -111,10 +108,6 @@ function AppContent() {
     if (path === '/premium' || path.startsWith('/premium/')) {
       const premSlug = path.startsWith('/premium/') ? path.slice('/premium/'.length).trim() : undefined;
       return { view: 'premium', slug: premSlug || undefined };
-    }
-    if (path === '/guides' || path.startsWith('/guides/')) {
-      const guideSlug = path.startsWith('/guides/') ? path.slice('/guides/'.length).trim() : undefined;
-      return { view: 'guides', slug: guideSlug || undefined };
     }
     if (path.startsWith('/mod/')) {
       return { view: 'item-detail', slug: path.slice('/mod/'.length).trim(), itemType: 'mod' };
@@ -142,9 +135,6 @@ function AppContent() {
       } else if (path === '/premium' || path.startsWith('/premium/')) {
         const premSlug = path.startsWith('/premium/') ? path.slice('/premium/'.length).trim() : undefined;
         setCurrentRoute({ view: 'premium', slug: premSlug || undefined });
-      } else if (path === '/guides' || path.startsWith('/guides/')) {
-        const guideSlug = path.startsWith('/guides/') ? path.slice('/guides/'.length).trim() : undefined;
-        setCurrentRoute({ view: 'guides', slug: guideSlug || undefined });
       } else if (path.startsWith('/mod/')) {
         setCurrentRoute({ view: 'item-detail', slug: path.slice('/mod/'.length).trim(), itemType: 'mod' });
       } else if (path.startsWith('/game/')) {
@@ -174,9 +164,6 @@ function AppContent() {
     } else if (path === '/premium' || path.startsWith('/premium/')) {
       const premSlug = path.startsWith('/premium/') ? path.slice('/premium/'.length).trim() : undefined;
       setCurrentRoute({ view: 'premium', slug: premSlug || undefined });
-    } else if (path === '/guides' || path.startsWith('/guides/')) {
-      const guideSlug = path.startsWith('/guides/') ? path.slice('/guides/'.length).trim() : undefined;
-      setCurrentRoute({ view: 'guides', slug: guideSlug || undefined });
     } else if (path.startsWith('/mod/')) {
       setCurrentRoute({ view: 'item-detail', slug: path.slice('/mod/'.length).trim(), itemType: 'mod' });
     } else if (path.startsWith('/game/')) {
@@ -375,21 +362,15 @@ function AppContent() {
     return undefined;
   }, [currentRoute, repositoryGames]);
 
-  const activeGuide = useMemo(() => {
-    if (currentRoute.view !== 'guides' || !currentRoute.slug) return undefined;
-    return EDITORIAL_GUIDES.find((g) => g.slug === currentRoute.slug);
-  }, [currentRoute]);
-
   useEffect(() => {
     const seo = resolveRouteSeoMetadata(currentRoute, {
       origin: window.location.origin,
       pathname: window.location.pathname,
       activeItem: activeDetailItem,
-      activeGuide,
       websiteSettings,
     });
     applySeoMetadataToDocument(seo);
-  }, [currentRoute, activeDetailItem, activeGuide, websiteSettings]);
+  }, [currentRoute, activeDetailItem, websiteSettings]);
 
   // Filtered & Sorted Games for general search view
   const filteredAndSortedGames = useMemo(() => {
@@ -466,15 +447,12 @@ function AppContent() {
             ? 'saved'
             : currentRoute.view === 'premium'
             ? 'premium'
-            : currentRoute.view === 'guides'
-            ? 'guides'
             : 'home'
         }
         setActiveTab={(tab) => {
           if (tab === 'home') navigateTo('/');
           else if (tab === 'saved') navigateTo('/saved');
           else if (tab === 'premium') navigateTo('/premium');
-          else if (tab === 'guides') navigateTo('/guides');
           else if (tab === 'admin') navigateTo('/admin');
         }}
         searchQuery={searchQuery}
@@ -487,7 +465,6 @@ function AppContent() {
           navigateTo('/');
         }}
         onNavigatePremium={() => navigateTo('/premium')}
-        onNavigateGuides={() => navigateTo('/guides')}
         onOpenAdminLogin={() => navigateTo('/admin/login')}
         isAdminAuthenticated={isAdminAuthenticated}
         showRepositorySearch={currentRoute.view === 'home'}
@@ -573,14 +550,6 @@ function AppContent() {
               onNavigateHome={() => navigateTo('/')}
             />
           )
-        ) : currentRoute.view === 'guides' ? (
-          /* VIEW: Dedicated Engineering & Verification Guides */
-          <GuidesView
-            activeSlug={currentRoute.slug}
-            onSelectGuide={(slug) => navigateTo(slug ? `/guides/${slug}` : '/guides')}
-            onNavigateHome={() => navigateTo('/')}
-            onNavigatePremium={() => navigateTo('/premium')}
-          />
         ) : currentRoute.view === 'premium' ? (
           /* VIEW: Dedicated Premium Games Page */
           <PremiumGamesView
@@ -830,21 +799,12 @@ function AppContent() {
               emptyMessage="No community mods published in this collection yet. Direct URLs remain accessible."
               isLoading={isLoadingItems}
             />
-
-            {/* 6. Curator Rationale, Verification Guides & Technical FAQ */}
-            <RepositoryEditorialSection
-              onOpenGuidesIndex={() => navigateTo('/guides')}
-              onSelectGuide={(slug) => navigateTo(`/guides/${slug}`)}
-            />
           </div>
         )}
       </main>
 
       {/* Footer in Frosted Glass */}
-      <Footer
-        onNavigateGuides={() => navigateTo('/guides')}
-        onNavigatePremium={() => navigateTo('/premium')}
-      />
+      <Footer onNavigatePremium={() => navigateTo('/premium')} />
 
       {/* Game Detail Modal */}
       {selectedGame && (

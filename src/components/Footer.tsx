@@ -7,12 +7,10 @@ const WEB_PROFILE_ICON_URL =
   'https://cdn.phototourl.com/anon/2026-11-15-95ccde76-958a-450f-91b0-60424cee492b.jpg';
 
 interface FooterProps {
-  onNavigateGuides?: () => void;
   onNavigatePremium?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
-  onNavigateGuides,
   onNavigatePremium,
 }) => {
   const [modalContent, setModalContent] = useState<{ title: string; body: string } | null>(null);
@@ -69,19 +67,6 @@ export const Footer: React.FC<FooterProps> = ({
 
           {/* Site & Legal Links */}
           <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 text-xs font-medium text-[#4a6f7d]">
-            <a
-              href="/guides"
-              onClick={(e) => {
-                if (onNavigateGuides && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
-                  e.preventDefault();
-                  onNavigateGuides();
-                }
-              }}
-              className="min-h-[36px] px-2 inline-flex items-center hover:text-[#0d9488] transition-colors"
-            >
-              Guides
-            </a>
-            <span aria-hidden="true">·</span>
             <a
               href="/premium"
               onClick={(e) => {

@@ -96,11 +96,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-[#10242E]/30 backdrop-blur-md overscroll-none backdrop-entrance"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-6 bg-[#10242E]/30 backdrop-blur-md overscroll-none backdrop-entrance"
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-4xl liquid-glass rounded-t-[28px] sm:rounded-3xl overflow-hidden my-0 sm:my-auto max-h-[92vh] flex flex-col overscroll-contain sheet-entrance ${sheetMotionClass}`}
+        className={`relative w-full max-w-2xl liquid-glass rounded-3xl overflow-hidden my-0 sm:my-auto max-h-[72dvh] sm:max-h-[76dvh] flex flex-col overscroll-contain sheet-entrance ${sheetMotionClass}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -177,22 +177,22 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
           ref={scrollContainerRef}
           className="overflow-y-auto custom-scrollbar flex-grow overscroll-y-contain touch-pan-y"
         >
-          {/* Hero Banner Section */}
-          <div className="relative h-32 sm:h-52 w-full bg-[#E3F2F0] border-b border-[#D3DDE3] overflow-hidden">
+          {/* Hero Banner Section (16:9 Aspect Ratio) */}
+          <div className="relative aspect-video w-full bg-[#E3F2F0] border-b border-[#D3DDE3] overflow-hidden">
             <img
               src={game.bannerUrl || game.coverUrl}
               alt=""
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover opacity-90 scale-105"
+              className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-[#10242E]/10 pointer-events-none" />
           </div>
 
           {/* Main Info Header */}
-          <div className="px-4 sm:px-8 -mt-12 sm:-mt-16 relative z-20 pb-5 border-b border-[#10242E]/10">
-            <div className="flex flex-col sm:flex-row gap-3.5 sm:gap-5 items-start sm:items-end">
-              {/* Cover Art (1:1 Icon Aspect with Elevated Physical Frame) */}
-              <div className="w-20 sm:w-32 aspect-square flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white bg-white shadow-[0_14px_28px_-8px_rgba(16,36,46,0.28)] relative ring-1 ring-black/5">
+          <div className="px-4 sm:px-6 pt-3 sm:pt-3.5 relative z-20 pb-4 border-b border-[#10242E]/10">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
+              {/* Cover Art (1:1 Icon Aspect Overlapping Banner Seam Cleanly) */}
+              <div className="w-16 sm:w-22 aspect-square -mt-11 sm:-mt-14 flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white bg-white shadow-[0_14px_28px_-8px_rgba(16,36,46,0.28)] relative ring-1 ring-black/5">
                 <img
                   src={game.coverUrl}
                   alt={game.title}
@@ -210,7 +210,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
                 <h2
                   id="modal-game-title"
-                  className="heading-font text-xl sm:text-3xl font-extrabold tracking-tight text-[#10242E] text-3d"
+                  className="heading-font text-lg sm:text-2xl font-extrabold tracking-tight text-[#10242E] text-3d"
                 >
                   {game.title}
                 </h2>
@@ -232,7 +232,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
               <div className="hidden sm:block flex-shrink-0">
                 <button
                   onClick={() => onOpenDownload(game)}
-                  className="min-h-[46px] flex items-center justify-center gap-2 px-6 py-3 rounded-2xl liquid-glass-button text-white font-bold text-sm tracking-wide cursor-pointer"
+                  className="min-h-[44px] flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl liquid-glass-button text-white font-bold text-xs sm:text-sm tracking-wide cursor-pointer"
                 >
                   <Download className="w-4 h-4 stroke-[2.5]" />
                   <span>Download ({game.fileSize})</span>
@@ -241,8 +241,8 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             </div>
 
             {/* Quick Specs Grid (Matte Recessed Instrument Wells) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-4 sm:mt-5 pt-4 border-t border-[#10242E]/10 text-xs">
-              <div className="p-3 rounded-2xl recessed-well flex items-center gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 mt-3.5 sm:mt-4 pt-3.5 border-t border-[#10242E]/10 text-xs">
+              <div className="p-2.5 rounded-2xl recessed-well flex items-center gap-2">
                 <HardDrive className="w-4 h-4 text-[#0D9488] shrink-0" />
                 <div className="min-w-0">
                   <div className="text-[10px] text-[#4A6270] font-medium">File Size</div>
@@ -279,10 +279,10 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
           </div>
 
           {/* Scrollable Horizontal Navigation Tabs on Mobile */}
-          <div className="px-5 sm:px-8 border-b border-[#0f2c38]/10 flex gap-5 sm:gap-7 text-xs sm:text-sm overflow-x-auto no-scrollbar">
+          <div className="px-4 sm:px-6 border-b border-[#0f2c38]/10 flex gap-4 sm:gap-6 text-xs sm:text-sm overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('about')}
-              className={`py-3.5 border-b-2 font-bold whitespace-nowrap cursor-pointer transition-colors ${
+              className={`py-2.5 border-b-2 font-bold whitespace-nowrap cursor-pointer transition-colors ${
                 activeTab === 'about'
                   ? 'border-[#0d9488] text-[#0d9488]'
                   : 'border-transparent text-[#4a6f7d] hover:text-[#0f2c38]'
@@ -292,7 +292,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('guide')}
-              className={`py-3.5 border-b-2 font-bold whitespace-nowrap cursor-pointer transition-colors ${
+              className={`py-2.5 border-b-2 font-bold whitespace-nowrap cursor-pointer transition-colors ${
                 activeTab === 'guide'
                   ? 'border-[#0d9488] text-[#0d9488]'
                   : 'border-transparent text-[#4a6f7d] hover:text-[#0f2c38]'
@@ -302,7 +302,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('changelog')}
-              className={`py-3.5 border-b-2 font-bold whitespace-nowrap cursor-pointer transition-colors ${
+              className={`py-2.5 border-b-2 font-bold whitespace-nowrap cursor-pointer transition-colors ${
                 activeTab === 'changelog'
                   ? 'border-[#0d9488] text-[#0d9488]'
                   : 'border-transparent text-[#4a6f7d] hover:text-[#0f2c38]'
@@ -312,7 +312,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('security')}
-              className={`py-3.5 border-b-2 font-bold whitespace-nowrap cursor-pointer transition-colors ${
+              className={`py-2.5 border-b-2 font-bold whitespace-nowrap cursor-pointer transition-colors ${
                 activeTab === 'security'
                   ? 'border-[#0d9488] text-[#0d9488]'
                   : 'border-transparent text-[#4a6f7d] hover:text-[#0f2c38]'
@@ -323,7 +323,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
           </div>
 
           {/* Tab Content */}
-          <div className="p-5 sm:p-8 space-y-6">
+          <div className="p-4 sm:p-6 space-y-5">
             {activeTab === 'about' && (
               <div className="space-y-6">
                 <div>

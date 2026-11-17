@@ -458,7 +458,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
       {/* DETAIL MODAL (Scroll-Locked & Swipe-Down-to-Close Sheet) */}
       {selectedGame && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#10242E]/30 backdrop-blur-md backdrop-entrance"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-6 bg-[#10242E]/30 backdrop-blur-md backdrop-entrance"
           onClick={closeGameDetail}
           role="dialog"
           aria-modal="true"
@@ -466,7 +466,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden sheet-entrance ${detailSwipe.sheetMotionClass}`}
+            className={`relative w-full max-w-xl max-h-[72dvh] sm:max-h-[76dvh] flex flex-col rounded-3xl liquid-glass shadow-2xl overflow-hidden sheet-entrance ${detailSwipe.sheetMotionClass}`}
           >
             {/* Top Grab Strip (-) & Action Header */}
             <div
@@ -519,63 +519,83 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y p-5 sm:p-8 space-y-5 custom-scrollbar">
-              {/* Top 1:1 Icon + Title */}
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 aspect-square rounded-2xl overflow-hidden bg-[#E3F2F0] border-2 border-white shadow-[0_12px_26px_-8px_rgba(16,36,46,0.22)] ring-1 ring-black/5 flex-shrink-0">
-                  {(selectedGame.iconUrl || selectedGame.coverUrl || selectedGame.bannerUrl) ? (
-                    <img
-                      src={selectedGame.iconUrl || selectedGame.coverUrl || selectedGame.bannerUrl}
-                      alt={selectedGame.title}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#0D9488]">
-                      <Crown className="w-8 h-8" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 space-y-1">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#7C4A03] border border-[#D97706]/35 text-[10px] font-extrabold uppercase">
-                    <Crown className="w-3 h-3 text-[#D97706]" />
-                    <span>{selectedGame.category || 'Games'}</span>
-                  </span>
-                  <h2 className="heading-font text-xl sm:text-2xl font-extrabold text-[#10242E] text-3d-subtle leading-tight">
-                    {selectedGame.title}
-                  </h2>
-                  <p className="text-xs text-[#4A6270] font-medium">
-                    {selectedGame.developer} • {selectedGame.version} • {selectedGame.fileSize}
-                  </p>
-                </div>
-              </div>
-
-              {/* Screenshots (Tap to Zoom) */}
-              {selectedGame.screenshots && selectedGame.screenshots.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-[#10242E] uppercase tracking-wider">
-                    Tangkapan Layar
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {selectedGame.screenshots.map((s, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setSelectedScreenshot(s)}
-                        className="rounded-xl overflow-hidden border border-[#D3DDE3] h-28 w-full shadow-sm cursor-pointer tactile-press"
-                        aria-label={`Perbesar screenshot ${idx + 1}`}
-                      >
-                        <img
-                          src={s}
-                          alt={`Screenshot ${idx + 1}`}
-                          referrerPolicy="no-referrer"
-                          className="h-full w-full object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
+            <div className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y custom-scrollbar">
+              {/* 16:9 Cover/Banner Image */}
+              {(selectedGame.bannerUrl || selectedGame.coverUrl || selectedGame.iconUrl) && (
+                <div className="relative aspect-video w-full bg-[#E3F2F0] border-b border-[#D3DDE3] overflow-hidden">
+                  <img
+                    src={selectedGame.bannerUrl || selectedGame.coverUrl || selectedGame.iconUrl}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-[#10242E]/10 pointer-events-none" />
                 </div>
               )}
+
+              <div className="p-4 sm:p-6 space-y-4">
+                {/* Top 1:1 Icon + Title */}
+                <div className="flex items-start gap-3.5">
+                  <div
+                    className={`w-16 h-16 sm:w-20 aspect-square rounded-2xl overflow-hidden bg-[#E3F2F0] border-2 border-white shadow-[0_12px_26px_-8px_rgba(16,36,46,0.22)] ring-1 ring-black/5 flex-shrink-0 ${
+                      selectedGame.bannerUrl || selectedGame.coverUrl || selectedGame.iconUrl
+                        ? '-mt-11 sm:-mt-14 relative z-20'
+                        : ''
+                    }`}
+                  >
+                    {(selectedGame.iconUrl || selectedGame.coverUrl || selectedGame.bannerUrl) ? (
+                      <img
+                        src={selectedGame.iconUrl || selectedGame.coverUrl || selectedGame.bannerUrl}
+                        alt={selectedGame.title}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[#0D9488]">
+                        <Crown className="w-8 h-8" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#7C4A03] border border-[#D97706]/35 text-[10px] font-extrabold uppercase">
+                      <Crown className="w-3 h-3 text-[#D97706]" />
+                      <span>{selectedGame.category || 'Games'}</span>
+                    </span>
+                    <h2 className="heading-font text-xl sm:text-2xl font-extrabold text-[#10242E] text-3d-subtle leading-tight">
+                      {selectedGame.title}
+                    </h2>
+                    <p className="text-xs text-[#4A6270] font-medium">
+                      {selectedGame.developer} • {selectedGame.version} • {selectedGame.fileSize}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Screenshots (16:9 Tap to Zoom) */}
+                {selectedGame.screenshots && selectedGame.screenshots.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-[#10242E] uppercase tracking-wider">
+                      Tangkapan Layar
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {selectedGame.screenshots.map((s, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedScreenshot(s)}
+                          className="rounded-xl overflow-hidden border border-[#D3DDE3] aspect-video w-full shadow-sm cursor-pointer tactile-press"
+                          aria-label={`Perbesar screenshot ${idx + 1}`}
+                        >
+                          <img
+                            src={s}
+                            alt={`Screenshot ${idx + 1}`}
+                            referrerPolicy="no-referrer"
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
               {/* Multi-line Description */}
               <div className="space-y-2 text-xs text-[#4A6270] leading-relaxed">
@@ -633,6 +653,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
                   ))}
                 </div>
               </div>
+              </div>
             </div>
           </div>
         </div>
@@ -641,7 +662,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
       {/* CONFIRMATION MODAL (Duration + Price + Confirm Redirect to Admin Link) */}
       {confirmingPurchase && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#10242E]/30 backdrop-blur-md backdrop-entrance"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-6 bg-[#10242E]/30 backdrop-blur-md backdrop-entrance"
           onClick={() => setConfirmingPurchase(null)}
           role="dialog"
           aria-modal="true"
@@ -649,7 +670,7 @@ export const PremiumGamesView: React.FC<PremiumGamesViewProps> = ({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`relative w-full max-w-md max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-3xl liquid-glass shadow-2xl overflow-hidden sheet-entrance ${confirmSwipe.sheetMotionClass}`}
+            className={`relative w-full max-w-md max-h-[72dvh] sm:max-h-[76dvh] flex flex-col rounded-3xl liquid-glass shadow-2xl overflow-hidden sheet-entrance ${confirmSwipe.sheetMotionClass}`}
           >
             <div
               {...confirmSwipe.dragHandlers}

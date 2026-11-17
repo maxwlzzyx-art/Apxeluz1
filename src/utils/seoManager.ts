@@ -1,9 +1,12 @@
-import { CURATOR_FAQS, CURATOR_PROFILE, EDITORIAL_GUIDES, EditorialGuide } from '../data/editorialContent';
 import { Game } from '../types/game';
 import { WebsiteSettings } from '../types/admin';
 
+const BRAND_NAME = 'APXELUZ';
+const CURATOR_NAME = 'Axeluf';
+const CURATOR_TITLE = 'Founder & Package Maintainer';
+
 export interface RouteSeoState {
-  view: 'home' | 'saved' | 'premium' | 'guides' | 'item-detail' | 'admin-login' | 'admin-dashboard';
+  view: 'home' | 'saved' | 'premium' | 'item-detail' | 'admin-login' | 'admin-dashboard';
   slug?: string;
   itemType?: 'game' | 'app' | 'mod';
 }
@@ -36,7 +39,7 @@ export function buildBaseOrganizationSchema(origin: string): Record<string, unkn
   return {
     '@type': 'Organization',
     '@id': `${base}/#organization`,
-    name: CURATOR_PROFILE.brandName,
+    name: BRAND_NAME,
     alternateName: 'Channel Axeluf',
     url: `${base}/`,
     logo: {
@@ -45,11 +48,11 @@ export function buildBaseOrganizationSchema(origin: string): Record<string, unkn
     },
     founder: {
       '@type': 'Person',
-      name: CURATOR_PROFILE.curatorName,
-      jobTitle: CURATOR_PROFILE.curatorTitle,
+      name: CURATOR_NAME,
+      jobTitle: CURATOR_TITLE,
     },
     description:
-      'Independent Android APK, mod menu, and utility repository curated by Axeluf with SHA-256 package fingerprints, VirusTotal checks, and ABI compatibility guides.',
+      'Independent Android APK, mod menu, and utility repository curated by Axeluf with SHA-256 package fingerprints, VirusTotal checks, and ABI compatibility tags.',
     knowsAbout: [
       'Android APK verification',
       'SHA-256 package checksums',
@@ -78,29 +81,12 @@ export function buildWebSiteSchema(origin: string): Record<string, unknown> {
   };
 }
 
-export function buildFaqSchema(origin: string): Record<string, unknown> {
-  const base = (origin || DEFAULT_CANONICAL_ORIGIN).replace(/\/+$/, '');
-  return {
-    '@type': 'FAQPage',
-    '@id': `${base}/#faq`,
-    mainEntity: CURATOR_FAQS.map((faq) => ({
-      '@type': 'Question',
-      name: faq.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: faq.answer,
-      },
-    })),
-  };
-}
-
 export function resolveRouteSeoMetadata(
   route: RouteSeoState,
   options: {
     origin?: string;
     pathname?: string;
     activeItem?: Game;
-    activeGuide?: EditorialGuide;
     websiteSettings?: WebsiteSettings | null;
   } = {}
 ): ResolvedSeoMetadata {
@@ -111,10 +97,6 @@ export function resolveRouteSeoMetadata(
       ? route.slug
         ? `/premium/${route.slug}`
         : '/premium'
-      : route.view === 'guides'
-      ? route.slug
-        ? `/guides/${route.slug}`
-        : '/guides'
       : route.view === 'saved'
       ? '/saved'
       : route.view === 'item-detail' && route.slug
@@ -137,64 +119,6 @@ export function resolveRouteSeoMetadata(
       ogType: 'website',
       robots: 'noindex, nofollow',
       jsonLdGraph: [orgSchema, websiteSchema],
-    };
-  }
-
-  if (route.view === 'guides' && options.activeGuide) {
-    const g = options.activeGuide;
-    return {
-      title: `${g.title} | APXELUZ Guides`,
-      description: g.summary,
-      canonicalUrl,
-      ogType: 'article',
-      robots: 'index, follow',
-      jsonLdGraph: [
-        orgSchema,
-        websiteSchema,
-        {
-          '@type': 'TechArticle',
-          headline: g.title,
-          description: g.summary,
-          datePublished: g.publishedAt,
-          dateModified: g.updatedAt,
-          author: {
-            '@type': 'Person',
-            name: g.authorName,
-          },
-          publisher: {
-            '@id': `${origin.replace(/\/+$/, '')}/#organization`,
-          },
-          mainEntityOfPage: canonicalUrl,
-          articleSection: g.category,
-        },
-      ],
-    };
-  }
-
-  if (route.view === 'guides') {
-    return {
-      title: 'Android Modding Guides, SHA-256 Verification & Field Notes | APXELUZ',
-      description:
-        'Technical guides by Axeluf covering APK SHA-256 verification, VirusTotal triage, ARM64 compatibility, OBB installation, and high-FPS Unity port tuning.',
-      canonicalUrl,
-      ogType: 'website',
-      robots: 'index, follow',
-      jsonLdGraph: [
-        orgSchema,
-        websiteSchema,
-        {
-          '@type': 'CollectionPage',
-          name: 'APXELUZ Guides & Verification Notes',
-          url: canonicalUrl,
-          hasPart: EDITORIAL_GUIDES.map((g) => ({
-            '@type': 'TechArticle',
-            headline: g.title,
-            url: buildCanonicalUrl(origin, `/guides/${g.slug}`),
-            datePublished: g.publishedAt,
-            author: { '@type': 'Person', name: g.authorName },
-          })),
-        },
-      ],
     };
   }
 
@@ -251,7 +175,7 @@ export function resolveRouteSeoMetadata(
           fileSize: item.fileSize,
           author: {
             '@type': 'Person',
-            name: item.developer || item.porter || CURATOR_PROFILE.curatorName,
+            name: item.developer || item.porter || CURATOR_NAME,
           },
           publisher: {
             '@id': `${origin.replace(/\/+$/, '')}/#organization`,
@@ -266,9 +190,9 @@ export function resolveRouteSeoMetadata(
     };
   }
 
-  const siteTitle = options.websiteSettings?.siteName || CURATOR_PROFILE.brandName;
+  const siteTitle = options.websiteSettings?.siteName || BRAND_NAME;
   const defaultDescription =
-    'Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal scans, ARM64 guides, and direct links.';
+    'Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal checks, and direct links.';
 
   return {
     title: `${siteTitle} — Curated Android APK, Game Mod & Utility Repository`,
@@ -286,7 +210,6 @@ export function resolveRouteSeoMetadata(
         description: defaultDescription,
         isPartOf: { '@id': `${origin.replace(/\/+$/, '')}/#website` },
       },
-      buildFaqSchema(origin),
     ],
   };
 }

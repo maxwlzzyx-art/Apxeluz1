@@ -1,12 +1,12 @@
 import React, { useRef, useState } from 'react';
-import { Compass, Search, X, Bookmark, Filter, Layers, Shield, Crown, BookOpen } from 'lucide-react';
+import { Compass, Search, X, Bookmark, Filter, Layers, Shield, Crown } from 'lucide-react';
 
 const WEB_PROFILE_ICON_URL =
   'https://cdn.phototourl.com/anon/2026-11-15-95ccde76-958a-450f-91b0-60424cee492b.jpg';
 
 interface HeaderProps {
-  activeTab: 'home' | 'saved' | 'premium' | 'guides' | 'admin' | 'all';
-  setActiveTab: (tab: 'home' | 'saved' | 'premium' | 'guides' | 'admin' | 'all') => void;
+  activeTab: 'home' | 'saved' | 'premium' | 'admin' | 'all';
+  setActiveTab: (tab: 'home' | 'saved' | 'premium' | 'admin' | 'all') => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   savedCount: number;
@@ -14,7 +14,6 @@ interface HeaderProps {
   isFiltersOpen?: boolean;
   onNavigateHome: () => void;
   onNavigatePremium?: () => void;
-  onNavigateGuides?: () => void;
   onOpenAdminLogin: () => void;
   isAdminAuthenticated: boolean;
   showRepositorySearch?: boolean;
@@ -30,7 +29,6 @@ export const Header: React.FC<HeaderProps> = ({
   isFiltersOpen,
   onNavigateHome,
   onNavigatePremium,
-  onNavigateGuides,
   onOpenAdminLogin,
   isAdminAuthenticated,
   showRepositorySearch = true,
@@ -140,26 +138,6 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Crown className="w-4 h-4 text-[#D97706]" />
               <span>Premium Game</span>
-            </a>
-
-            <a
-              href="/guides"
-              onClick={(e) => {
-                if (!e.metaKey && !e.ctrlKey && !e.shiftKey) {
-                  e.preventDefault();
-                  setActiveTab('guides');
-                  if (onNavigateGuides) onNavigateGuides();
-                }
-              }}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-sm font-semibold whitespace-nowrap shrink-0 cursor-pointer tactile-press ${
-                activeTab === 'guides'
-                  ? 'text-[#0F766E] bg-[#D6F2EE] border border-[#0D9488]/30 shadow-[0_4px_12px_-4px_rgba(13,148,136,0.20),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(13,148,136,0.22)]'
-                  : 'text-[#4A6270] hover:text-[#10242E] hover:bg-[#E6ECEF] border border-transparent'
-              }`}
-              aria-label="Guides"
-            >
-              <BookOpen className="w-4 h-4 text-[#1D6FA5]" />
-              <span>Guides</span>
             </a>
 
             <a
@@ -313,7 +291,7 @@ export const Header: React.FC<HeaderProps> = ({
         aria-label="Mobile Navigation"
       >
         <div
-          className={`grid ${isAdminAuthenticated ? 'grid-cols-5' : 'grid-cols-4'} items-center h-[60px] max-w-md mx-auto px-1.5`}
+          className={`grid ${isAdminAuthenticated ? 'grid-cols-4' : 'grid-cols-3'} items-center h-[60px] max-w-md mx-auto px-1.5`}
         >
           <button
             onClick={() => {
@@ -353,26 +331,6 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             />
             <span className="text-[10.5px] font-bold tracking-tight whitespace-nowrap">Premium</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab('guides');
-              if (onNavigateGuides) onNavigateGuides();
-            }}
-            className={`relative min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-0.5 tactile-press cursor-pointer ${
-              activeTab === 'guides'
-                ? 'bg-[#D6F2EE] text-[#0F766E] border border-[#0D9488]/30 shadow-[0_4px_10px_-4px_rgba(13,148,136,0.24),inset_0_1.5px_0_rgba(255,255,255,0.95),inset_0_-2px_0_rgba(13,148,136,0.22)]'
-                : 'text-[#4A6270]'
-            }`}
-            aria-label="Guides"
-          >
-            <BookOpen
-              className={`w-[19px] h-[19px] transition-transform ${
-                activeTab === 'guides' ? 'text-[#0D9488] scale-105' : ''
-              }`}
-            />
-            <span className="text-[10.5px] font-bold tracking-tight whitespace-nowrap">Guides</span>
           </button>
 
           <button

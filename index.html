@@ -6,7 +6,7 @@
     <title>APXELUZ — Curated Android APK, Game Mod &amp; Utility Repository</title>
     <meta
       name="description"
-      content="Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal scans, ARM64 guides, and direct links."
+      content="Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal checks, and direct links."
     />
     <meta name="robots" content="index, follow" />
     <meta name="author" content="Axeluf" />
@@ -19,7 +19,7 @@
     <meta property="og:title" content="APXELUZ — Curated Android APK, Game Mod &amp; Utility Repository" />
     <meta
       property="og:description"
-      content="Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal scans, ARM64 guides, and direct links."
+      content="Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal checks, and direct links."
     />
     <meta property="og:image" content="https://cdn.phototourl.com/anon/2026-11-15-95ccde76-958a-450f-91b0-60424cee492b.jpg" />
     <meta property="og:image:alt" content="APXELUZ Android App and Mod Repository" />
@@ -28,7 +28,7 @@
     <meta name="twitter:title" content="APXELUZ — Curated Android APK, Game Mod &amp; Utility Repository" />
     <meta
       name="twitter:description"
-      content="Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal scans, ARM64 guides, and direct links."
+      content="Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal checks, and direct links."
     />
     <meta name="twitter:image" content="https://cdn.phototourl.com/anon/2026-11-15-95ccde76-958a-450f-91b0-60424cee492b.jpg" />
 
@@ -62,7 +62,7 @@
               "name": "Axeluf",
               "jobTitle": "Founder & Package Maintainer"
             },
-            "description": "Independent Android APK, mod menu, and utility repository curated by Axeluf with SHA-256 package fingerprints, VirusTotal checks, and ABI compatibility guides.",
+            "description": "Independent Android APK, mod menu, and utility repository curated by Axeluf with SHA-256 package fingerprints, VirusTotal checks, and ABI compatibility tags.",
             "knowsAbout": [
               "Android APK verification",
               "SHA-256 package checksums",
@@ -90,40 +90,10 @@
             "@id": "https://apxeluz.my.id/#collection",
             "name": "APXELUZ App & Mod Repository",
             "url": "https://apxeluz.my.id/",
-            "description": "Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal scans, ARM64 guides, and direct links.",
+            "description": "Curated Android APK, game mod, and utility repository maintained by Axeluf—featuring SHA-256 checksums, VirusTotal checks, and direct links.",
             "isPartOf": {
               "@id": "https://apxeluz.my.id/#website"
             }
-          },
-          {
-            "@type": "FAQPage",
-            "@id": "https://apxeluz.my.id/#faq",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "How does APXELUZ verify that uploaded APKs and mods are safe?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Before publication, every package goes through manual manifest and native library inspection, receives a deterministic SHA-256 fingerprint, and undergoes VirusTotal multi-engine screening."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Why does App not installed happen on newer Android phones?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "The two most common causes are a signing certificate conflict with an existing Play Store version or trying to install a 32-bit ARM32 package on a 64-bit-only ARM64 chipset."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Where should I extract OBB companion files before opening a game?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Place the folder named after the package ID directly inside Internal Storage / Android / obb / before launching the game for the first time."
-                }
-              }
-            ]
           }
         ]
       }
@@ -137,7 +107,6 @@
           <nav aria-label="Primary Navigation" class="flex items-center gap-6 text-sm font-semibold text-[#4A6270]">
             <a href="/">Discover</a>
             <a href="/premium">Premium Game</a>
-            <a href="/guides">Guides &amp; Field Notes</a>
             <a href="/saved">Saved</a>
           </nav>
         </header>
@@ -150,57 +119,6 @@
             <p class="text-sm text-[#4A6270] leading-relaxed">
               APXELUZ is an independent repository for curated Android games, community mod menus, HD mobile ports, and power-user APK utilities maintained by Axeluf. Every package is inspected for ARM64-v8a and armeabi-v7a compatibility, paired with deterministic SHA-256 verification checksums, screened on VirusTotal, and delivered without ad-heavy shortlink redirects.
             </p>
-          </section>
-
-          <section class="space-y-3">
-            <h2 class="text-xl font-bold text-[#10242E]">Why APXELUZ Exists</h2>
-            <p class="text-sm text-[#4A6270] leading-relaxed">
-              Started as a direct archive for Channel Axeluf subscribers, APXELUZ replaces broken file-mirror links and undocumented APK uploads with transparent release changelogs, explicit Android OS minimums, OBB placement instructions, and verifiable binary fingerprints.
-            </p>
-          </section>
-
-          <section class="space-y-3">
-            <h2 class="text-xl font-bold text-[#10242E]">Technical Guides &amp; Package Verification Notes</h2>
-            <ul class="space-y-2 text-sm text-[#0F766E]">
-              <li>
-                <a href="/guides/how-we-verify-apk-sha256-and-virustotal">
-                  How We Verify Every APK Before Publishing: SHA-256, Signatures, and VirusTotal Triage
-                </a>
-              </li>
-              <li>
-                <a href="/guides/arm64-v8a-vs-armeabi-v7a-android-compatibility">
-                  ARM64-v8a vs armeabi-v7a vs Universal APKs: Fixing "App Not Installed" on Android 12–15
-                </a>
-              </li>
-              <li>
-                <a href="/guides/installing-obb-and-split-apks-android-14">
-                  Installing Split APKs (.apks/.xapk) and OBB Data Folders Safely on Modern Android
-                </a>
-              </li>
-              <li>
-                <a href="/guides/unity-il2cpp-60fps-mod-architecture-notes">
-                  Release Engineering Notes: Unlocking 60/120FPS &amp; Frame Pacing in Unity IL2CPP Ports
-                </a>
-              </li>
-            </ul>
-          </section>
-
-          <section class="space-y-3">
-            <h2 class="text-xl font-bold text-[#10242E]">Frequently Asked Questions</h2>
-            <dl class="space-y-3 text-sm">
-              <div>
-                <dt class="font-bold text-[#10242E]">How does APXELUZ verify that uploaded APKs and mods are safe?</dt>
-                <dd class="text-[#4A6270]">
-                  Every build undergoes manifest and native library inspection, receives a SHA-256 fingerprint, and passes VirusTotal screening before listing.
-                </dd>
-              </div>
-              <div>
-                <dt class="font-bold text-[#10242E]">Why does "App not installed" happen on Android 12–15?</dt>
-                <dd class="text-[#4A6270]">
-                  Most installation failures come from a signing certificate mismatch against an existing Play Store install or running a 32-bit ARM32 build on a 64-bit-only ARM64 phone.
-                </dd>
-              </div>
-            </dl>
           </section>
         </main>
 

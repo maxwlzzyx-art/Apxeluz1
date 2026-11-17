@@ -88,11 +88,11 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ game, onClose }) =
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#10242E]/30 backdrop-blur-md overscroll-none backdrop-entrance"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-6 bg-[#10242E]/30 backdrop-blur-md overscroll-none backdrop-entrance"
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-lg max-h-[92vh] flex flex-col liquid-glass rounded-t-[28px] sm:rounded-3xl p-5 sm:p-7 pt-2 sm:pt-3 overflow-hidden text-left overscroll-contain sheet-entrance ${sheetMotionClass}`}
+        className={`relative w-full max-w-md max-h-[72dvh] sm:max-h-[76dvh] flex flex-col liquid-glass rounded-3xl p-4 sm:p-6 pt-2 overflow-hidden text-left overscroll-contain sheet-entrance ${sheetMotionClass}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
